@@ -111,7 +111,7 @@ export default function Footer4Col() {
                 {aboutLinks.map(({ text, href }) => (
                   <li key={text}>
                     <Link
-                      className="text-secondary-foreground/70 transition"
+                      className="text-secondary-foreground/70 transition-colors hover:text-foreground"
                       href={href}
                     >
                       {text}
@@ -127,7 +127,7 @@ export default function Footer4Col() {
                 {serviceLinks.map(({ text, href }) => (
                   <li key={text}>
                     <Link
-                      className="text-secondary-foreground/70 transition"
+                      className="text-secondary-foreground/70 transition-colors hover:text-foreground"
                       href={href}
                     >
                       {text}
@@ -188,15 +188,9 @@ export default function Footer4Col() {
         </div>
 
         <div className="mt-12 border-t pt-6">
-          <div className="text-center sm:flex sm:justify-between sm:text-left">
-            <p className="text-sm">
-              <span className="block sm:inline">All rights reserved.</span>
-            </p>
-
-            <div className="text-secondary-foreground/70 mt-4 text-sm transition sm:order-first sm:mt-0 flex items-center gap-2">
-              &copy; {new Date().getFullYear()} QuickVoice
-            </div>
-          </div>
+          <p className="text-center text-sm text-secondary-foreground/70">
+            &copy; {new Date().getFullYear()} QuickVoice. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

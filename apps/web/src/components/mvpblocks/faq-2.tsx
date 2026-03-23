@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { MinusIcon, PlusIcon } from 'lucide-react';
+import { PlusIcon } from 'lucide-react';
 
 interface FaqItem {
   id: string;
@@ -179,7 +179,7 @@ export default function Faq2() {
   };
 
   return (
-    <section className="py-16">
+    <section id="faq" className="py-20 md:py-28">
       <div className="container mx-auto max-w-6xl px-4 md:px-6">
         <div className="mb-12 flex flex-col items-center">
           <Badge
@@ -233,7 +233,6 @@ export default function Faq2() {
                     ? 'shadow-3xl bg-card/50'
                     : 'bg-card/50',
                 )}
-                style={{ minHeight: '88px' }}
               >
                 <button
                   onClick={() => toggleExpand(faq.id)}
@@ -243,11 +242,7 @@ export default function Faq2() {
                     {faq.question}
                   </h3>
                   <div className="ml-4 flex-shrink-0">
-                    {expandedId === faq.id ? (
-                      <MinusIcon className="text-primary h-5 w-5" />
-                    ) : (
-                      <PlusIcon className="text-primary h-5 w-5" />
-                    )}
+                    <PlusIcon className={`text-primary h-5 w-5 transition-transform duration-300 ${expandedId === faq.id ? "rotate-45" : ""}`} />
                   </div>
                 </button>
 

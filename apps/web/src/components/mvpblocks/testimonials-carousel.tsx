@@ -10,42 +10,42 @@ import { Quote } from 'lucide-react';
 const defaultTestimonials = [
   {
     text: "We deployed our first AI voice agent in under 10 minutes. It now handles 70% of appointment scheduling calls without any human intervention.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=SM&backgroundColor=6366f1",
     name: "Sarah M.",
     username: "Practice Manager",
     role: "Multi-Location Healthcare Group",
   },
   {
     text: "HIPAA compliance was non-negotiable for us. QuickVoice gave us the security certifications we needed while dramatically reducing missed calls.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=JT&backgroundColor=8b5cf6",
     name: "James T.",
     username: "Director of Operations",
     role: "Regional Hospital System",
   },
   {
     text: "The CRM integration alone saved our team 15 hours per week. Every call is logged, transcribed, and synced to HubSpot automatically.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=MR&backgroundColor=2563eb",
     name: "Michael R.",
     username: "VP of Sales",
     role: "B2B SaaS Company",
   },
   {
     text: "We went from missing 40% of after-hours calls to capturing every single inquiry. Our lead conversion rate increased by 35% in the first month.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=LK&backgroundColor=7c3aed",
     name: "Lisa K.",
     username: "Business Development Lead",
     role: "Commercial Real Estate Firm",
   },
   {
     text: "Multi-language support was the deciding factor. Our AI agents now handle calls in English, Spanish, and French across all our locations.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=DP&backgroundColor=4f46e5",
     name: "David P.",
     username: "Customer Experience Director",
     role: "National Retail Chain",
   },
   {
     text: "We replaced our legacy IVR with QuickVoice and saw customer satisfaction scores jump from 3.2 to 4.6 out of 5 within 60 days.",
-    imageSrc: "",
+    imageSrc: "https://api.dicebear.com/7.x/initials/svg?seed=RW&backgroundColor=6d28d9",
     name: "Rachel W.",
     username: "Contact Center Manager",
     role: "Financial Services Provider",
@@ -92,11 +92,10 @@ export default function TestimonialsCarousel({
     };
   }, [emblaApi, autoplaySpeed]);
 
-  const allTestimonials = [...testimonials, ...testimonials];
-
   return (
     <section
-      className={cn('relative overflow-hidden py-16 md:py-24', className)}
+      id="testimonials"
+      className={cn('relative overflow-hidden py-20 md:py-28', className)}
     >
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,hsl(var(--primary)/0.2),transparent_60%)]" />
@@ -112,7 +111,7 @@ export default function TestimonialsCarousel({
           viewport={{ once: true }}
           className="relative mb-12 text-center md:mb-16"
         >
-          <h2 className="from-foreground to-foreground/40 mb-4 pb-4 bg-gradient-to-b bg-clip-text text-3xl font-bold text-transparent md:text-5xl lg:text-6xl">
+          <h2 className="from-foreground to-foreground/70 mb-4 pb-4 bg-gradient-to-b bg-clip-text text-3xl font-bold text-transparent md:text-5xl lg:text-6xl">
             {title}
           </h2>
 
@@ -130,52 +129,28 @@ export default function TestimonialsCarousel({
         {/* Testimonials carousel */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex">
-            {allTestimonials.map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <div
                 key={`${testimonial.name}-${index}`}
-                className="flex justify-center px-4"
+                className="flex-shrink-0 basis-[350px] md:basis-[400px] px-4"
               >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  className="border-border from-secondary/20 to-card relative h-full w-fit rounded-2xl border bg-gradient-to-b p-6 shadow-md backdrop-blur-sm"
+                <div
+                  className="border-border from-secondary/20 to-card relative h-full rounded-2xl border bg-gradient-to-b p-6 shadow-md backdrop-blur-sm"
                 >
                   {/* Enhanced decorative gradients */}
                   <div className="from-primary/15 to-card absolute -top-5 -left-5 -z-10 h-40 w-40 rounded-full bg-gradient-to-b blur-md" />
                   <div className="from-primary/10 absolute -right-10 -bottom-10 -z-10 h-32 w-32 rounded-full bg-gradient-to-t to-transparent opacity-70 blur-xl" />
 
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 + index * 0.05 }}
-                    viewport={{ once: true }}
-                    className="text-primary mb-4"
-                  >
-                    <div className="relative">
-                      <Quote className="h-10 w-10 -rotate-180" />
-                    </div>
-                  </motion.div>
+                  <div className="text-primary mb-4">
+                    <Quote className="h-10 w-10 -rotate-180" />
+                  </div>
 
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 + index * 0.05 }}
-                    viewport={{ once: true }}
-                    className="text-foreground/90 relative mb-6 text-base leading-relaxed"
-                  >
-                    <span className="relative">{testimonial.text}</span>
-                  </motion.p>
+                  <p className="text-foreground/90 relative mb-6 text-base leading-relaxed">
+                    {testimonial.text}
+                  </p>
 
-                  {/* Enhanced user info with animation */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.4 + index * 0.05 }}
-                    viewport={{ once: true }}
-                    className="border-border/40 mt-auto flex items-center gap-3 border-t pt-2"
-                  >
+                  {/* User info */}
+                  <div className="border-border/40 mt-auto flex items-center gap-3 border-t pt-2">
                     <Avatar className="border-border ring-primary/10 ring-offset-background h-10 w-10 border ring-2 ring-offset-1">
                       {testimonial.imageSrc ? (
                         <AvatarImage
@@ -188,9 +163,9 @@ export default function TestimonialsCarousel({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <h4 className="text-foreground font-medium whitespace-nowrap">
+                      <p className="text-foreground font-medium whitespace-nowrap">
                         {testimonial.name}
-                      </h4>
+                      </p>
                       <div className="flex items-center gap-2">
                         {testimonial.username && (
                           <p className="text-primary/80 text-sm whitespace-nowrap">
@@ -201,7 +176,7 @@ export default function TestimonialsCarousel({
                           <>
                             {testimonial.username && (
                               <span className="text-muted-foreground flex-shrink-0">
-                                •
+                                &bull;
                               </span>
                             )}
                             <p className="text-muted-foreground text-sm whitespace-nowrap">
@@ -211,8 +186,8 @@ export default function TestimonialsCarousel({
                         )}
                       </div>
                     </div>
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

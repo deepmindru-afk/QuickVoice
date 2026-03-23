@@ -11,9 +11,6 @@ const FeaturesSection = dynamic(() =>
 const AboutSection = dynamic(() =>
   import("@/components/landing/about-section").then((m) => ({ default: m.AboutSection }))
 );
-const PricingSection = dynamic(() =>
-  import("@/components/landing/pricing-section").then((m) => ({ default: m.PricingSection }))
-);
 const TestimonialsSection = dynamic(() =>
   import("@/components/landing/testimonials-section").then((m) => ({ default: m.TestimonialsSection }))
 );

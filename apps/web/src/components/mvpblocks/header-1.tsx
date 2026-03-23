@@ -109,6 +109,8 @@ export default function Header1() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [openMobileDropdown, setOpenMobileDropdown] = useState<string | null>(null);
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -126,12 +128,8 @@ export default function Header1() {
         {/* Top row */}
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div>
-              
-              <Logo1 />
-            </div>
-            
+          <Link href="/" className="flex items-center space-x-2" aria-label="QuickVoice - Home">
+            <Logo1 />
           </Link>
 
           {/* Desktop Nav */}
@@ -248,48 +246,92 @@ export default function Header1() {
           <motion.nav
             id="mobile-nav"
             aria-label="Mobile navigation"
-            className="lg:hidden mx-4  mt-2 rounded-xl border border-border bg-background shadow-xl backdrop-blur p-4 space-y-2"
+            className="lg:hidden mx-4 mt-2 rounded-xl border border-border bg-background shadow-xl backdrop-blur p-4 space-y-2"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ul className="space-y-2 max-h-[60vh] overflow-auto">
+            <ul className="space-y-1 max-h-[60vh] overflow-auto">
               {navItems.map((item) => (
                 <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className="block px-2 py-2 rounded-lg font-medium hover:bg-muted"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                  {item.hasDropdown &&
-                    item.dropdownItems?.map((dropdown) => (
-                      <ul key={dropdown.name} className="ml-4 mt-1 space-y-1">
-                        <li>
-                          <Link
-                            href={dropdown.href}
-                            className="block px-5 py-1 text-sm text-foreground hover:bg-muted rounded-lg"
-                            onClick={() => setIsMobileMenuOpen(false)}
+                  {item.hasDropdown ? (
+                    <>
+                      <button
+                        className="flex w-full items-center justify-between px-2 py-2 rounded-lg font-medium hover:bg-muted transition-colors"
+                        onClick={() =>
+                          setOpenMobileDropdown(
+                            openMobileDropdown === item.name ? null : item.name
+                          )
+                        }
+                      >
+                        <span>{item.name}</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform duration-200 ${
+                            openMobileDropdown === item.name ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {openMobileDropdown === item.name && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
                           >
-                            {dropdown.name}
-                          </Link>
-                        </li>
-                        {dropdown.hasNestedDropdown &&
-                          dropdown.nestedDropdownItems?.map((nested) => (
-                            <li key={nested.name}>
-                              <Link
-                                href={nested.href}
-                                className="block px-8 py-1 text-sm text-muted-foreground hover:bg-muted rounded-lg"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                              >
-                                {nested.name}
-                              </Link>
-                            </li>
-                          ))}
-                      </ul>
-                    ))}
+                            <ul className="ml-2 mt-1 space-y-1 border-l border-border pl-3">
+                              {item.dropdownItems?.map((dropdown) => (
+                                <li key={dropdown.name}>
+                                  {dropdown.hasNestedDropdown ? (
+                                    <>
+                                      <Link
+                                        href={dropdown.href}
+                                        className="block px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                      >
+                                        {dropdown.name}
+                                      </Link>
+                                      <ul className="ml-3 space-y-0.5">
+                                        {dropdown.nestedDropdownItems?.map((nested) => (
+                                          <li key={nested.name}>
+                                            <Link
+                                              href={nested.href}
+                                              className="block px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                                              onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                              {nested.name}
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </>
+                                  ) : (
+                                    <Link
+                                      href={dropdown.href}
+                                      className="block px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                                      onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                      {dropdown.name}
+                                    </Link>
+                                  )}
+                                </li>
+                              ))}
+                            </ul>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className="block px-2 py-2 rounded-lg font-medium hover:bg-muted"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

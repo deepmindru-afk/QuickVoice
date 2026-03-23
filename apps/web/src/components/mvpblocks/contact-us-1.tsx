@@ -72,7 +72,7 @@ export default function ContactUs1() {
   };
 
   return (
-    <section id="contact-us" className="relative w-full overflow-hidden py-16 md:py-24">
+    <section id="contact-us" className="relative w-full overflow-hidden py-20 md:py-28">
       {/* Light mode glows */}
       <div
         className="absolute top-0 left-0 h-[500px] w-[500px] rounded-full opacity-20 blur-[120px] dark:hidden"
@@ -109,21 +109,18 @@ export default function ContactUs1() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="flex w-full gap-2"
+                className="relative"
               >
                 <h2 className="from-foreground to-foreground/80 mb-2 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent md:text-5xl">
-                  Contact
+                  Contact <span className="text-primary">Us</span>
                 </h2>
-                <span className="text-primary relative z-10 w-full text-4xl font-bold tracking-tight md:text-5xl">
-                  Us
-                </span>
                 <SparklesCore
                   id="tsparticles"
                   background="transparent"
                   minSize={0.6}
                   maxSize={1.4}
-                  particleDensity={500}
-                  className="absolute inset-0 top-0 h-24 w-full"
+                  particleDensity={80}
+                  className="absolute inset-0 top-0 h-24 w-full pointer-events-none"
                   particleColor="#2563eb"
                 />
               </motion.div>

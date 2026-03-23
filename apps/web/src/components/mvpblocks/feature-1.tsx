@@ -197,8 +197,16 @@ const features = [
 
 function ComplianceCertifications() {
   return (
-    <section className="relative py-16 bg-background">
+    <section id="features" className="relative py-20 md:py-28 bg-background">
       <div className="mx-auto max-w-screen-xl px-4 md:px-8">
+        <div className="text-center mb-12">
+          <h2 className="mt-4 text-3xl font-normal tracking-tighter sm:text-4xl md:text-5xl">
+            Enterprise-Grade Security & Compliance
+          </h2>
+          <p className="text-muted-foreground mt-3">
+            Certified to the highest industry standards to protect your data
+          </p>
+        </div>
         <div className="flex flex-row items-center justify-center gap-8 md:gap-12 lg:gap-16 flex-wrap">
           {complianceData.compliance.map((item, index) => (
             <motion.div
@@ -254,14 +262,14 @@ function PartnersSection() {
   ];
 
   return (
-    <section className="relative py-16 bg-background">
+    <section className="relative py-20 md:py-28 bg-background">
       <div className="mx-auto max-w-screen-xl px-4 md:px-8">
         <div className="relative mx-auto max-w-2xl sm:text-center mb-12">
           <div className="relative z-10">
-            <h2 className="font-geist mt-4 text-3xl font-normal tracking-tighter sm:text-4xl md:text-5xl">
+            <h2 className="mt-4 text-3xl font-normal tracking-tighter sm:text-4xl md:text-5xl">
               Our Partners
             </h2>
-            <p className="font-geist text-foreground/60 mt-3">
+            <p className="text-foreground/60 mt-3">
               We partner with the best in the business to bring you the best experience possible
             </p>
           </div>
@@ -298,14 +306,14 @@ export default function Feature1() {
   return (
     <>
       <ComplianceCertifications />
-      <section className="relative py-14">
+      <section className="relative py-20 md:py-28">
       <div className="mx-auto max-w-screen-xl px-4 md:px-8">
         <div className="relative mx-auto max-w-2xl sm:text-center">
           <div className="relative z-10">
-            <h2 className="font-geist mt-4 text-3xl font-normal tracking-tighter sm:text-4xl md:text-5xl">
+            <h2 className="mt-4 text-3xl font-normal tracking-tighter sm:text-4xl md:text-5xl">
               Why QuickVoice is the Smarter Choice
             </h2>
-            <p className="font-geist text-foreground/60 mt-3">
+            <p className="text-foreground/60 mt-3">
               We&apos;ve engineered QuickVoice to be a seamless, powerful, and secure
               extension of your brand. Here&apos;s how we deliver unrivaled value.
             </p>
@@ -330,10 +338,10 @@ export default function Feature1() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className="font-geist text-lg font-bold tracking-tighter">
+                <h3 className="text-lg font-bold tracking-tighter">
                   {item.title}
                 </h3>
-                <p className="text-gray-500">{item.description}</p>
+                <p className="text-muted-foreground">{item.description}</p>
               </li>
             ))}
           </ul>

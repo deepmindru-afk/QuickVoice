@@ -1,25 +1,17 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function CTA2() {
   return (
-    <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-[40px] bg-[#2563eb] dark:bg-[#8b5cf6] p-6 sm:p-10 md:p-20">
+    <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-[40px] bg-primary p-8 sm:p-10 md:p-20">
       <div className="absolute inset-0 hidden h-full w-full overflow-hidden md:block">
         <div className="absolute top-1/2 right-[-45%] aspect-square h-[800px] w-[800px] -translate-y-1/2">
-          {/* Light mode circles */}
-          <div className="absolute inset-0 rounded-full bg-[#3b82f6] opacity-30 dark:hidden"></div>
-          <div className="absolute inset-0 scale-[0.8] rounded-full bg-[#60a5fa] opacity-30 dark:hidden"></div>
-          <div className="absolute inset-0 scale-[0.6] rounded-full bg-[#93c5fd] opacity-30 dark:hidden"></div>
-          <div className="absolute inset-0 scale-[0.4] rounded-full bg-[#bfdbfe] opacity-30 dark:hidden"></div>
-          <div className="absolute inset-0 scale-[0.2] rounded-full bg-[#dbeafe] opacity-30 dark:hidden"></div>
-          <div className="absolute inset-0 scale-[0.1] rounded-full bg-white/50 opacity-30 dark:hidden"></div>
-
-          {/* Dark mode circles */}
-          <div className="absolute inset-0 rounded-full bg-[#a78bfa] opacity-30 hidden dark:block"></div>
-          <div className="absolute inset-0 scale-[0.8] rounded-full bg-[#c4b5fd] opacity-30 hidden dark:block"></div>
-          <div className="absolute inset-0 scale-[0.6] rounded-full bg-[#ddd6fe] opacity-30 hidden dark:block"></div>
-          <div className="absolute inset-0 scale-[0.4] rounded-full bg-[#ede9fe] opacity-30 hidden dark:block"></div>
-          <div className="absolute inset-0 scale-[0.2] rounded-full bg-[#f5f3ff] opacity-30 hidden dark:block"></div>
-          <div className="absolute inset-0 scale-[0.1] rounded-full bg-white/50 opacity-30 hidden dark:block"></div>
+          <div className="absolute inset-0 rounded-full bg-white/20"></div>
+          <div className="absolute inset-0 scale-[0.8] rounded-full bg-white/15"></div>
+          <div className="absolute inset-0 scale-[0.6] rounded-full bg-white/12"></div>
+          <div className="absolute inset-0 scale-[0.4] rounded-full bg-white/10"></div>
+          <div className="absolute inset-0 scale-[0.2] rounded-full bg-white/8"></div>
+          <div className="absolute inset-0 scale-[0.1] rounded-full bg-white/5"></div>
         </div>
       </div>
 
@@ -36,17 +28,21 @@ export default function CTA2() {
         <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
           <Link
             href="/company/contact"
-            className="flex w-full items-center justify-between rounded-full bg-black px-5 py-3 text-white sm:w-[240px]"
+            className="flex w-full items-center justify-between rounded-full bg-black px-5 py-3 text-white transition-colors hover:bg-gray-900 sm:w-[240px]"
           >
             <span className="font-medium">Book a discovery call</span>
-            <span className="h-5 w-5 flex-shrink-0 rounded-full bg-white"></span>
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white">
+              <ArrowRight className="h-3.5 w-3.5 text-black" />
+            </span>
           </Link>
           <Link
             href="#contact-us"
-            className="flex w-full items-center justify-between rounded-full bg-black px-5 py-3 text-white sm:w-[240px]"
+            className="flex w-full items-center justify-between rounded-full bg-black px-5 py-3 text-white transition-colors hover:bg-gray-900 sm:w-[240px]"
           >
             <span className="font-medium">Contact Us</span>
-            <span className="h-5 w-5 flex-shrink-0 rounded-full bg-white"></span>
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-white">
+              <ArrowRight className="h-3.5 w-3.5 text-black" />
+            </span>
           </Link>
         </div>
       </div>

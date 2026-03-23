@@ -56,6 +56,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="preload" as="image" href="/dashboard.png" />
         {process.env.NEXT_PUBLIC_GSC_VERIFICATION && (
           <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_GSC_VERIFICATION} />
         )}

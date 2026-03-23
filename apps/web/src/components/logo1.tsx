@@ -1,4 +1,4 @@
-export default function Logo() {
+export default function Logo1() {
     return (
       <div className="flex items-center gap-2 text-black dark:text-white">
   
