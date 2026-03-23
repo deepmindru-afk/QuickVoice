@@ -4,10 +4,6 @@ import React, { useEffect, useRef } from 'react';
 import createGlobe from 'cobe';
 import { cn } from '@/lib/utils';
 
-type GlobeOptionsWithOnRender = Parameters<typeof createGlobe>[1] & {
-  onRender?: (state: Record<string, unknown>) => void;
-};
-
 interface EarthProps {
   className?: string;
   theta?: number;
@@ -20,6 +16,7 @@ interface EarthProps {
   markerColor?: [number, number, number];
   glowColor?: [number, number, number];
 }
+
 const Earth: React.FC<EarthProps> = ({
   className,
   theta = 0.25,
@@ -35,47 +32,60 @@ const Earth: React.FC<EarthProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    let width = 0;
-    const onResize = () =>
-      canvasRef.current && (width = canvasRef.current.offsetWidth);
-    window.addEventListener('resize', onResize);
-    onResize();
-    let phi = 0;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    onResize();
-    const globeOptions: GlobeOptionsWithOnRender = {
-      devicePixelRatio: 2,
-      width: width * 2,
-      height: width * 2,
-      phi: 0,
-      theta: theta,
-      dark: dark,
-      scale: scale,
-      diffuse: diffuse,
-      mapSamples: mapSamples,
-      mapBrightness: mapBrightness,
-      baseColor: baseColor,
-      markerColor: markerColor,
-      glowColor: glowColor,
-      opacity: 1,
-      offset: [0, 0],
-      markers: [
-        // longitude latitude
-      ],
-      onRender: (state) => {
-        // Called on every animation frame.
-        // `state` will be an empty object, return updated params.\
-        (state as { phi?: number }).phi = phi;
+    let phi = 0;
+    let animationId: number;
+    let globe: ReturnType<typeof createGlobe> | null = null;
+
+    const initGlobe = () => {
+      const width = canvas.offsetWidth;
+      if (width === 0) {
+        // Canvas not laid out yet, retry next frame
+        animationId = requestAnimationFrame(initGlobe);
+        return;
+      }
+
+      // Set canvas pixel dimensions explicitly
+      canvas.width = width * 2;
+      canvas.height = width * 2;
+
+      globe = createGlobe(canvas, {
+        devicePixelRatio: 2,
+        width: width * 2,
+        height: width * 2,
+        phi: 0,
+        theta,
+        dark,
+        scale,
+        diffuse,
+        mapSamples,
+        mapBrightness,
+        baseColor,
+        markerColor,
+        glowColor,
+        opacity: 1,
+        offset: [0, 0],
+        markers: [],
+      });
+
+      // Animate rotation using cobe v2 update() API
+      const animate = () => {
         phi += 0.003;
-      },
+        globe?.update({ phi });
+        animationId = requestAnimationFrame(animate);
+      };
+      animationId = requestAnimationFrame(animate);
     };
 
-    const globe = createGlobe(canvasRef.current as HTMLCanvasElement, globeOptions);
+    initGlobe();
 
     return () => {
-      globe.destroy();
+      cancelAnimationFrame(animationId);
+      globe?.destroy();
     };
-  }, [dark]);
+  }, [theta, dark, scale, diffuse, mapSamples, mapBrightness, baseColor, markerColor, glowColor]);
 
   return (
     <div

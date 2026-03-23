@@ -124,7 +124,7 @@ export default function ContactUs1() {
                   maxSize={1.4}
                   particleDensity={500}
                   className="absolute inset-0 top-0 h-24 w-full"
-                  particleColor="currentColor"
+                  particleColor="#2563eb"
                 />
               </motion.div>
 
