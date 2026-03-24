@@ -119,20 +119,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
 
-    // Solution pages
-    {
-      url: `${baseUrl}/solutions/ai-receptionist`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/solutions/ai-answering-service`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-
     // Compliance
     {
       url: `${baseUrl}/compliance/hipaa`,

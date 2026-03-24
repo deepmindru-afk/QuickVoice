@@ -3,7 +3,9 @@ import Script from "next/script";
 import "./globals.css";
 
 import type { Metadata } from "next";
-const inter = Inter({ subsets: ["latin"] });
+import Navbar from "@/components/landing/navbar";
+import { Footer } from "@/components/landing/footer";
+const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -78,16 +80,18 @@ export default function RootLayout({
           </Script>
         </>
       )}
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={inter.className}>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:rounded-lg focus:bg-indigo-600 focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg"
         >
           Skip to main content
         </a>
-        
+        <Navbar />
+        <main id="main-content">
             {children}
-            
+        </main>
+        <Footer />
       </body>
     </html>
   );

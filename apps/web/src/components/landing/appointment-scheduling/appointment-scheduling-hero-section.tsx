@@ -8,7 +8,7 @@ import  AudioPlayer from "react-h5-audio-player";
 
 
 import { Player } from "@/components/audioPlayer";
-import { TypingTranscript , TranscriptLine} from "@/components/TranscriptPlayer";
+import { TypingTranscript , TranscriptLine} from "@/components/TypingTranscript";
 import appointment from "@/data/use-cases/appointment-scheduling.json";
 import { useEffect , useState , useRef} from "react";
 import { generateDownloadUrl } from "@/utils/s3Ops";
@@ -17,15 +17,12 @@ export function AppointmentSchedulingHeroSection() {
   const folderName = "Voice-agents/marketing/demo-voices";
  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  // why this gives errorr so you fix it 
-
   const audioRef = useRef<AudioPlayer | null>(null);
   /** Fetch audio */
  useEffect(() => {
   async function fetchAudio() {
     try {
       const res = await generateDownloadUrl(folderName, appointment.appointmentscheduling);
-    //  console.log("Fetched audio URL:", data.url);
          setAudioUrl(res);
     } catch (error) {
       console.error("Error fetching audio URL:", error);

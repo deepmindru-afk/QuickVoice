@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Phone, Mail, Building2, Loader2, Check } from "lucide-react";
 
@@ -23,6 +23,15 @@ export function ContactUsFormSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -111,18 +120,20 @@ export function ContactUsFormSection() {
       setIsSubmitted(true);
 
       // Reset success message after 10 seconds
-      setTimeout(() => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
         setIsSubmitted(false);
       }, 10000);
     } catch (error: unknown) {
       console.error("Error submitting form:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : "We encountered an issue processing your request. Please try again or contact us directly at info@quickvoice.co or +1 218-452-5998.";
       setSubmitError(errorMessage);
 
       // Clear error message after 10 seconds
-      setTimeout(() => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
         setSubmitError("");
       }, 10000);
     } finally {
@@ -310,17 +321,19 @@ export function ContactUsFormSection() {
                 )}
               </div>
 
-              {submitError && (
-                <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400">
-                  {submitError}
-                </div>
-              )}
+              <div aria-live="polite" aria-atomic="true">
+                {submitError && (
+                  <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400">
+                    {submitError}
+                  </div>
+                )}
 
-              {isSubmitted && (
-                <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400">
-                  Thank you! Your inquiry has been received. A voice AI specialist will respond within one business day. Check your email for confirmation.
-                </div>
-              )}
+                {isSubmitted && (
+                  <div role="status" className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400">
+                    Thank you! Your inquiry has been received. A voice AI specialist will respond within one business day. Check your email for confirmation.
+                  </div>
+                )}
+              </div>
 
               <div className="flex justify-center pt-2">
                 <button

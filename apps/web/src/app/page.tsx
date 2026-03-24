@@ -2,7 +2,6 @@ import dynamic from "next/dynamic";
 
 // Above-fold: server-rendered immediately (SSR)
 import { HeroSection } from "@/components/landing/hero-section";
-import Navbar from "../components/landing/navbar";
 
 // Below-fold: lazy-loaded to reduce initial JS parse
 const FeaturesSection = dynamic(() =>
@@ -23,9 +22,7 @@ const FaqSection = dynamic(() =>
 const ContactSection = dynamic(() =>
   import("@/components/landing/contact-section").then((m) => ({ default: m.ContactSection }))
 );
-const Footer = dynamic(() =>
-  import("@/components/landing/footer").then((m) => ({ default: m.Footer }))
-);
+
 
 const homepageSchema = [
   {
@@ -146,7 +143,6 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <main id="main-content" className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-        <Navbar />
         <HeroSection />
         <FeaturesSection />
         <AboutSection />
@@ -154,7 +150,6 @@ export default function Home() {
         <CtaSection />
         <FaqSection />
         <ContactSection />
-        <Footer />
       </main>
     </>
   );

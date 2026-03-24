@@ -53,8 +53,8 @@ export function SalesLeadGenConcernsSection() {
               className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               {/* Icon */}
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#9b87f5]/10 mb-6">
-                <concern.icon className="h-8 w-8 text-[#9b87f5]" />
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-6">
+                <concern.icon className="h-8 w-8 text-primary" />
               </div>
 
               {/* Content */}
@@ -87,27 +87,27 @@ export function SalesLeadGenConcernsSection() {
               </p>
               <div className="space-y-4">
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-[#9b87f5] mr-3" />
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-gray-700 dark:text-gray-300">Expert product knowledge</span>
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-[#9b87f5] mr-3" />
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-gray-700 dark:text-gray-300">Competitive advantage insights</span>
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-[#9b87f5] mr-3" />
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-gray-700 dark:text-gray-300">Personalized recommendations</span>
                 </div>
                 <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-[#9b87f5] mr-3" />
+                  <CheckCircle className="h-5 w-5 text-primary mr-3" />
                   <span className="text-gray-700 dark:text-gray-300">Risk-free trial guidance</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="bg-gradient-to-br from-[#9b87f5]/10 to-[#7a68c3]/10 rounded-2xl p-8">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/[0.08] rounded-2xl p-8">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-[#9b87f5] mb-2">92%</div>
+                  <div className="text-4xl font-bold text-primary mb-2">92%</div>
                   <div className="text-lg text-gray-600 dark:text-gray-300">Customer Trust Score</div>
                 </div>
               </div>

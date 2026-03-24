@@ -16,6 +16,7 @@ export interface BlogPost {
   canonical: string;
   ogImage: string;
   readTime: string;
+  authorBio?: string;
   content: string;
 }
 
@@ -36,6 +37,7 @@ function parseFile(filename: string): BlogPost | null {
       canonical: data.canonical as string,
       ogImage: (data.ogImage as string) || "",
       readTime: (data.readTime as string) || "5 min",
+      authorBio: (data.authorBio as string) || "",
       content,
     };
   } catch {

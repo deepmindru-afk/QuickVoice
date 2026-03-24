@@ -101,7 +101,7 @@ const [audioUrl, setAudioUrl] = useState<string | null>(null);
                 className="relative w-full sm:w-auto overflow-hidden rounded-full border px-8 py-4 text-foreground shadow-lg transition-all duration-300
                            bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md
                            dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10
-                           dark:hover:border-[#9b87f5]/30 dark:hover:shadow-[0_0_20px_rgba(155,135,245,0.5)]"
+                           dark:hover:border-primary/30 dark:hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)]"
               >
                 Book a Free Demo
               </Link>

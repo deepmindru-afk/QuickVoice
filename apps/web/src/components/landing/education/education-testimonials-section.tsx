@@ -108,7 +108,7 @@ export function EducationTestimonialsSection() {
             >
               {/* Quote Icon */}
               <div className="absolute top-6 right-6">
-                <Quote className="h-8 w-8 text-[#9b87f5]/20" />
+                <Quote className="h-8 w-8 text-primary/20" />
               </div>
 
               {/* Rating */}
@@ -124,13 +124,13 @@ export function EducationTestimonialsSection() {
               </blockquote>
 
               {/* Metrics */}
-              <div className="flex items-center justify-between mb-6 p-4 bg-[#9b87f5]/5 rounded-lg">
+              <div className="flex items-center justify-between mb-6 p-4 bg-primary/5 rounded-lg">
                 <div className="flex items-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#9b87f5]/10 mr-3">
-                    <testimonial.metrics.icon className="h-5 w-5 text-[#9b87f5]" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 mr-3">
+                    <testimonial.metrics.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-[#9b87f5]">
+                    <div className="text-2xl font-bold text-primary">
                       {testimonial.metrics.value}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">
@@ -143,7 +143,7 @@ export function EducationTestimonialsSection() {
               {/* Author */}
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#9b87f5] to-[#7a68c3] flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center">
                     <span className="text-white font-semibold text-lg">
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </span>
@@ -156,7 +156,7 @@ export function EducationTestimonialsSection() {
                   <div className="text-sm text-gray-500 dark:text-gray-400">
                     {testimonial.role}
                   </div>
-                  <div className="text-sm font-medium text-[#9b87f5]">
+                  <div className="text-sm font-medium text-primary">
                     {testimonial.company}
                   </div>
                 </div>

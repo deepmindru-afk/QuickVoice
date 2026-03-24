@@ -70,17 +70,17 @@ export function EducationResourcesSection() {
               className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               {/* Category Badge */}
-              <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#9b87f5]/10 text-[#9b87f5] mb-4">
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary mb-4">
                 {resource.category}
               </div>
 
               {/* Icon */}
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#9b87f5]/10 mb-4">
-                <resource.icon className="h-6 w-6 text-[#9b87f5]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
+                <resource.icon className="h-6 w-6 text-primary" />
               </div>
 
               {/* Content */}
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-[#9b87f5] transition-colors duration-300">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary transition-colors duration-300">
                 {resource.title}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
@@ -88,7 +88,7 @@ export function EducationResourcesSection() {
               </p>
 
               {/* CTA */}
-              <div className="flex items-center text-[#9b87f5] font-semibold group-hover:underline">
+              <div className="flex items-center text-primary font-semibold group-hover:underline">
                 {resource.type === "Case Study" && "READ MORE"}
                 {resource.type === "Podcast" && "LISTEN NOW"}
                 {resource.type === "eBook" && "READ MORE"}

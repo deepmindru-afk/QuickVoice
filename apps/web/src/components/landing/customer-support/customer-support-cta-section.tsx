@@ -13,7 +13,7 @@ const features = [
 
 export function CustomerSupportCtaSection() {
   return (
-    <div className="py-20 bg-gradient-to-r from-[#9b87f5] to-[#7a68c3]">
+    <div className="py-20 bg-gradient-to-r from-primary to-primary/80">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <motion.div
@@ -57,14 +57,14 @@ export function CustomerSupportCtaSection() {
           >
             <Link
               href="/contact"
-              className="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-[#9b87f5] shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
+              className="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-primary shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
             >
               Contact Sales
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
               href="/demo"
-              className="inline-flex items-center rounded-full border-2 border-white px-8 py-4 text-lg font-semibold text-white hover:bg-white hover:text-[#9b87f5] transition-colors duration-200"
+              className="inline-flex items-center rounded-full border-2 border-white px-8 py-4 text-lg font-semibold text-white hover:bg-white hover:text-primary transition-colors duration-200"
             >
               Try a Demo
             </Link>

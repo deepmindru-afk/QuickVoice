@@ -1,0 +1,19 @@
+@use "~react-h5-audio-player/src/styles" with (
+  $rhap_theme-color: var(--primary),
+  $rhap_background-color: var(--card),
+  $rhap_time-color: var(--foreground),
+);
+
+.rhap_button-clear {
+  color: #8B5CF6; /* same as transcript */
+}
+
+/* Progress bar */
+.rhap_progress-filled {
+  background-color: #8B5CF6;
+}
+
+/* Progress bar thumb (dot) */
+.rhap_progress-indicator {
+  background-color: #8B5CF6;
+}

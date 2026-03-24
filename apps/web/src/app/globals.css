@@ -238,6 +238,18 @@ body::-webkit-scrollbar-thumb:hover {
   animation-play-state: paused;
 }
 
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -250,6 +262,10 @@ body::-webkit-scrollbar-thumb:hover {
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
+  }
+  /* Accessible focus indicators for keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
   }
 }
 
