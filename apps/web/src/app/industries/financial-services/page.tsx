@@ -112,7 +112,6 @@ export default async function FinancialServicesPage() {
           { title: "Customer Support", href: "/use-cases/customer-support", description: "AI-powered support for banking and insurance customers" },
           { title: "Reminders & Collections", href: "/use-cases/reminders-collections", description: "Automated payment reminders and collections outreach" },
           { title: "HIPAA Compliance", href: "/compliance/hipaa", description: "Enterprise-grade security and compliance standards" },
-          { title: "AI Customer Support", href: "/use-cases/customer-support", description: "Automate customer inquiries with intelligent voice agents" },
           { title: "Healthcare", href: "/industries/healthcare", description: "AI voice agents for healthcare organizations" },
           { title: "SaaS", href: "/industries/saas", description: "AI voice agents for software companies" },
         ]}

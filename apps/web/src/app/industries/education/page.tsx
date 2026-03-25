@@ -99,7 +99,6 @@ export default async function EducationPage() {
         pages={[
           { title: "Appointment Scheduling", href: "/use-cases/appointment-scheduling", description: "Automate enrollment and counseling session booking" },
           { title: "Customer Support", href: "/use-cases/customer-support", description: "AI-powered support for students and parents" },
-          { title: "24/7 Customer Support", href: "/use-cases/customer-support", description: "AI-powered customer support that never sleeps" },
           { title: "Reminders & Collections", href: "/use-cases/reminders-collections", description: "Automated fee reminders and student notifications" },
           { title: "Healthcare", href: "/industries/healthcare", description: "AI voice agents for healthcare organizations" },
         ]}

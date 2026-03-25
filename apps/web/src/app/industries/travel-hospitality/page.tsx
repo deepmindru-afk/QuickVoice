@@ -145,7 +145,6 @@ export default async function TravelHospitalityPage() {
         pages={[
           { title: "Appointment Scheduling", href: "/use-cases/appointment-scheduling", description: "Automate booking and reservation scheduling" },
           { title: "Customer Support", href: "/use-cases/customer-support", description: "AI-powered support for guests and travelers" },
-          { title: "24/7 Customer Support", href: "/use-cases/customer-support", description: "AI-powered customer support that never sleeps" },
           { title: "Sales & Lead Generation", href: "/use-cases/sales-lead-gen", description: "AI-powered upselling and package promotion" },
           { title: "Real Estate", href: "/industries/real-estate", description: "AI voice agents for property management" },
         ]}

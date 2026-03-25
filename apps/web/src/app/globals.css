@@ -252,7 +252,7 @@ body::-webkit-scrollbar-thumb:hover {
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    data-scroll-behavior: smooth;
   }
   * {
     @apply border-border outline-ring/50;

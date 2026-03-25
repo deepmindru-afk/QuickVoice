@@ -21,9 +21,9 @@ export function RelatedPages({
           {title}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pages.map((page) => (
+          {pages.map((page, index) => (
             <Link
-              key={page.href}
+              key={`${page.href}-${index}`}
               href={page.href}
               className="group rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-md transition-all"
             >

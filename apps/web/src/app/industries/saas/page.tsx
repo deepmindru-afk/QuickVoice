@@ -111,7 +111,6 @@ export default async function SaasPage() {
             { title: "Customer Support", href: "/use-cases/customer-support", description: "AI-powered support for SaaS customers" },
             { title: "Sales & Lead Generation", href: "/use-cases/sales-lead-gen", description: "Automate demo scheduling and lead qualification" },
             { title: "Reminders & Collections", href: "/use-cases/reminders-collections", description: "Automated renewal reminders and billing follow-ups" },
-            { title: "AI Customer Support", href: "/use-cases/customer-support", description: "Automate customer inquiries with intelligent voice agents" },
             { title: "E-Commerce", href: "/industries/e-commerce", description: "AI voice agents for online retail operations" },
             { title: "Financial Services", href: "/industries/financial-services", description: "AI voice agents for banking and insurance" },
           ]}

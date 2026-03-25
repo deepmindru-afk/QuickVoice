@@ -109,7 +109,6 @@ export default async function EcommercePage() {
         pages={[
           { title: "Customer Support", href: "/use-cases/customer-support", description: "AI-powered support for online shoppers" },
           { title: "Order Status & Returns", href: "/use-cases/order-status-returns", description: "Automate order tracking and return processing" },
-          { title: "AI Customer Support", href: "/use-cases/customer-support", description: "Automate customer inquiries with intelligent voice agents" },
           { title: "Logistics", href: "/industries/logistics", description: "AI voice agents for supply chain and delivery" },
           { title: "SaaS", href: "/industries/saas", description: "AI voice agents for software companies" },
         ]}
