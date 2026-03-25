@@ -15,13 +15,13 @@ export function AppointmentSchedulingHeroSection() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<AudioPlayer | null>(null);
 
-  /** 🔒 HARD STOP AUTOPLAY + listen to play/pause */
   useEffect(() => {
     const audio = audioRef.current?.audio.current;
     if (!audio) return;
 
-    audio.pause(); // Ensure audio is paused on load
-    audio.currentTime = 0; // Reset to start
+    // 🔒 Disable autoplay completely
+    audio.autoplay = false;
+    audio.preload = "metadata";
 
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
@@ -33,7 +33,7 @@ export function AppointmentSchedulingHeroSection() {
       audio.removeEventListener("play", onPlay);
       audio.removeEventListener("pause", onPause);
     };
-  }, []); // Empty dependency array as audioUrl is now constant
+  }, []);
 
   return (
     <section className="relative pt-32 pb-20 bg-background min-h-screen">

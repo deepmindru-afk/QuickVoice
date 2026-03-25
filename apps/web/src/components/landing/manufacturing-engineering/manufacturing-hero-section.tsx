@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import AudioPlayer from "react-h5-audio-player";
 
 import { Player } from "@/components/audioPlayer";
-import { TypingTranscript, type TranscriptLine } from "@/components/TranscriptPlayer";
+import { TypingTranscript, type TranscriptLine } from "@/components/TypingTranscript";
 import transcript from "@/data/industries/manufacturing-engineering-images.json";
 
 // Assuming JSON structure aligns with the other files
@@ -18,25 +18,25 @@ export function ManufacturingHeroSection() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<AudioPlayer | null>(null);
 
-  /** 🔒 HARD STOP AUTOPLAY + listen to play/pause */
   useEffect(() => {
     const audio = audioRef.current?.audio.current;
     if (!audio) return;
 
-    audio.pause();
-    audio.currentTime = 0;
+    // 🔒 Disable autoplay completely
+    audio.autoplay = false;
+    audio.preload = "metadata";
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
     };
-  }, []); // Empty dependency array as audioUrl is static
+  }, []);
 
   return (
     <section className="relative pt-32 pb-20 bg-background min-h-screen">

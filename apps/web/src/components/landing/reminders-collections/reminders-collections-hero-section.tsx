@@ -8,7 +8,7 @@ import transcript from "@/data/use-cases/remainders-collection.json";
 import { useEffect, useState, useRef } from "react";
 import AudioPlayer from "react-h5-audio-player";
 import { Player } from "@/components/audioPlayer";
-import { TypingTranscript, type TranscriptLine } from "@/components/TranscriptPlayer";
+import { TypingTranscript, type TranscriptLine } from "@/components/TypingTranscript";
 
 const audioUrl = transcript.remaindercollection;
 
@@ -16,26 +16,25 @@ export function RemindersCollectionsHeroSection() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<AudioPlayer | null>(null);
 
-  /** 🔒 HARD STOP AUTOPLAY + listen to play/pause */
   useEffect(() => {
     const audio = audioRef.current?.audio.current;
-
     if (!audio) return;
-    
-    audio.pause();
-    audio.currentTime = 0;
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    // 🔒 Disable autoplay completely
+    audio.autoplay = false;
+    audio.preload = "metadata";
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
     };
-  }, []); // Empty dependency array as audioUrl is now static
+  }, []);
 
   return (
     <section className="relative pt-32 pb-20 bg-background min-h-screen">

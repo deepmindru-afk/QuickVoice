@@ -30,26 +30,25 @@ export function AutomotiveHeroSection() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<AudioPlayer | null>(null);
 
-  /** 🔒 HARD STOP AUTOPLAY + listen to play/pause */
   useEffect(() => {
     const audio = audioRef.current?.audio.current;
     if (!audio) return;
 
-    // ⛔ Force stop autoplay
-    audio.pause();
-    audio.currentTime = 0;
+    // 🔒 Disable autoplay completely
+    audio.autoplay = false;
+    audio.preload = "metadata";
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
     };
-  }, []); // Empty dependency array since audioUrl is now a constant
+  }, []);
 
   return (
     <section className="relative pt-32 pb-20 bg-background min-h-screen">
@@ -137,7 +136,7 @@ export function AutomotiveHeroSection() {
             </div>
           </motion.div>
         </div>
-        
+
         <div className="text-center">
           {/* Key Metrics */}
           <motion.div

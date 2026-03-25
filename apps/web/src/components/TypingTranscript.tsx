@@ -89,11 +89,6 @@ export function TypingTranscript({
         intervalsRef.current.push(interval);
       }
     });
-
-    return () => {
-      intervalsRef.current.forEach(clearInterval);
-      intervalsRef.current = [];
-    };
   }, [currentTime, transcript, typingSpeed, isPlaying]);
 
   /** Auto-scroll */
@@ -103,6 +98,13 @@ export function TypingTranscript({
       behavior: "smooth",
     });
   }, [typedLines]);
+
+  useEffect(() => {
+    return () => {
+      intervalsRef.current.forEach(clearInterval);
+      intervalsRef.current = [];
+    };
+  }, []);
 
   return (
     <div

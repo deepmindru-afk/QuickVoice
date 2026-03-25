@@ -29,33 +29,33 @@ export function TravelHospitalityHeroSection() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<AudioPlayer | null>(null);
 
-  /** 🔒 HARD STOP AUTOPLAY + sync play/pause */
   useEffect(() => {
     const audio = audioRef.current?.audio.current;
     if (!audio) return;
 
-    audio.pause();
-    audio.currentTime = 0;
+    // 🔒 Disable autoplay completely
+    audio.autoplay = false;
+    audio.preload = "metadata";
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("pause", onPause);
 
     return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("pause", onPause);
     };
-  }, []); // Empty dependency array as audioUrl is now a constant
+  }, []);
 
   return (
     <section className="relative pt-32 pb-20 bg-background min-h-screen">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
+
         {/* Hero */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-          
+
           {/* LEFT — Content */}
           <div className="text-left relative">
             <div
