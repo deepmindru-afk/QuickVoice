@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(grep -h \"^import\\\\|^export\" /d/Coding/QuickVoice/apps/web/src/components/landing/*.tsx)",
-      "Bash(grep -rh \"from ['''']\" /d/Coding/QuickVoice/apps/web/src --include=*.tsx)"
+      "Bash(grep -rh \"from ['''']\" /d/Coding/QuickVoice/apps/web/src --include=*.tsx)",
+      "Bash(find /c/Users/Aditya Kurani/Desktop/QuickVoice/apps/dashboard/src/app/api -type f -name *.ts)",
+      "Bash(find /c/Users/Aditya Kurani/Desktop/QuickVoice -name .env* -o -name *.env.example)"
     ]
   }
 }
