@@ -1,7 +1,6 @@
-version: 1
 applications:
-  - appRoot: apps/web
-    frontend:
+  - frontend:
+      buildPath: '/'  # run install and build from monorepo project root
       phases:
         preBuild:
           commands:
@@ -17,3 +16,4 @@ applications:
       cache:
         paths:
           - node_modules/**/*
+    appRoot: apps/web
