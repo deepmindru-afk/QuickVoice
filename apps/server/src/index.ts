@@ -1,40 +1,115 @@
 import "dotenv/config";
-import express from "express";
-import { toNodeHandler } from "better-auth/node";
-import { auth } from "./lib/auth.js";
+import express, { Request } from "express";
 import cors from "cors";
 import morgan from "morgan";
-import { Request } from "express";
-const app = express();
-app.use(morgan("dev", {
-	skip: (req: Request) => req.method === "OPTIONS"
-  }));
-const port = process.env.PORT! || 5000;
-const apiVersion = process.env.API_VERSION! || "v1";
+import helmet from "helmet";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./lib/auth.js";
 
-import authMiddleware  from "./middleware/authMiddleware.js";
-import notFound from "./middleware/notFound.js";
-import errorHandler from "./middleware/errorHandler.js";
+import authMiddleware from "./middleware/auth.middleware.js";
+import notFound from "./middleware/notFound.middleware.js";
+import errorHandler from "./middleware/error.middleware.js";
+import rateLimitMiddleware from "./middleware/rateLimit.middleware.js";
+
+const app = express();
+
+const port = process.env.PORT || 5000;
+const apiVersion = process.env.API_VERSION || "v1";
+
+/**
+ * =========================
+ * Global Middlewares
+ * =========================
+ */
+
+// Security headers
+app.use(helmet());
+
+// CORS
 app.use(
-	cors({
-		origin: "http://localhost:3000",
-		methods: ["GET", "POST", "PUT", "DELETE"],
-		credentials: true,
-	})
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  })
 );
+
+// Request logger
+app.use(
+  morgan("dev", {
+    skip: (req: Request) => req.method === "OPTIONS",
+  })
+);
+
+/**
+ * =========================
+ * Auth Routes
+ * =========================
+ *
+ * Better Auth handler MUST be mounted BEFORE express.json() — otherwise
+ * client API requests get stuck in a pending state.
+ * See: https://better-auth.com/docs/integrations/express
+ */
 
 app.all(`/api/${apiVersion}/auth/*splat`, toNodeHandler(auth));
 
+// Body parser (after Better Auth handler)
 app.use(express.json());
 
+// Rate limit
+app.use(rateLimitMiddleware);
 
+/**
+ * =========================
+ * Public Routes
+ * =========================
+ */
 
 app.get("/", (req, res) => {
-	res.send("Hello World");
+  res.send("Hello World");
 });
+
+app.get(`/api/${apiVersion}/health`, (req, res) => {
+  res.json({
+    success: true,
+    message: "Server running fine",
+  });
+});
+
+/**
+ * =========================
+ * Protected Routes Example
+ * =========================
+ */
+
+app.get(
+  `/api/${apiVersion}/me`,
+  authMiddleware,
+  (req, res) => {
+    res.json({
+      success: true,
+      message: "Protected route access granted",
+    });
+  }
+);
+
+/**
+ * =========================
+ * 404 + Error Handler
+ * =========================
+ */
 
 app.use(notFound);
 app.use(errorHandler);
+
+/**
+ * =========================
+ * Start Server
+ * =========================
+ */
+
 app.listen(port, () => {
-	console.log(`Server listening on http://localhost:${port}`);
+  console.log(
+    `Server listening on http://localhost:${port}`
+  );
 });

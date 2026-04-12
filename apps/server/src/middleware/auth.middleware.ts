@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth.js";
-import { UnauthenticatedError } from "../errors/unauthenticated.js";
+import { UnauthenticatedError } from "../common/errors/unauthenticated.js";
 
 const authMiddleware = async (
   req: Request,

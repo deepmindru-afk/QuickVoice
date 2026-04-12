@@ -1,8 +1,8 @@
-import CustomApiError from "../errors/customApiError.js";
+import CustomApiError from "../common/errors/customApiError.js";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
- const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+ const errorMiddleware = (err: Error, req: Request, res: Response, next: NextFunction) => {
   console.log(err);
     let customError = {
         // set default
@@ -22,4 +22,4 @@ import { ZodError } from "zod";
       }
     return res.status(customError.statusCode).json({ message: customError.msg });
 }
-export default errorHandler;
+export default errorMiddleware;
