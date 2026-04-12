@@ -35,9 +35,27 @@ const authMiddleware = async (
         token &&
         token === process.env.INTERNAL_API_KEY
       ) {
+        // Internal callers must assert who they are acting on behalf of by
+        // passing userId and organizationId in the request body. We fail fast
+        // here so a malformed call gets a clear 401 instead of a downstream
+        // Prisma error caused by an undefined userId.
+        const internalUserId = req?.body?.userId || req?.query?.userId;
+        const internalOrgId = req?.body?.organizationId || req?.query?.organizationId;
+
+        if (
+          typeof internalUserId !== "string" ||
+          internalUserId.length === 0 ||
+          typeof internalOrgId !== "string" ||
+          internalOrgId.length === 0
+        ) {
+          throw new UnauthenticatedError(
+            "Internal calls must provide userId and organizationId in the request body"
+          );
+        }
+
         req.auth = {
-          userId: req.body.userId,
-          activeOrganizationId: req.body.organizationId,
+          userId: internalUserId,
+          activeOrganizationId: internalOrgId,
           authMethod: "internal",
           session: null,
         };

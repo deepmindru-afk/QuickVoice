@@ -16,3 +16,13 @@ export type CreateAgentArgs = CreateAgentInput & {
   organizationId: string;
   userId: string;
 };
+
+// Agent update schema — all fields optional, body must not be empty. Same
+// server-injection rules as create: organizationId / userId / agentSlug are
+// never accepted from the client.
+export const updateAgentSchema = createAgentSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided",
+  });
+export type UpdateAgentInput = z.infer<typeof updateAgentSchema>;
