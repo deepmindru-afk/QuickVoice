@@ -7,6 +7,8 @@ import { stripeClient } from "@better-auth/stripe/client"
 
 import { auth } from "../../../server/src/lib/auth";
 export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL!,
+  basePath: `/api/${process.env.NEXT_PUBLIC_API_VERSION! || "v1"}/auth`,
   plugins: [inferAdditionalFields<typeof auth>(), adminClient(), apiKeyClient(), organizationClient({
     dynamicAccessControl: {
       enabled: true,

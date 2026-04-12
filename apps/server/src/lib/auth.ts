@@ -1,17 +1,20 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "@/src/config/prisma";
-import { plans } from "@/data/plans";
-import bcrypt from "bcryptjs";
-import { sendEmail } from "../../../console/src/lib/mailer";
-import { admin } from "better-auth/plugins";
+import { admin, organization } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
-import { organization } from "better-auth/plugins"
-import { stripe } from "@better-auth/stripe"
-import { stripeClient } from "@/src/config/stripe";
-import { ac, roles } from "../../../console/src/lib/permissions";
+import { stripe } from "@better-auth/stripe";
+import bcrypt from "bcryptjs";
+
+import { prisma } from "../config/prisma.js";
+import { stripeClient } from "../config/stripe.js";
+import { sendEmail } from "./mailer.js";
+import { ac, roles } from "./permissions.js";
+import { plans } from "../../data/plans.js";
+
 // ─── Better Auth server instance ────────────────────────────────────────────
 export const auth = betterAuth({
+  basePath: `/api/${process.env.API_VERSION! || "v1"}/auth`,
+  trustedOrigins: [process.env.CLIENT_URL || "http://localhost:3000"],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -26,7 +29,7 @@ export const auth = betterAuth({
         return await bcrypt.compare(password, hash);
       },
     },
-    async sendResetPassword({ user, url, }) {
+    async sendResetPassword({ user, url }) {
       await sendEmail("resetPassword", user.email, url, user.name);
     },
   },
@@ -43,25 +46,28 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
-  plugins: [admin(), apiKey(), organization({
-    dynamicAccessControl: {
-      enabled: true,
-      ac,
-      roles: roles,
-    },
-  }), stripe({
-    stripeClient,
-    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-    createCustomerOnSignUp: true,
-    subscription: {
-      enabled: true,
-      defaultPlan: "free",
-      plans: plans,
-    },
-    organization: {
-      enabled: true,
-    }
-  })],
+  plugins: [
+    admin(),
+    apiKey(),
+    organization({
+      dynamicAccessControl: {
+        enabled: true,
+        ac,
+        roles: roles,
+      },
+    }),
+    stripe({
+      stripeClient,
+      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+      createCustomerOnSignUp: true,
+      subscription: {
+        enabled: true,
+        defaultPlan: "free",
+        plans: plans,
+      },
+      organization: {
+        enabled: true,
+      },
+    }),
+  ],
 });
-
-
