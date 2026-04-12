@@ -11,6 +11,8 @@ import notFound from "./middleware/notFound.middleware.js";
 import errorHandler from "./middleware/error.middleware.js";
 import rateLimitMiddleware from "./middleware/rateLimit.middleware.js";
 
+import apiRouter from "./router.js";
+
 const app = express();
 
 const port = process.env.PORT || 5000;
@@ -92,6 +94,14 @@ app.get(
     });
   }
 );
+
+/**
+ * =========================
+ * Module Routes
+ * =========================
+ */
+
+app.use(`/api/${apiVersion}`, apiRouter);
 
 /**
  * =========================

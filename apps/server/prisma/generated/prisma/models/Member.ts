@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums"
-import type * as Prisma from "../internal/prismaNamespace"
+import type * as $Enums from "../enums.js"
+import type * as Prisma from "../internal/prismaNamespace.js"
 
 /**
  * Model Member
@@ -158,7 +158,7 @@ export type MemberGroupByOutputType = {
   _max: MemberMaxAggregateOutputType | null
 }
 
-type GetMemberGroupByPayload<T extends MemberGroupByArgs> = Prisma.PrismaPromise<
+export type GetMemberGroupByPayload<T extends MemberGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<MemberGroupByOutputType, T['by']> &
       {
@@ -198,6 +198,7 @@ export type MemberOrderByWithRelationInput = {
 
 export type MemberWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  organizationId_userId?: Prisma.MemberOrganizationIdUserIdCompoundUniqueInput
   AND?: Prisma.MemberWhereInput | Prisma.MemberWhereInput[]
   OR?: Prisma.MemberWhereInput[]
   NOT?: Prisma.MemberWhereInput | Prisma.MemberWhereInput[]
@@ -207,7 +208,7 @@ export type MemberWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Member"> | Date | string
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id">
+}, "id" | "organizationId_userId">
 
 export type MemberOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -293,6 +294,11 @@ export type MemberListRelationFilter = {
 
 export type MemberOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type MemberOrganizationIdUserIdCompoundUniqueInput = {
+  organizationId: string
+  userId: string
 }
 
 export type MemberCountOrderByAggregateInput = {

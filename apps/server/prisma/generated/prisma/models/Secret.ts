@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums"
-import type * as Prisma from "../internal/prismaNamespace"
+import type * as $Enums from "../enums.js"
+import type * as Prisma from "../internal/prismaNamespace.js"
 
 /**
  * Model Secret
@@ -172,7 +172,7 @@ export type SecretGroupByOutputType = {
   _max: SecretMaxAggregateOutputType | null
 }
 
-type GetSecretGroupByPayload<T extends SecretGroupByArgs> = Prisma.PrismaPromise<
+export type GetSecretGroupByPayload<T extends SecretGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<SecretGroupByOutputType, T['by']> &
       {
@@ -216,6 +216,7 @@ export type SecretOrderByWithRelationInput = {
 
 export type SecretWhereUniqueInput = Prisma.AtLeast<{
   secretId?: string
+  organizationId_name?: Prisma.SecretOrganizationIdNameCompoundUniqueInput
   AND?: Prisma.SecretWhereInput | Prisma.SecretWhereInput[]
   OR?: Prisma.SecretWhereInput[]
   NOT?: Prisma.SecretWhereInput | Prisma.SecretWhereInput[]
@@ -227,7 +228,7 @@ export type SecretWhereUniqueInput = Prisma.AtLeast<{
   userId?: Prisma.StringNullableFilter<"Secret"> | string | null
   organization?: Prisma.XOR<Prisma.OrganizationScalarRelationFilter, Prisma.OrganizationWhereInput>
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
-}, "secretId">
+}, "secretId" | "organizationId_name">
 
 export type SecretOrderByWithAggregationInput = {
   secretId?: Prisma.SortOrder
@@ -331,6 +332,11 @@ export type SecretListRelationFilter = {
 
 export type SecretOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type SecretOrganizationIdNameCompoundUniqueInput = {
+  organizationId: string
+  name: string
 }
 
 export type SecretCountOrderByAggregateInput = {

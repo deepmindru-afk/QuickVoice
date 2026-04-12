@@ -4,7 +4,7 @@
 
 import { Request, Response, NextFunction } from "express";
 
-export const validate = (schema: any) => {
+const validate = (schema: any) => {
   return (
     req: Request,
     res: Response,
@@ -23,3 +23,4 @@ export const validate = (schema: any) => {
     }
   };
 };
+export default validate;

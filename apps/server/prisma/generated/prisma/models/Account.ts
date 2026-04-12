@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums"
-import type * as Prisma from "../internal/prismaNamespace"
+import type * as $Enums from "../enums.js"
+import type * as Prisma from "../internal/prismaNamespace.js"
 
 /**
  * Model Account
@@ -214,7 +214,7 @@ export type AccountGroupByOutputType = {
   _max: AccountMaxAggregateOutputType | null
 }
 
-type GetAccountGroupByPayload<T extends AccountGroupByArgs> = Prisma.PrismaPromise<
+export type GetAccountGroupByPayload<T extends AccountGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AccountGroupByOutputType, T['by']> &
       {
@@ -268,6 +268,7 @@ export type AccountOrderByWithRelationInput = {
 
 export type AccountWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  providerId_accountId?: Prisma.AccountProviderIdAccountIdCompoundUniqueInput
   AND?: Prisma.AccountWhereInput | Prisma.AccountWhereInput[]
   OR?: Prisma.AccountWhereInput[]
   NOT?: Prisma.AccountWhereInput | Prisma.AccountWhereInput[]
@@ -284,7 +285,7 @@ export type AccountWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Account"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Account"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "id">
+}, "id" | "providerId_accountId">
 
 export type AccountOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -443,6 +444,11 @@ export type AccountListRelationFilter = {
 
 export type AccountOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type AccountProviderIdAccountIdCompoundUniqueInput = {
+  providerId: string
+  accountId: string
 }
 
 export type AccountCountOrderByAggregateInput = {

@@ -9,8 +9,8 @@
  * 🟢 You can import this file directly.
  */
 import type * as runtime from "@prisma/client/runtime/client"
-import type * as $Enums from "../enums"
-import type * as Prisma from "../internal/prismaNamespace"
+import type * as $Enums from "../enums.js"
+import type * as Prisma from "../internal/prismaNamespace.js"
 
 /**
  * Model OutboundCall
@@ -224,7 +224,7 @@ export type OutboundCallGroupByOutputType = {
   _max: OutboundCallMaxAggregateOutputType | null
 }
 
-type GetOutboundCallGroupByPayload<T extends OutboundCallGroupByArgs> = Prisma.PrismaPromise<
+export type GetOutboundCallGroupByPayload<T extends OutboundCallGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<OutboundCallGroupByOutputType, T['by']> &
       {

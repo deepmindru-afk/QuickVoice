@@ -127,6 +127,7 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  @@unique([providerId, accountId])
   @@index([userId])
 }
 
@@ -175,27 +176,29 @@ model Apikey {
 // ─── Organization & Team ─────────────────────────────────────────────────────
 
 model Organization {
-  id               String            @id
-  name             String
-  slug             String
-  logo             String?
-  createdAt        DateTime
-  metadata         String?
-  stripeCustomerId String?
-  members          Member[]
-  invitations      Invitation[]
-  accessKey        String?
-  plan             PlanId            @default(free)
-  agents           Agent[]
-  knowledgeSources KnowledgeSource[]
-  phoneNumbers     PhoneNumber[]
-  tools            Tool[]
-  secrets          Secret[]
-  callLogs         CallLog[]
-  outboundCalls    OutboundCall[]
-  campaigns        Campaign[]
+  id                String             @id
+  name              String
+  slug              String
+  logo              String?
+  createdAt         DateTime
+  metadata          String?
+  stripeCustomerId  String?
+  members           Member[]
+  invitations       Invitation[]
+  accessKey         String?
+  plan              PlanId             @default(free)
+  agents            Agent[]
+  knowledgeSources  KnowledgeSource[]
+  phoneNumbers      PhoneNumber[]
+  tools             Tool[]
+  secrets           Secret[]
+  callLogs          CallLog[]
+  outboundCalls     OutboundCall[]
+  campaigns         Campaign[]
   organizationroles OrganizationRole[]
+
   @@unique([slug])
+  @@index([stripeCustomerId])
 }
 
 model OrganizationRole {
@@ -220,6 +223,7 @@ model Member {
   role           String       @default("member")
   createdAt      DateTime
 
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
 }
@@ -238,6 +242,7 @@ model Invitation {
 
   @@index([organizationId])
   @@index([email])
+  @@index([inviterId])
 }
 
 // ─── Billing (Better Auth Stripe Plugin) ─────────────────────────────────────
@@ -261,6 +266,10 @@ model Subscription {
   billingInterval      String?
   stripeScheduleId     String?
 
+  @@index([referenceId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
 }
 
 // ─── App Resource Models ─────────────────────────────────────────────────────
@@ -282,6 +291,8 @@ model PhoneNumber {
 
   @@index([organizationId])
   @@index([agentId])
+  @@index([userId])
+  @@index([sid])
 }
 
 model Agent {
@@ -316,6 +327,8 @@ model Agent {
   tools Tool[] @relation("AgentTools")
 
   @@unique([organizationId, agentSlug])
+  @@index([userId])
+  @@index([organizationId, createdAt])
 }
 
 model AgentConfiguration {
@@ -353,8 +366,6 @@ model AgentConfiguration {
   initiation_webhook                Json?
   post_call_webhook                 Json?
   variables                         Json?
-
-  @@index([agentId])
 }
 
 model KnowledgeSource {
@@ -376,6 +387,8 @@ model KnowledgeSource {
 
   @@index([organizationId])
   @@index([agentId])
+  @@index([userId])
+  @@index([organizationId, status])
 }
 
 // ─── Call & Conversation Models ──────────────────────────────────────────────
@@ -412,6 +425,7 @@ model CallLog {
   @@index([organizationId, startTime])
   @@index([organizationId, endTime])
   @@index([agentId])
+  @@index([userId])
 }
 
 model CallTranscript {
@@ -454,6 +468,8 @@ model OutboundCall {
   @@index([organizationId])
   @@index([agentId])
   @@index([campaignId])
+  @@index([userId])
+  @@index([status, scheduledAt])
 }
 
 model Campaign {
@@ -474,6 +490,8 @@ model Campaign {
 
   @@index([organizationId])
   @@index([agentId])
+  @@index([userId])
+  @@index([status, scheduledAt])
 }
 
 // ─── Config & Secrets ────────────────────────────────────────────────────────
@@ -501,6 +519,7 @@ model Tool {
   agent                 Agent[]      @relation("AgentTools")
 
   @@index([organizationId])
+  @@index([userId])
 }
 
 model Secret {
@@ -514,5 +533,7 @@ model Secret {
   userId         String?
   user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@unique([organizationId, name])
   @@index([organizationId])
+  @@index([userId])
 }

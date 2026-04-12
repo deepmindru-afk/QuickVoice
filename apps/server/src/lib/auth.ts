@@ -5,7 +5,7 @@ import { apiKey } from "@better-auth/api-key";
 import { stripe } from "@better-auth/stripe";
 import bcrypt from "bcryptjs";
 
-import { prisma } from "../config/prisma.js";
+import prisma from "../config/prisma.js";
 import { stripeClient } from "../config/stripe.js";
 import { sendEmail } from "./mailer.js";
 import { ac, roles } from "./permissions.js";
@@ -48,7 +48,9 @@ export const auth = betterAuth({
   },
   plugins: [
     admin(),
-    apiKey(),
+    apiKey({
+      enableSessionForAPIKeys: true,
+    }),
     organization({
       dynamicAccessControl: {
         enabled: true,
