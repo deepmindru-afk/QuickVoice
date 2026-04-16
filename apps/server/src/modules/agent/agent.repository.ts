@@ -130,3 +130,18 @@ export const getAgentConfig = async (
     },
   });
 };
+
+// Cross-entity foreign-key check used by linkAgent to verify the target agent
+// lives in the same org as the number being linked. Kept here rather than in
+// agent.repository.ts so the numbers module does not reach across module
+// boundaries at the service layer.
+export const agentExistsInOrg = async (
+  agentId: string,
+  organizationId: string
+) => {
+  const row = await prisma.agent.findFirst({
+    where: { agentId, organizationId },
+    select: { agentId: true },
+  });
+  return row !== null;
+};

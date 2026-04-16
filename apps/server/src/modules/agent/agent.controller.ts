@@ -1,15 +1,10 @@
-import type { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import * as agentService from "./agent.service.js";
-import { ForbiddenError } from "../../common/errors/forbidden.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
+import { authorized } from "../../middleware/authorize.middleware.js";
 
-export const createAgent = async (req: Request, res: Response) => {
-  if (!req.auth?.activeOrganizationId) {
-    throw new ForbiddenError("No active organization for this request");
-  }
-  console.log(req.auth);
+export const createAgent = authorized(async (req, res) => {
   const agent = await agentService.createAgent({
     ...req.body,
     organizationId: req.auth.activeOrganizationId,
@@ -21,24 +16,18 @@ export const createAgent = async (req: Request, res: Response) => {
     message: "Agent created successfully",
     data: agent,
   });
-};
+});
 
-export const getAgents = async (req: Request, res: Response) => {
-  if (!req.auth?.activeOrganizationId) {
-    throw new ForbiddenError("No active organization for this request");
-  }
+export const getAgents = authorized(async (req, res) => {
   const agents = await agentService.getAgents(req.auth.activeOrganizationId);
   res.status(StatusCodes.OK).json({
     success: true,
     message: "Agents fetched successfully",
     data: agents,
   });
-};
+});
 
-export const updateAgent = async (req: Request, res: Response) => {
-  if (!req.auth?.activeOrganizationId) {
-    throw new ForbiddenError("No active organization for this request");
-  }
+export const updateAgent = authorized(async (req, res) => {
   const agentId = req.params.id;
   if (typeof agentId !== "string" || agentId.length === 0) {
     throw new BadRequestError("Agent id is required");
@@ -53,14 +42,10 @@ export const updateAgent = async (req: Request, res: Response) => {
     message: "Agent updated successfully",
     data: agent,
   });
-};
+});
 
 
-export const configureAgent = async (req: Request, res: Response) => {
-  if (!req.auth?.activeOrganizationId) {
-    throw new ForbiddenError("No active organization for this request");
-  }
-
+export const configureAgent = authorized(async (req, res) => {
   const agentId = req.params.agentId;
   if (typeof agentId !== "string" || agentId.length === 0) {
     throw new BadRequestError("Agent id is required");
@@ -78,13 +63,9 @@ export const configureAgent = async (req: Request, res: Response) => {
     message: "Agent configured successfully",
     data: configuration,
   });
-};
+});
 
-export const getAgentConfig = async (req: Request, res: Response) => {
-  if (!req.auth?.activeOrganizationId) {
-    throw new ForbiddenError("No active organization for this request");
-  }
-
+export const getAgentConfig = authorized(async (req, res) => {
   const agentId = req.params.agentId;
   if (typeof agentId !== "string" || agentId.length === 0) {
     throw new BadRequestError("Agent id is required");
@@ -100,4 +81,4 @@ export const getAgentConfig = async (req: Request, res: Response) => {
     message: "Agent configuration fetched successfully",
     data: configuration,
   });
-};
+});

@@ -14,3 +14,19 @@ declare module "express-serve-static-core" {
     auth?: RequestAuth;
   }
 }
+
+declare global {
+  interface PhoneNumber {
+    phId: string;
+    number: string;
+    userId: string | null;
+    agentId: string | null;
+    sid: string;
+    friendlyName: string;
+    // agent?: Agent;
+    // user: User;
+    createdAt: DateTime;
+    updatedAt: DateTime;
+    provider: TelephonyProvider;
+  }
+}
