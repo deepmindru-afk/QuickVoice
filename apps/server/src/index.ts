@@ -11,6 +11,9 @@ import notFound from "./middleware/notFound.middleware.js";
 import errorHandler from "./middleware/error.middleware.js";
 import rateLimitMiddleware from "./middleware/rateLimit.middleware.js";
 
+import { serve as serveInngest } from "inngest/express";
+import { inngest } from "./config/inngest.js";
+import { inngestFunctions } from "./inngest/index.js";
 import apiRouter from "./router.js";
 
 const app = express();
@@ -60,7 +63,12 @@ app.use(express.json());
 
 // Rate limit
 app.use(rateLimitMiddleware);
-
+// Inngest serve handler — exposes functions for remote invocation.
+// Must be after express.json() so Inngest can read request bodies.
+app.use(
+  `/api/inngest`,
+  serveInngest({ client: inngest, functions: inngestFunctions })
+);
 /**
  * =========================
  * Public Routes
@@ -102,6 +110,8 @@ app.get(
  */
 
 app.use(`/api/${apiVersion}`, apiRouter);
+
+
 
 /**
  * =========================
