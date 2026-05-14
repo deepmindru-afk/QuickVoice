@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { Button } from "../ui/button";
 import Logo1 from "../logo1";
+import { DEMO_BOOKING_URL } from "@/lib/links";
 
 interface NavItem {
   name: string;
@@ -30,6 +31,16 @@ const navItems: NavItem[] = [
     href: "#",
     hasDropdown: true,
     dropdownItems: [
+      {
+        name: "Voice Agent Solutions",
+        href: "/solutions",
+        hasNestedDropdown: true,
+        nestedDropdownItems: [
+          { name: "Solutions Overview", href: "/solutions" },
+          { name: "AI Receptionist", href: "/solutions/ai-receptionist" },
+          { name: "AI Answering Service", href: "/solutions/ai-answering-service" },
+        ],
+      },
       {
         name: "Industries",
         href: "/industries",
@@ -218,6 +229,9 @@ export default function Header1() {
               <Button variant="ghost" asChild>
                 <Link href="/login">Log in</Link>
               </Button>
+              <Button variant="outline" asChild>
+                <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
+              </Button>
               <Button asChild>
                 <Link href="/register">Get Started</Link>
               </Button>
@@ -338,6 +352,9 @@ export default function Header1() {
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
               <Button variant="outline" asChild className="w-full">
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>Log in</Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full">
+                <Link href={DEMO_BOOKING_URL} onClick={() => setIsMobileMenuOpen(false)}>Book a Demo</Link>
               </Button>
               <Button asChild className="w-full">
                 <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>Get Started</Link>

@@ -1,0 +1,597 @@
+import type { Metadata } from "next";
+import { DEMO_BOOKING_URL } from "@/lib/links";
+import Link from "next/link";
+import {
+  Phone,
+  CalendarCheck,
+  ArrowRightLeft,
+  Globe,
+  ShieldCheck,
+  RefreshCw,
+  Settings,
+  Plug,
+  Rocket,
+  Clock,
+  Building2,
+  Stethoscope,
+  Scale,
+  SmilePlus,
+  CheckCircle2,
+  XCircle,
+  ChevronRight,
+} from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/*  Metadata                                                           */
+/* ------------------------------------------------------------------ */
+
+export const metadata: Metadata = {
+  title: "AI Receptionist — 24/7 Automated Call Answering",
+  description:
+    "Deploy an AI receptionist that answers calls 24/7, books appointments, and routes callers. HIPAA compliant. 100+ languages. Try free.",
+  alternates: {
+    canonical: "https://quickvoice.co/solutions/ai-receptionist",
+  },
+  openGraph: {
+    title: "AI Receptionist — 24/7 Automated Call Answering",
+    description:
+      "Deploy an AI receptionist that answers calls 24/7, books appointments, and routes callers. HIPAA compliant. 100+ languages. Try free.",
+    url: "https://quickvoice.co/solutions/ai-receptionist",
+    siteName: "QuickVoice",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "QuickVoice AI Receptionist — 24/7 Automated Call Answering",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Receptionist — 24/7 Automated Call Answering",
+    description:
+      "Deploy an AI receptionist that answers calls 24/7, books appointments, and routes callers. HIPAA compliant. 100+ languages. Try free.",
+    images: ["/og-image.png"],
+  },
+};
+
+/* ------------------------------------------------------------------ */
+/*  Static data                                                        */
+/* ------------------------------------------------------------------ */
+
+const STEPS = [
+  {
+    step: "1",
+    title: "Configure",
+    description:
+      "Set your greeting, business hours, call routing rules, and FAQ answers in a no-code dashboard. Upload your knowledge base so the AI speaks your brand voice.",
+    icon: Settings,
+  },
+  {
+    step: "2",
+    title: "Connect",
+    description:
+      "Forward your existing business number or provision a new one. Integrate with your calendar, CRM, and helpdesk in a few clicks.",
+    icon: Plug,
+  },
+  {
+    step: "3",
+    title: "Go Live",
+    description:
+      "Your AI receptionist starts answering calls instantly. Monitor live dashboards, review transcripts, and fine-tune as needed.",
+    icon: Rocket,
+  },
+];
+
+const FEATURES = [
+  {
+    title: "24/7 Call Answering",
+    description:
+      "Never miss a call again. Your AI receptionist picks up on the first ring, day or night, weekends and holidays included.",
+    icon: Clock,
+  },
+  {
+    title: "Appointment Scheduling",
+    description:
+      "Callers can book, reschedule, or cancel appointments in real time. The AI syncs with Google Calendar, Calendly, and more.",
+    icon: CalendarCheck,
+  },
+  {
+    title: "Intelligent Call Routing",
+    description:
+      "Route callers to the right department or team member based on intent, priority, or custom rules you define.",
+    icon: ArrowRightLeft,
+  },
+  {
+    title: "Multi-Language Support",
+    description:
+      "Serve a global audience with support for 100+ languages. The AI detects the caller's language automatically.",
+    icon: Globe,
+  },
+  {
+    title: "HIPAA Compliant",
+    description:
+      "Built for regulated industries. Encrypted data, PHI redaction, audit logs, and BAA available on qualifying plans.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "CRM Sync",
+    description:
+      "Log every call, capture lead details, and push data to Salesforce, HubSpot, or your custom CRM via API.",
+    icon: RefreshCw,
+  },
+];
+
+const USE_CASES = [
+  {
+    industry: "Healthcare",
+    description:
+      "Handle patient intake calls, schedule appointments, send reminders, and route urgent calls to on-call staff — all while staying HIPAA compliant.",
+    icon: Stethoscope,
+  },
+  {
+    industry: "Real Estate",
+    description:
+      "Capture buyer and seller leads 24/7, schedule property showings, and qualify prospects before they reach your agents.",
+    icon: Building2,
+  },
+  {
+    industry: "Legal",
+    description:
+      "Screen potential clients, collect case details, schedule consultations, and ensure no prospective client call goes unanswered.",
+    icon: Scale,
+  },
+  {
+    industry: "Dental",
+    description:
+      "Book hygiene appointments, handle insurance verification questions, and send automated appointment confirmations and reminders.",
+    icon: SmilePlus,
+  },
+];
+
+const ROI_STATS = [
+  {
+    stat: "62%",
+    label: "of calls go unanswered after hours",
+    description: "Every missed call is a missed opportunity. An AI receptionist ensures zero calls go to voicemail.",
+  },
+  {
+    stat: "80%",
+    label: "of routine calls handled by AI",
+    description: "Free your team to focus on high-value work while the AI handles FAQs, scheduling, and routing.",
+  },
+  {
+    stat: "$3K+",
+    label: "average monthly savings",
+    description: "Eliminate the cost of full-time receptionists, overtime pay, and outsourced answering services.",
+  },
+];
+
+const COMPARISON_ROWS = [
+  {
+    feature: "Monthly Cost",
+    ai: "From $49/mo",
+    traditional: "$800 - $2,500/mo",
+  },
+  {
+    feature: "Availability",
+    ai: "24/7/365",
+    traditional: "Business hours only",
+  },
+  {
+    feature: "Languages",
+    ai: "100+",
+    traditional: "1 - 2",
+  },
+  {
+    feature: "Scalability",
+    ai: "Unlimited concurrent calls",
+    traditional: "Limited by headcount",
+  },
+  {
+    feature: "Setup Time",
+    ai: "Minutes",
+    traditional: "Days to weeks",
+  },
+  {
+    feature: "Appointment Booking",
+    ai: "Automated, real-time",
+    traditional: "Manual, error-prone",
+  },
+  {
+    feature: "CRM Integration",
+    ai: "Native, automatic",
+    traditional: "Manual data entry",
+  },
+  {
+    feature: "Call Transcripts",
+    ai: "Every call, searchable",
+    traditional: "Rarely available",
+  },
+];
+
+const FAQS = [
+  {
+    q: "What is an AI receptionist?",
+    a: "An AI receptionist is a voice-powered virtual agent that answers phone calls on behalf of your business. It greets callers, answers frequently asked questions, schedules appointments, routes calls, and captures lead information — all without human intervention.",
+  },
+  {
+    q: "How does the AI receptionist handle complex or unexpected questions?",
+    a: "The AI is trained on your custom knowledge base and can answer a wide range of questions. When it encounters a request beyond its scope, it seamlessly transfers the call to a human team member or takes a message for follow-up.",
+  },
+  {
+    q: "Can I customize the greeting and voice?",
+    a: "Yes. You can fully customize the greeting script, hold music, voice tone, speaking pace, and language. The AI adapts to your brand personality so callers experience a consistent, professional interaction.",
+  },
+  {
+    q: "Is my data secure and HIPAA compliant?",
+    a: "Absolutely. QuickVoice uses end-to-end encryption, automatic PHI redaction, and role-based access controls. HIPAA-ready logging is available on the Scale plan, and we sign Business Associate Agreements on the Enterprise tier.",
+  },
+  {
+    q: "How long does it take to set up?",
+    a: "Most businesses are live within minutes. You configure your receptionist through a no-code dashboard, connect your phone number, and start receiving AI-answered calls right away. No coding or IT resources required.",
+  },
+  {
+    q: "Can the AI receptionist handle multiple calls at the same time?",
+    a: "Yes. Unlike a human receptionist, the AI can handle an unlimited number of concurrent calls. No caller ever gets a busy signal or has to wait on hold.",
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  JSON-LD Schemas                                                    */
+/* ------------------------------------------------------------------ */
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.a,
+    },
+  })),
+};
+
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://quickvoice.co",
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Solutions",
+      item: "https://quickvoice.co/solutions",
+    },
+    {
+      "@type": "ListItem",
+      position: 3,
+      name: "AI Receptionist",
+      item: "https://quickvoice.co/solutions/ai-receptionist",
+    },
+  ],
+};
+
+const webAppSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "QuickVoice AI Receptionist",
+  description:
+    "Deploy an AI receptionist that answers calls 24/7, books appointments, and routes callers automatically.",
+  url: "https://quickvoice.co/solutions/ai-receptionist",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    description: "Free trial available",
+  },
+  featureList: [
+    "24/7 automated call answering",
+    "Appointment scheduling",
+    "Intelligent call routing",
+    "100+ language support",
+    "HIPAA compliance",
+    "CRM integration",
+  ],
+};
+
+/* ================================================================== */
+/*  Page Component                                                     */
+/* ================================================================== */
+
+export default function AIReceptionistPage() {
+  return (
+    <main className="min-h-screen bg-background text-foreground">
+      {/* ── JSON-LD ─────────────────────────────────────────────── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }}
+      />
+
+      {/* ── Hero ────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden pt-24 pb-20 text-center">
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -top-[10%] left-1/2 h-[40%] w-[60%] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-[10%] -right-[10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-3xl" />
+        </div>
+
+        <div className="container mx-auto max-w-4xl px-4">
+          <nav aria-label="Breadcrumb" className="mb-8 flex items-center justify-center gap-1 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span>Solutions</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="text-foreground font-medium">AI Receptionist</span>
+          </nav>
+
+          <p className="mb-4 inline-block rounded-full border border-primary/20 bg-primary/5 px-4 py-1 text-sm font-medium text-primary">
+            AI Receptionist
+          </p>
+
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            AI Receptionist — Automate{" "}
+            <span className="text-primary">Front Desk Calls 24/7</span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+            Replace voicemail with an AI-powered virtual receptionist that
+            answers every call, books appointments, routes inquiries, and
+            captures leads — around the clock, in 100+ languages.
+          </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Start Free Trial
+            </Link>
+            <Link
+              href={DEMO_BOOKING_URL}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              Book a Demo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How It Works ────────────────────────────────────────── */}
+      <section className="border-t border-border bg-muted/30 py-20">
+        <div className="container mx-auto max-w-5xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            How It Works
+          </h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">
+            Get your AI receptionist live in three simple steps — no coding
+            required.
+          </p>
+
+          <div className="grid gap-10 md:grid-cols-3">
+            {STEPS.map((step) => (
+              <div key={step.step} className="text-center">
+                <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <step.icon className="h-7 w-7" />
+                </div>
+                <div className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {step.step}
+                </div>
+                <h3 className="mb-2 text-xl font-semibold">{step.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Key Features ────────────────────────────────────────── */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-6xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            Key Features
+          </h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">
+            Everything you need in a virtual receptionist, powered by
+            conversational AI.
+          </p>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-2xl border border-border bg-background p-6 transition-shadow hover:shadow-lg"
+              >
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Use Cases by Industry ───────────────────────────────── */}
+      <section className="border-t border-border bg-muted/30 py-20">
+        <div className="container mx-auto max-w-6xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            Use Cases by Industry
+          </h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">
+            See how businesses across industries use an AI receptionist to
+            streamline front-desk operations.
+          </p>
+
+          <div className="grid gap-8 sm:grid-cols-2">
+            {USE_CASES.map((uc) => (
+              <div
+                key={uc.industry}
+                className="rounded-2xl border border-border bg-background p-6"
+              >
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <uc.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">{uc.industry}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {uc.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI Stats ───────────────────────────────────────────── */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-5xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            The ROI of an AI Receptionist
+          </h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">
+            Missing calls means missing revenue. Here is what the numbers say.
+          </p>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {ROI_STATS.map((item) => (
+              <div
+                key={item.stat}
+                className="rounded-2xl border border-border bg-background p-8 text-center"
+              >
+                <p className="text-4xl font-bold text-primary">{item.stat}</p>
+                <p className="mt-2 text-sm font-semibold">{item.label}</p>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Comparison Table ────────────────────────────────────── */}
+      <section className="border-t border-border bg-muted/30 py-20">
+        <div className="container mx-auto max-w-4xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            AI Receptionist vs Traditional Answering Service
+          </h2>
+          <p className="mx-auto mb-14 max-w-xl text-center text-muted-foreground">
+            See why businesses are switching from legacy services to AI-powered
+            call answering.
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="border-b border-border p-4 text-left font-medium text-muted-foreground">
+                    Feature
+                  </th>
+                  <th className="border-b border-primary bg-primary/5 p-4 text-center font-semibold">
+                    <div className="flex items-center justify-center gap-2">
+                      <Phone className="h-4 w-4 text-primary" />
+                      AI Receptionist
+                    </div>
+                  </th>
+                  <th className="border-b border-border p-4 text-center font-semibold">
+                    Traditional Service
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {COMPARISON_ROWS.map((row) => (
+                  <tr key={row.feature}>
+                    <td className="p-4 font-medium">{row.feature}</td>
+                    <td className="bg-primary/5 p-4 text-center">
+                      <span className="inline-flex items-center gap-1.5">
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                        {row.ai}
+                      </span>
+                    </td>
+                    <td className="p-4 text-center text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <XCircle className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                        {row.traditional}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────────── */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-3xl px-4">
+          <h2 className="mb-2 text-center text-3xl font-bold tracking-tight">
+            Frequently Asked Questions
+          </h2>
+          <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
+            Everything you need to know about QuickVoice&apos;s AI receptionist.
+          </p>
+
+          <dl className="divide-y divide-border">
+            {FAQS.map((faq) => (
+              <div key={faq.q} className="py-6">
+                <dt className="text-base font-semibold">{faq.q}</dt>
+                <dd className="mt-2 text-muted-foreground">{faq.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* ── Bottom CTA ──────────────────────────────────────────── */}
+      <section className="border-t border-border bg-muted/30 py-20">
+        <div className="container mx-auto max-w-2xl px-4 text-center">
+          <h2 className="text-3xl font-bold tracking-tight">
+            Ready to Never Miss a Call Again?
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+            Deploy your AI receptionist in minutes. Start with a free trial — no
+            credit card required — or book a personalized demo with our team.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            >
+              Start Free Trial
+            </Link>
+            <Link
+              href={DEMO_BOOKING_URL}
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              Book a Demo
+            </Link>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
