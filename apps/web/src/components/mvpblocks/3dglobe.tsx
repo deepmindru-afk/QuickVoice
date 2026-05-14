@@ -3,14 +3,11 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Button } from "../ui/button";
-import { ChevronDown } from "lucide-react";
+import { DEMO_BOOKING_URL } from "@/lib/links";
 
 export default function Globe3D() {
   return (
-    <section
-      className="relative w-full overflow-hidden pt-32 pb-10 font-light antialiased md:pt-20 md:pb-16"
-    >
+    <section className="relative w-full overflow-hidden pt-32 pb-10 font-light antialiased md:pt-20 md:pb-16">
       <div
         className="absolute top-0 right-0 h-1/2 w-1/2"
         style={{
@@ -28,35 +25,40 @@ export default function Globe3D() {
 
       <div className="relative z-10 container mx-auto max-w-2xl px-4 text-center md:max-w-4xl md:px-6 lg:max-w-7xl">
         <div>
-          <span
-            className="mb-6 mt-10 inline-block rounded-full border px-3 py-1 text-xs border-primary/60 text-primary/80 dark:border-primary/30 dark:text-primary">
+          <span className="mb-6 mt-10 inline-block rounded-full border px-3 py-1 text-xs border-primary/60 text-primary/80 dark:border-primary/30 dark:text-primary">
             NO CODING REQUIRED
           </span>
           <h1 className="mx-auto mb-6 max-w-4xl text-4xl font-light md:text-5xl lg:text-7xl text-foreground">
             Stop Losing Customers — Start Converting with{" "}
             <span className="text-primary">AI-Powered</span> Voice Agents
           </h1>
-          
+
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Combine artificial intelligence with cutting-edge voice
-            technology to automate customer support, scheduling, and outbound sales.
+            Combine artificial intelligence with cutting-edge voice technology
+            to automate customer support, scheduling, and outbound sales.
           </p>
 
           <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:mb-0 sm:flex-row">
             <Link
-              href="/register"
-              className="neumorphic-button relative w-full sm:w-auto overflow-hidden rounded-full border px-8 py-4 text-foreground shadow-lg transition-all duration-300 bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10 dark:hover:border-primary/30 dark:hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)]">
-              Get Started
+              href={DEMO_BOOKING_URL}
+              className="relative w-full overflow-hidden rounded-full bg-primary px-8 py-4 text-center font-semibold text-white shadow-lg shadow-[rgba(var(--primary-rgb),0.28)] transition-all duration-300 hover:bg-primary/90 hover:shadow-[0_18px_60px_rgba(var(--primary-rgb),0.35)] sm:w-auto"
+            >
+              Book a Demo
             </Link>
-
-            
+            <Link
+              href="/register"
+              className="neumorphic-button relative w-full overflow-hidden rounded-full border px-8 py-4 text-center text-foreground shadow-lg transition-all duration-300 bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10 dark:hover:border-primary/30 dark:hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)] sm:w-auto"
+            >
+              Try the Builder
+            </Link>
           </div>
         </div>
         <motion.div
           className="relative"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}>
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+        >
           <div className="relative flex h-48 w-full overflow-hidden md:h-72">
             <Image
               src="/earth.webp"
