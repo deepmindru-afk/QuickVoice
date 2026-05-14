@@ -155,17 +155,20 @@ const ROI_STATS = [
   {
     stat: "62%",
     label: "of calls go unanswered after hours",
-    description: "Every missed call is a missed opportunity. An AI receptionist ensures zero calls go to voicemail.",
+    description:
+      "Every missed call is a missed opportunity. An AI receptionist ensures zero calls go to voicemail.",
   },
   {
     stat: "80%",
     label: "of routine calls handled by AI",
-    description: "Free your team to focus on high-value work while the AI handles FAQs, scheduling, and routing.",
+    description:
+      "Free your team to focus on high-value work while the AI handles FAQs, scheduling, and routing.",
   },
   {
     stat: "$3K+",
     label: "average monthly savings",
-    description: "Eliminate the cost of full-time receptionists, overtime pay, and outsourced answering services.",
+    description:
+      "Eliminate the cost of full-time receptionists, overtime pay, and outsourced answering services.",
   },
 ];
 
@@ -335,8 +338,13 @@ export default function AIReceptionistPage() {
         </div>
 
         <div className="container mx-auto max-w-4xl px-4">
-          <nav aria-label="Breadcrumb" className="mb-8 flex items-center justify-center gap-1 text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-8 flex items-center justify-center gap-1 text-sm text-muted-foreground"
+          >
+            <Link href="/" className="hover:text-foreground transition-colors">
+              Home
+            </Link>
             <ChevronRight className="h-3.5 w-3.5" />
             <span>Solutions</span>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -360,16 +368,16 @@ export default function AIReceptionistPage() {
 
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-            >
-              Start Free Trial
-            </Link>
-            <Link
               href={DEMO_BOOKING_URL}
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
             >
               Book a Demo
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              Try the Builder
             </Link>
           </div>
         </div>
@@ -573,21 +581,21 @@ export default function AIReceptionistPage() {
             Ready to Never Miss a Call Again?
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Deploy your AI receptionist in minutes. Start with a free trial — no
-            credit card required — or book a personalized demo with our team.
+            Deploy your AI receptionist in minutes. Book a demo to map routing,
+            scheduling, compliance, and handoff rules before launch.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
-              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-            >
-              Start Free Trial
-            </Link>
-            <Link
               href={DEMO_BOOKING_URL}
-              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+              className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
             >
               Book a Demo
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
+            >
+              Try the Builder
             </Link>
           </div>
         </div>

@@ -55,49 +55,110 @@ const solutions = [
 
 export default function SolutionsPage() {
   return (
-    <main className="bg-background text-foreground">
-      <section className="mx-auto flex min-h-[72vh] w-full max-w-7xl flex-col justify-center px-6 py-20 md:px-10">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase text-primary">
-            QuickVoice solutions
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold md:text-6xl">
-            AI voice agents for every front-office call flow
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Deploy voice agents that answer calls, qualify requests, book meetings,
-            and hand off complex conversations with transcripts and context.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button asChild size="lg">
-              <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/pricing">View Pricing</Link>
-            </Button>
+    <main className="min-h-screen bg-background text-foreground">
+      <section className="relative overflow-hidden px-6 pt-28 pb-16 md:px-10">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(var(--primary-rgb),0.18),transparent_32%),linear-gradient(135deg,rgba(var(--primary-rgb),0.08),transparent_52%)]" />
+        <div className="mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <p className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
+              QuickVoice solutions
+            </p>
+            <h1 className="mt-5 max-w-4xl text-4xl font-bold tracking-tight md:text-6xl">
+              Built for the calls your team keeps missing.
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+              QuickVoice voice agents answer, qualify, schedule, route, and
+              follow up with callers while your staff focuses on the work that
+              needs a human.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg">
+                <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/pricing">View Pricing</Link>
+              </Button>
+            </div>
+          </div>
+          <div className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            {[
+              [
+                "Answer every call",
+                "Instant pickup for inbound demand, after-hours coverage, and overflow.",
+              ],
+              [
+                "Collect useful context",
+                "Caller intent, transcript, disposition, and next step captured automatically.",
+              ],
+              [
+                "Hand off cleanly",
+                "Escalate complex conversations with summary and call history attached.",
+              ],
+            ].map(([title, body]) => (
+              <div
+                key={title}
+                className="rounded-xl border border-border bg-background p-4"
+              >
+                <p className="font-semibold">{title}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {body}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div className="mt-14 grid gap-4 md:grid-cols-3">
+      <section className="mx-auto w-full max-w-7xl px-6 pb-20 md:px-10">
+        <div className="mb-8 max-w-3xl">
+          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">
+            Choose the workflow you want to automate first
+          </h2>
+          <p className="mt-3 text-muted-foreground">
+            Each solution is designed around a real phone workflow, not a
+            generic chatbot script.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
           {solutions.map((solution) => {
             const Icon = solution.icon;
             return (
               <Link
                 key={solution.href}
                 href={solution.href}
-                className="group rounded-lg border bg-card p-6 transition hover:border-primary/60 hover:shadow-sm"
+                className="group rounded-xl border border-border bg-card p-6 transition hover:border-primary/60 hover:shadow-md hover:shadow-primary/5"
               >
-                <Icon className="h-6 w-6 text-primary" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
                 <h2 className="mt-5 text-xl font-semibold">{solution.title}</h2>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
                   {solution.description}
                 </p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary">
-                  Explore <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  Explore{" "}
+                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </span>
               </Link>
             );
           })}
+        </div>
+
+        <div className="mt-12 rounded-2xl border border-border bg-muted/40 p-6 md:flex md:items-center md:justify-between md:gap-8">
+          <div>
+            <h2 className="text-xl font-semibold">Not sure where to start?</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Book a working session and we will map your call volume, routing
+              rules, integrations, and compliance needs to the right first
+              agent.
+            </p>
+          </div>
+          <div className="mt-5 md:mt-0">
+            <Button asChild size="lg">
+              <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </main>

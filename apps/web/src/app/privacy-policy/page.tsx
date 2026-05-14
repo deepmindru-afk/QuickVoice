@@ -26,6 +26,15 @@ export const metadata: Metadata = {
   },
 };
 
+const PRIVACY_SECTIONS = [
+  "Information we collect",
+  "How we use information",
+  "Data sharing",
+  "Security and retention",
+  "Your rights",
+  "Contact us",
+] as const;
+
 export default function PrivacyPolicyPage() {
   return (
     <main className="bg-background text-foreground">
@@ -38,6 +47,23 @@ export default function PrivacyPolicyPage() {
           <p className="mt-4 text-lg text-muted-foreground">
             Last updated: February 2026
           </p>
+        </div>
+      </section>
+
+      <section className="border-b border-border bg-background py-6">
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-sm font-semibold text-foreground">
+              On this page
+            </p>
+            <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+              {PRIVACY_SECTIONS.map((item) => (
+                <span key={item} className="rounded-lg bg-muted/50 px-3 py-2">
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -85,7 +111,10 @@ export default function PrivacyPolicyPage() {
                 <li>Email address</li>
                 <li>Phone number</li>
                 <li>Company name and job title</li>
-                <li>Billing and payment information (processed securely through third-party payment processors)</li>
+                <li>
+                  Billing and payment information (processed securely through
+                  third-party payment processors)
+                </li>
                 <li>Mailing address</li>
                 <li>Account credentials</li>
               </ul>
@@ -99,11 +128,16 @@ export default function PrivacyPolicyPage() {
                 <li>IP address and approximate geolocation</li>
                 <li>Browser type and version</li>
                 <li>Operating system and device information</li>
-                <li>Pages visited, time spent on pages, and navigation paths</li>
+                <li>
+                  Pages visited, time spent on pages, and navigation paths
+                </li>
                 <li>Referring and exit URLs</li>
                 <li>Date and time stamps of access</li>
                 <li>Feature usage patterns within the platform</li>
-                <li>Voice agent interaction logs and analytics (e.g., call duration, call outcomes, and aggregated performance metrics)</li>
+                <li>
+                  Voice agent interaction logs and analytics (e.g., call
+                  duration, call outcomes, and aggregated performance metrics)
+                </li>
               </ul>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -116,26 +150,38 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Essential cookies:</strong>{" "}
-                  Required for core functionality such as authentication and security.
+                  <strong className="text-foreground">
+                    Essential cookies:
+                  </strong>{" "}
+                  Required for core functionality such as authentication and
+                  security.
                 </li>
                 <li>
-                  <strong className="text-foreground">Analytics cookies:</strong>{" "}
-                  Help us understand how visitors interact with our website so we can improve the user experience.
+                  <strong className="text-foreground">
+                    Analytics cookies:
+                  </strong>{" "}
+                  Help us understand how visitors interact with our website so
+                  we can improve the user experience.
                 </li>
                 <li>
-                  <strong className="text-foreground">Functional cookies:</strong>{" "}
-                  Remember your preferences, language settings, and other customizations.
+                  <strong className="text-foreground">
+                    Functional cookies:
+                  </strong>{" "}
+                  Remember your preferences, language settings, and other
+                  customizations.
                 </li>
                 <li>
-                  <strong className="text-foreground">Marketing cookies:</strong>{" "}
-                  Used to deliver relevant advertisements and track campaign performance.
+                  <strong className="text-foreground">
+                    Marketing cookies:
+                  </strong>{" "}
+                  Used to deliver relevant advertisements and track campaign
+                  performance.
                 </li>
               </ul>
               <p className="mt-3 leading-relaxed text-muted-foreground">
                 You can control cookie preferences through your browser
-                settings. Disabling certain cookies may limit your ability to use
-                some features of our Services.
+                settings. Disabling certain cookies may limit your ability to
+                use some features of our Services.
               </p>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -143,11 +189,11 @@ export default function PrivacyPolicyPage() {
               </h3>
               <p className="mt-3 leading-relaxed text-muted-foreground">
                 As an AI voice agent platform, we may process voice recordings,
-                transcriptions, and related metadata when you use our voice agent
-                features. This data is processed to deliver the Services and
-                improve voice agent performance. Call recordings and
-                transcriptions are stored securely and retained according to your
-                account settings and applicable law.
+                transcriptions, and related metadata when you use our voice
+                agent features. This data is processed to deliver the Services
+                and improve voice agent performance. Call recordings and
+                transcriptions are stored securely and retained according to
+                your account settings and applicable law.
               </p>
             </div>
 
@@ -162,14 +208,33 @@ export default function PrivacyPolicyPage() {
               <ul className="mt-3 list-disc space-y-2 pl-6 text-muted-foreground">
                 <li>To provide, operate, and maintain our Services</li>
                 <li>To create and manage your account</li>
-                <li>To process transactions and send billing-related communications</li>
-                <li>To personalize and improve your experience with our platform</li>
+                <li>
+                  To process transactions and send billing-related
+                  communications
+                </li>
+                <li>
+                  To personalize and improve your experience with our platform
+                </li>
                 <li>To develop new features, products, and services</li>
-                <li>To analyze usage patterns and optimize platform performance</li>
-                <li>To train and improve our AI voice agent models using aggregated and de-identified data</li>
-                <li>To communicate with you, including sending service updates, security alerts, and support messages</li>
-                <li>To send marketing and promotional communications (with your consent, where required by law)</li>
-                <li>To detect, prevent, and address fraud, abuse, and security issues</li>
+                <li>
+                  To analyze usage patterns and optimize platform performance
+                </li>
+                <li>
+                  To train and improve our AI voice agent models using
+                  aggregated and de-identified data
+                </li>
+                <li>
+                  To communicate with you, including sending service updates,
+                  security alerts, and support messages
+                </li>
+                <li>
+                  To send marketing and promotional communications (with your
+                  consent, where required by law)
+                </li>
+                <li>
+                  To detect, prevent, and address fraud, abuse, and security
+                  issues
+                </li>
                 <li>To comply with legal obligations and enforce our terms</li>
               </ul>
             </div>
@@ -192,8 +257,8 @@ export default function PrivacyPolicyPage() {
                 functions on our behalf, such as cloud hosting, payment
                 processing, analytics, email delivery, and customer support.
                 These providers have access to your information only to the
-                extent necessary to perform their services and are
-                contractually obligated to protect your data.
+                extent necessary to perform their services and are contractually
+                obligated to protect your data.
               </p>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -222,8 +287,8 @@ export default function PrivacyPolicyPage() {
                 3.4 With Your Consent
               </h3>
               <p className="mt-3 leading-relaxed text-muted-foreground">
-                We may share your information with third parties when you
-                have given us explicit consent to do so.
+                We may share your information with third parties when you have
+                given us explicit consent to do so.
               </p>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -250,7 +315,10 @@ export default function PrivacyPolicyPage() {
                 <li>Comply with our legal obligations</li>
                 <li>Resolve disputes and enforce our agreements</li>
                 <li>Maintain security and prevent fraud</li>
-                <li>Fulfill legitimate business purposes, such as analytics and reporting</li>
+                <li>
+                  Fulfill legitimate business purposes, such as analytics and
+                  reporting
+                </li>
               </ul>
               <p className="mt-3 leading-relaxed text-muted-foreground">
                 When your data is no longer required for these purposes, we will
@@ -267,8 +335,8 @@ export default function PrivacyPolicyPage() {
                 5. Your Rights
               </h2>
               <p className="mt-4 leading-relaxed text-muted-foreground">
-                Depending on your jurisdiction, you may have the following rights
-                regarding your personal data:
+                Depending on your jurisdiction, you may have the following
+                rights regarding your personal data:
               </p>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -280,30 +348,41 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Access</strong> — Request a copy of the personal data we hold about you.
+                  <strong className="text-foreground">Access</strong> — Request
+                  a copy of the personal data we hold about you.
                 </li>
                 <li>
-                  <strong className="text-foreground">Rectification</strong> — Request correction of inaccurate or incomplete data.
+                  <strong className="text-foreground">Rectification</strong> —
+                  Request correction of inaccurate or incomplete data.
                 </li>
                 <li>
-                  <strong className="text-foreground">Erasure</strong> — Request deletion of your personal data (&quot;right to be forgotten&quot;).
+                  <strong className="text-foreground">Erasure</strong> — Request
+                  deletion of your personal data (&quot;right to be
+                  forgotten&quot;).
                 </li>
                 <li>
-                  <strong className="text-foreground">Restriction</strong> — Request that we limit the processing of your data.
+                  <strong className="text-foreground">Restriction</strong> —
+                  Request that we limit the processing of your data.
                 </li>
                 <li>
-                  <strong className="text-foreground">Portability</strong> — Receive your data in a structured, commonly used, machine-readable format.
+                  <strong className="text-foreground">Portability</strong> —
+                  Receive your data in a structured, commonly used,
+                  machine-readable format.
                 </li>
                 <li>
-                  <strong className="text-foreground">Object</strong> — Object to the processing of your data for certain purposes, including direct marketing.
+                  <strong className="text-foreground">Object</strong> — Object
+                  to the processing of your data for certain purposes, including
+                  direct marketing.
                 </li>
                 <li>
-                  <strong className="text-foreground">Withdraw Consent</strong> — Where processing is based on consent, withdraw that consent at any time.
+                  <strong className="text-foreground">Withdraw Consent</strong>{" "}
+                  — Where processing is based on consent, withdraw that consent
+                  at any time.
                 </li>
               </ul>
               <p className="mt-3 leading-relaxed text-muted-foreground">
-                You also have the right to lodge a complaint with your local data
-                protection authority.
+                You also have the right to lodge a complaint with your local
+                data protection authority.
               </p>
 
               <h3 className="mt-6 text-xl font-medium">
@@ -314,16 +393,26 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">Know</strong> — Request disclosure of the categories and specific pieces of personal information we have collected about you.
+                  <strong className="text-foreground">Know</strong> — Request
+                  disclosure of the categories and specific pieces of personal
+                  information we have collected about you.
                 </li>
                 <li>
-                  <strong className="text-foreground">Delete</strong> — Request deletion of the personal information we have collected from you, subject to certain exceptions.
+                  <strong className="text-foreground">Delete</strong> — Request
+                  deletion of the personal information we have collected from
+                  you, subject to certain exceptions.
                 </li>
                 <li>
-                  <strong className="text-foreground">Opt-Out of Sale</strong> — We do not sell personal information. If this changes, you will have the right to opt out.
+                  <strong className="text-foreground">Opt-Out of Sale</strong> —
+                  We do not sell personal information. If this changes, you will
+                  have the right to opt out.
                 </li>
                 <li>
-                  <strong className="text-foreground">Non-Discrimination</strong> — You will not be discriminated against for exercising your privacy rights.
+                  <strong className="text-foreground">
+                    Non-Discrimination
+                  </strong>{" "}
+                  — You will not be discriminated against for exercising your
+                  privacy rights.
                 </li>
               </ul>
 
@@ -357,9 +446,14 @@ export default function PrivacyPolicyPage() {
                 These measures include:
               </p>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-muted-foreground">
-                <li>Encryption of data in transit (TLS/SSL) and at rest (AES-256)</li>
+                <li>
+                  Encryption of data in transit (TLS/SSL) and at rest (AES-256)
+                </li>
                 <li>Regular security assessments and penetration testing</li>
-                <li>Access controls and role-based permissions for internal systems</li>
+                <li>
+                  Access controls and role-based permissions for internal
+                  systems
+                </li>
                 <li>Secure software development practices</li>
                 <li>Employee security awareness training</li>
                 <li>Incident response and breach notification procedures</li>
@@ -381,8 +475,8 @@ export default function PrivacyPolicyPage() {
                 Your information may be transferred to, stored, and processed in
                 countries other than your country of residence, including the
                 United States and Canada. These countries may have data
-                protection laws that differ from those in your jurisdiction. When
-                we transfer data internationally, we implement appropriate
+                protection laws that differ from those in your jurisdiction.
+                When we transfer data internationally, we implement appropriate
                 safeguards, such as Standard Contractual Clauses (SCCs) approved
                 by the European Commission, to ensure your data is protected in
                 accordance with this Privacy Policy and applicable law.
@@ -395,13 +489,13 @@ export default function PrivacyPolicyPage() {
                 8. Children&apos;s Privacy
               </h2>
               <p className="mt-4 leading-relaxed text-muted-foreground">
-                Our Services are not directed to individuals under the age of 16.
-                We do not knowingly collect personal information from children
-                under 16. If we become aware that we have inadvertently collected
-                personal data from a child under 16, we will take steps to
-                delete that information as promptly as possible. If you believe
-                that a child under 16 has provided us with personal information,
-                please contact us at{" "}
+                Our Services are not directed to individuals under the age of
+                16. We do not knowingly collect personal information from
+                children under 16. If we become aware that we have inadvertently
+                collected personal data from a child under 16, we will take
+                steps to delete that information as promptly as possible. If you
+                believe that a child under 16 has provided us with personal
+                information, please contact us at{" "}
                 <a
                   href="mailto:support@quickvoice.co"
                   className="text-primary underline underline-offset-4 hover:text-primary/80"
@@ -419,10 +513,11 @@ export default function PrivacyPolicyPage() {
               </h2>
               <p className="mt-4 leading-relaxed text-muted-foreground">
                 Our Services may contain links to third-party websites,
-                applications, or services that are not operated by us. We are not
-                responsible for the privacy practices of these third parties. We
-                encourage you to review the privacy policies of any third-party
-                services before providing them with your personal information.
+                applications, or services that are not operated by us. We are
+                not responsible for the privacy practices of these third
+                parties. We encourage you to review the privacy policies of any
+                third-party services before providing them with your personal
+                information.
               </p>
             </div>
 
@@ -501,12 +596,12 @@ export default function PrivacyPolicyPage() {
             Have privacy or security questions before you deploy?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-            Book time with a QuickVoice specialist to review data handling, voice records,
-            and compliance requirements for your use case.
+            Book time with a QuickVoice specialist to review data handling,
+            voice records, and compliance requirements for your use case.
           </p>
           <Link
             href={DEMO_BOOKING_URL}
-            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
           >
             Book a Demo
           </Link>

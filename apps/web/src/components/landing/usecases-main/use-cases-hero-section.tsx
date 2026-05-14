@@ -1,7 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Headphones, MessageSquare, Calendar, Bell, Package, Settings } from "lucide-react";
+import {
+  Sparkles,
+  Headphones,
+  MessageSquare,
+  Calendar,
+  Bell,
+  Package,
+  Settings,
+} from "lucide-react";
+import Link from "next/link";
+import { DEMO_BOOKING_URL } from "@/lib/links";
 
 const floatingIcons = [
   { Icon: Headphones, delay: 0, x: "10%", y: "20%" },
@@ -80,8 +90,7 @@ export function UseCasesHeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-geist text-4xl font-light tracking-tighter text-foreground sm:text-5xl lg:text-6xl mb-6"
           >
-            Powerful{" "}
-            <span className="text-primary">Use Cases</span>
+            Built for the calls your team keeps missing
           </motion.h1>
 
           <motion.p
@@ -90,9 +99,30 @@ export function UseCasesHeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg leading-8 text-muted-foreground mb-8 max-w-2xl mx-auto"
           >
-            Discover how QuickVoice&apos;s AI-powered voice agents automate workflows, enhance customer
-            experiences, and drive operational efficiency across various business functions.
+            Explore the phone workflows where AI voice agents pay back fastest:
+            support, scheduling, lead response, order updates, collections, and
+            operational follow-up.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.28 }}
+            className="mb-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          >
+            <Link
+              href={DEMO_BOOKING_URL}
+              className="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 sm:w-auto"
+            >
+              Book a Demo
+            </Link>
+            <Link
+              href="/pricing"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-muted sm:w-auto"
+            >
+              View Pricing
+            </Link>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

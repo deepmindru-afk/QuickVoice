@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { DEMO_BOOKING_URL } from "@/lib/links";
 
 export function UseCasesCtaSection() {
   return (
@@ -45,8 +46,8 @@ export function UseCasesCtaSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Join thousands of businesses already using QuickVoice to automate operations,
-              enhance customer experiences, and drive efficiency.
+              Join thousands of businesses already using QuickVoice to automate
+              operations, enhance customer experiences, and drive efficiency.
             </motion.p>
 
             <motion.div
@@ -57,21 +58,21 @@ export function UseCasesCtaSection() {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Link
-                href="/register"
+                href={DEMO_BOOKING_URL}
                 className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-medium text-white transition-all duration-200 hover:shadow-lg hover:shadow-primary/50"
                 style={{
                   backgroundImage:
                     "linear-gradient(to right, var(--primary), #1e40af)",
                 }}
               >
-                Get Started Free
+                Book a Demo
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                href="/company/contact"
+                href="/pricing"
                 className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-medium text-foreground border border-border hover:border-primary/50 hover:bg-muted transition-all duration-200"
               >
-                Contact Sales
+                View Pricing
               </Link>
             </motion.div>
           </div>

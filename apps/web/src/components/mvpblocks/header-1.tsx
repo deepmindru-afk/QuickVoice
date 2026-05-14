@@ -2,11 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Menu,
-  X,
-  ChevronDown,
-} from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import Logo1 from "../logo1";
@@ -38,7 +34,10 @@ const navItems: NavItem[] = [
         nestedDropdownItems: [
           { name: "Solutions Overview", href: "/solutions" },
           { name: "AI Receptionist", href: "/solutions/ai-receptionist" },
-          { name: "AI Answering Service", href: "/solutions/ai-answering-service" },
+          {
+            name: "AI Answering Service",
+            href: "/solutions/ai-answering-service",
+          },
         ],
       },
       {
@@ -120,7 +119,9 @@ export default function Header1() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [openMobileDropdown, setOpenMobileDropdown] = useState<string | null>(null);
+  const [openMobileDropdown, setOpenMobileDropdown] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -130,21 +131,29 @@ export default function Header1() {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${isScrolled
-        ? "bg-white/80 dark:bg-black/80 backdrop-blur shadow-lg"
-        : "bg-transparent"
-        }`}
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/80 dark:bg-black/80 backdrop-blur shadow-lg"
+          : "bg-transparent"
+      }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Top row */}
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2" aria-label="QuickVoice - Home">
-            <Logo1 />
+          <Link
+            href="/"
+            className="flex items-center space-x-2"
+            aria-label="QuickVoice - Home"
+          >
+            <Logo1 compactOnMobile />
           </Link>
 
           {/* Desktop Nav */}
-          <nav aria-label="Main navigation" className="hidden lg:flex items-center space-x-8">
+          <nav
+            aria-label="Main navigation"
+            className="hidden lg:flex items-center space-x-8"
+          >
             <ul className="flex items-center space-x-6">
               {navItems.map((item) => (
                 <li
@@ -162,8 +171,9 @@ export default function Header1() {
                     <span>{item.name}</span>
                     {item.hasDropdown && (
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform ${activeDropdown === item.name ? "rotate-180" : ""
-                          }`}
+                        className={`h-4 w-4 transition-transform ${
+                          activeDropdown === item.name ? "rotate-180" : ""
+                        }`}
                       />
                     )}
                   </Link>
@@ -173,10 +183,11 @@ export default function Header1() {
                     <AnimatePresence>
                       {activeDropdown === item.name && (
                         <motion.ul
-                          className={`absolute top-full left-0 mt-2 w-80 rounded-xl border border-border bg-background shadow-xl z-40 ${item.name === "Solutions"
-                            ? "w-[600px] grid grid-cols-2 gap-6 p-6"
-                            : "p-2"
-                            }`}
+                          className={`absolute top-full left-0 mt-2 w-80 rounded-xl border border-border bg-background shadow-xl z-40 ${
+                            item.name === "Solutions"
+                              ? "w-[600px] grid grid-cols-2 gap-6 p-6"
+                              : "p-2"
+                          }`}
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
@@ -200,7 +211,7 @@ export default function Header1() {
                                             {nested.name}
                                           </Link>
                                         </li>
-                                      )
+                                      ),
                                     )}
                                   </ul>
                                 </div>
@@ -229,13 +240,19 @@ export default function Header1() {
               <Button variant="ghost" asChild>
                 <Link href="/login">Log in</Link>
               </Button>
-              <Button variant="outline" asChild>
+              <Button asChild>
                 <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
               </Button>
-              <Button asChild>
+              <Button variant="outline" asChild>
                 <Link href="/register">Get Started</Link>
               </Button>
             </div>
+            <Link
+              href={DEMO_BOOKING_URL}
+              className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 text-sm font-medium text-white shadow-xs transition-all hover:bg-primary/90 sm:px-4 lg:hidden"
+            >
+              Book a Demo
+            </Link>
             {/* Mobile Menu Button */}
             <button
               className="lg:hidden rounded-lg p-2 hover:bg-muted transition"
@@ -275,7 +292,7 @@ export default function Header1() {
                         className="flex w-full items-center justify-between px-2 py-2 rounded-lg font-medium hover:bg-muted transition-colors"
                         onClick={() =>
                           setOpenMobileDropdown(
-                            openMobileDropdown === item.name ? null : item.name
+                            openMobileDropdown === item.name ? null : item.name,
                           )
                         }
                       >
@@ -303,22 +320,28 @@ export default function Header1() {
                                       <Link
                                         href={dropdown.href}
                                         className="block px-2 py-1.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg"
-                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        onClick={() =>
+                                          setIsMobileMenuOpen(false)
+                                        }
                                       >
                                         {dropdown.name}
                                       </Link>
                                       <ul className="ml-3 space-y-0.5">
-                                        {dropdown.nestedDropdownItems?.map((nested) => (
-                                          <li key={nested.name}>
-                                            <Link
-                                              href={nested.href}
-                                              className="block px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                                              onClick={() => setIsMobileMenuOpen(false)}
-                                            >
-                                              {nested.name}
-                                            </Link>
-                                          </li>
-                                        ))}
+                                        {dropdown.nestedDropdownItems?.map(
+                                          (nested) => (
+                                            <li key={nested.name}>
+                                              <Link
+                                                href={nested.href}
+                                                className="block px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                                                onClick={() =>
+                                                  setIsMobileMenuOpen(false)
+                                                }
+                                              >
+                                                {nested.name}
+                                              </Link>
+                                            </li>
+                                          ),
+                                        )}
                                       </ul>
                                     </>
                                   ) : (
@@ -351,13 +374,25 @@ export default function Header1() {
             </ul>
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
               <Button variant="outline" asChild className="w-full">
-                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>Log in</Link>
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  Log in
+                </Link>
               </Button>
               <Button variant="outline" asChild className="w-full">
-                <Link href={DEMO_BOOKING_URL} onClick={() => setIsMobileMenuOpen(false)}>Book a Demo</Link>
+                <Link
+                  href={DEMO_BOOKING_URL}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Book a Demo
+                </Link>
               </Button>
               <Button asChild className="w-full">
-                <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>Get Started</Link>
+                <Link
+                  href="/register"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
               </Button>
             </div>
           </motion.nav>

@@ -145,14 +145,42 @@ const INDUSTRIES = [
 ];
 
 const COMPARISON_ROWS = [
-  { feature: "Availability", ai: "24/7/365", traditional: "Business hours (or premium for after-hours)" },
-  { feature: "Cost per minute", ai: "$0.20/min", traditional: "$1.00 - $3.00/min" },
+  {
+    feature: "Availability",
+    ai: "24/7/365",
+    traditional: "Business hours (or premium for after-hours)",
+  },
+  {
+    feature: "Cost per minute",
+    ai: "$0.20/min",
+    traditional: "$1.00 - $3.00/min",
+  },
   { feature: "Hold time", ai: "0 seconds", traditional: "30 sec - 5+ minutes" },
-  { feature: "Languages supported", ai: "100+", traditional: "1 - 3 (extra cost)" },
-  { feature: "Scalability", ai: "Unlimited concurrent calls", traditional: "Limited by staff count" },
-  { feature: "Setup time", ai: "Under 5 minutes", traditional: "Days to weeks" },
-  { feature: "Call analytics", ai: "Real-time dashboard", traditional: "Monthly reports (if any)" },
-  { feature: "Consistency", ai: "Every call, every time", traditional: "Varies by operator" },
+  {
+    feature: "Languages supported",
+    ai: "100+",
+    traditional: "1 - 3 (extra cost)",
+  },
+  {
+    feature: "Scalability",
+    ai: "Unlimited concurrent calls",
+    traditional: "Limited by staff count",
+  },
+  {
+    feature: "Setup time",
+    ai: "Under 5 minutes",
+    traditional: "Days to weeks",
+  },
+  {
+    feature: "Call analytics",
+    ai: "Real-time dashboard",
+    traditional: "Monthly reports (if any)",
+  },
+  {
+    feature: "Consistency",
+    ai: "Every call, every time",
+    traditional: "Varies by operator",
+  },
 ];
 
 const FAQS = [
@@ -257,23 +285,23 @@ export default function AIAnsweringServicePage() {
             Never Miss a Call Again
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            QuickVoice&apos;s AI answering service picks up every call instantly,
-            24/7, in over 100 languages — at a fraction of the cost of a
-            traditional answering service. No hold music. No missed leads.
+            QuickVoice&apos;s AI answering service picks up every call
+            instantly, 24/7, in over 100 languages — at a fraction of the cost
+            of a traditional answering service. No hold music. No missed leads.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              href={DEMO_BOOKING_URL}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
             >
-              Start Free Trial
+              Book a Demo
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href={DEMO_BOOKING_URL}
+              href="/register"
               className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
             >
-              Talk to Sales
+              Try the Builder
             </Link>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
@@ -289,8 +317,8 @@ export default function AIAnsweringServicePage() {
             Why Choose AI Over a Traditional Answering Service?
           </h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
-            Traditional answering services are expensive, limited by
-            staff availability, and inconsistent. AI changes the equation.
+            Traditional answering services are expensive, limited by staff
+            availability, and inconsistent. AI changes the equation.
           </p>
 
           <div className="overflow-x-auto">
@@ -339,8 +367,8 @@ export default function AIAnsweringServicePage() {
             Everything You Need in an AI Answering Service
           </h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
-            QuickVoice goes far beyond basic call answering. Here is what you get
-            out of the box.
+            QuickVoice goes far beyond basic call answering. Here is what you
+            get out of the box.
           </p>
 
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -369,8 +397,8 @@ export default function AIAnsweringServicePage() {
             AI Answering for Every Industry
           </h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
-            From solo practitioners to enterprise teams, QuickVoice adapts to the
-            way your industry handles calls.
+            From solo practitioners to enterprise teams, QuickVoice adapts to
+            the way your industry handles calls.
           </p>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -403,8 +431,8 @@ export default function AIAnsweringServicePage() {
             Save Up to 90% vs. Traditional Answering Services
           </h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-muted-foreground">
-            Human answering services charge $1 - $3 per minute and still put your
-            callers on hold. QuickVoice answers instantly at $0.20/min.
+            Human answering services charge $1 - $3 per minute and still put
+            your callers on hold. QuickVoice answers instantly at $0.20/min.
           </p>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -486,8 +514,8 @@ export default function AIAnsweringServicePage() {
             Frequently Asked Questions
           </h2>
           <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
-            Everything you need to know about our AI answering service. Can&apos;t
-            find what you&apos;re looking for?{" "}
+            Everything you need to know about our AI answering service.
+            Can&apos;t find what you&apos;re looking for?{" "}
             <Link
               href="/company/contact"
               className="text-primary underline underline-offset-4 hover:text-primary/80"
@@ -516,22 +544,22 @@ export default function AIAnsweringServicePage() {
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
             Join thousands of businesses that trust QuickVoice to deliver
-            instant, professional call handling around the clock. Start for free
-            — no credit card required.
+            instant, professional call handling around the clock. Book a demo to
+            map your call volume, transfer rules, and rollout plan.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+              href={DEMO_BOOKING_URL}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary/90"
             >
-              Get Started Free
+              Book a Demo
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href={DEMO_BOOKING_URL}
+              href="/register"
               className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
             >
-              Book a Demo
+              Try the Builder
             </Link>
           </div>
         </div>

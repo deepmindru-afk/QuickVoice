@@ -25,6 +25,15 @@ export const metadata: Metadata = {
   },
 };
 
+const TERMS_SECTIONS = [
+  "Acceptance",
+  "Services",
+  "Account security",
+  "Billing",
+  "Acceptable use",
+  "Contact",
+] as const;
+
 export default function TermsOfServicePage() {
   return (
     <main className="bg-background text-foreground">
@@ -38,6 +47,17 @@ export default function TermsOfServicePage() {
             Last updated: February 2026
           </p>
         </header>
+
+        <section className="mb-12 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-sm font-semibold text-foreground">On this page</p>
+          <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            {TERMS_SECTIONS.map((item) => (
+              <span key={item} className="rounded-lg bg-muted/50 px-3 py-2">
+                {item}
+              </span>
+            ))}
+          </div>
+        </section>
 
         {/* Content */}
         <div className="space-y-12 text-base leading-7">
@@ -81,28 +101,22 @@ export default function TermsOfServicePage() {
                 <li>
                   AI voice agent creation, configuration, and deployment tools
                 </li>
-                <li>
-                  Inbound and outbound automated voice call handling
-                </li>
+                <li>Inbound and outbound automated voice call handling</li>
                 <li>
                   Integration with third-party telephony, CRM, and business
                   systems
                 </li>
-                <li>
-                  Call analytics, transcription, and reporting dashboards
-                </li>
-                <li>
-                  API access for programmatic voice agent management
-                </li>
+                <li>Call analytics, transcription, and reporting dashboards</li>
+                <li>API access for programmatic voice agent management</li>
                 <li>
                   Knowledge base management and voice agent training tools
                 </li>
               </ul>
               <p>
-                QuickVoice reserves the right to modify, suspend, or
-                discontinue any part of the Services at any time with reasonable
-                notice. We will make commercially reasonable efforts to notify
-                you of material changes that affect your use of the Services.
+                QuickVoice reserves the right to modify, suspend, or discontinue
+                any part of the Services at any time with reasonable notice. We
+                will make commercially reasonable efforts to notify you of
+                material changes that affect your use of the Services.
               </p>
             </div>
           </section>
@@ -186,7 +200,9 @@ export default function TermsOfServicePage() {
                   start of your next billing period following the notice.
                 </li>
                 <li>
-                  <strong className="text-foreground">Usage-Based Charges:</strong>{" "}
+                  <strong className="text-foreground">
+                    Usage-Based Charges:
+                  </strong>{" "}
                   Certain Services may include usage-based components (e.g.,
                   per-minute call charges, additional voice agent deployments).
                   These charges are billed in arrears and detailed on your
@@ -292,9 +308,9 @@ export default function TermsOfServicePage() {
                 other materials, are owned by or licensed to QuickVoice and are
                 protected by copyright, trademark, patent, trade secret, and
                 other intellectual property laws. Nothing in these Terms grants
-                you any right, title, or interest in the Services except for
-                the limited right to use the Services as expressly permitted
-                under these Terms.
+                you any right, title, or interest in the Services except for the
+                limited right to use the Services as expressly permitted under
+                these Terms.
               </p>
               <p>
                 <strong className="text-foreground">Your Content:</strong> You
@@ -334,9 +350,7 @@ export default function TermsOfServicePage() {
                 </a>
                 , which is incorporated into these Terms by reference.
               </p>
-              <p>
-                By using the Services, you acknowledge and agree that:
-              </p>
+              <p>By using the Services, you acknowledge and agree that:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>
                   QuickVoice may collect and process voice data, call
@@ -417,9 +431,7 @@ export default function TermsOfServicePage() {
               9. Limitation of Liability
             </h2>
             <div className="mt-4 space-y-4 text-muted-foreground">
-              <p>
-                To the maximum extent permitted by applicable law:
-              </p>
+              <p>To the maximum extent permitted by applicable law:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>
                   <strong className="text-foreground">
@@ -454,14 +466,12 @@ export default function TermsOfServicePage() {
                   interactions as appropriate for your use case.
                 </li>
                 <li>
-                  <strong className="text-foreground">
-                    No Warranty:
-                  </strong>{" "}
-                  The Services are provided on an &ldquo;as is&rdquo; and
-                  &ldquo;as available&rdquo; basis without warranties of any
-                  kind, whether express, implied, or statutory, including but
-                  not limited to implied warranties of merchantability, fitness
-                  for a particular purpose, and non-infringement.
+                  <strong className="text-foreground">No Warranty:</strong> The
+                  Services are provided on an &ldquo;as is&rdquo; and &ldquo;as
+                  available&rdquo; basis without warranties of any kind, whether
+                  express, implied, or statutory, including but not limited to
+                  implied warranties of merchantability, fitness for a
+                  particular purpose, and non-infringement.
                 </li>
               </ul>
             </div>
@@ -511,9 +521,7 @@ export default function TermsOfServicePage() {
               11. Termination
             </h2>
             <div className="mt-4 space-y-4 text-muted-foreground">
-              <p>
-                Either party may terminate these Terms as follows:
-              </p>
+              <p>Either party may terminate these Terms as follows:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>
                   <strong className="text-foreground">By You:</strong> You may
@@ -537,9 +545,7 @@ export default function TermsOfServicePage() {
                   days&apos; notice.
                 </li>
               </ul>
-              <p>
-                Upon termination:
-              </p>
+              <p>Upon termination:</p>
               <ul className="list-disc space-y-2 pl-6">
                 <li>
                   Your right to access and use the Services will cease
@@ -652,9 +658,9 @@ export default function TermsOfServicePage() {
                 the minimum extent necessary to make it valid and enforceable.
               </p>
               <p>
-                <strong className="text-foreground">Waiver:</strong> The
-                failure of QuickVoice to enforce any right or provision of these
-                Terms shall not constitute a waiver of that right or provision.
+                <strong className="text-foreground">Waiver:</strong> The failure
+                of QuickVoice to enforce any right or provision of these Terms
+                shall not constitute a waiver of that right or provision.
               </p>
               <p>
                 <strong className="text-foreground">Assignment:</strong> You may
@@ -721,7 +727,7 @@ export default function TermsOfServicePage() {
           </p>
           <Link
             href={DEMO_BOOKING_URL}
-            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+            className="mt-6 inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
           >
             Book a Demo
           </Link>
