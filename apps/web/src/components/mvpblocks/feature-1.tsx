@@ -17,26 +17,29 @@ import {
 import { cn } from "@/lib/utils";
 
 const useAnimationFrame = (callback: (time: number, delta: number) => void) => {
-  const requestRef = useRef<number | null>(null);
-  const previousTimeRef = useRef<number | null>(null);
+  const callbackRef = useRef(callback);
 
-  const animate = useCallback((time: number) => {
-    if (previousTimeRef.current !== null && previousTimeRef.current !== undefined) {
-      const delta = time - previousTimeRef.current;
-      callback(time, delta);
-    }
-    previousTimeRef.current = time;
-    requestRef.current = requestAnimationFrame(animate);
+  useEffect(() => {
+    callbackRef.current = callback;
   }, [callback]);
 
   useEffect(() => {
-    requestRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
+    let requestId: number;
+    let previousTime: number | null = null;
+
+    const animate = (time: number) => {
+      if (previousTime !== null) {
+        callbackRef.current(time, time - previousTime);
       }
+      previousTime = time;
+      requestId = requestAnimationFrame(animate);
     };
-  }, [animate]);
+
+    requestId = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(requestId);
+    };
+  }, []);
 };
 
 interface MarqueeProps extends React.ComponentPropsWithoutRef<"div"> {
