@@ -4,8 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -40,11 +40,11 @@ export function usePageActionsSlot() {
 // Helper component pages can render to register topbar CTAs.
 export function PageActions({ children }: { children: ReactNode }) {
   const { setSlot } = usePageActionsSlot();
-  // One-time registration on mount via a ref to avoid re-runs on parent re-renders.
-  const registered = useRef(false);
-  if (!registered.current) {
+
+  useEffect(() => {
     setSlot(children);
-    registered.current = true;
-  }
+    return () => setSlot(null);
+  }, [children, setSlot]);
+
   return null;
 }

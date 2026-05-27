@@ -142,7 +142,8 @@ function getStringValue(value: unknown): string | null {
 function getBearerToken(value: string | undefined): string | null {
   const match = value?.match(/^Bearer\s+(.+)$/i);
   if (!match) return null;
-  return match[1].replace(/^Bearer\s+/i, "").trim();
+  const token = match[1];
+  return token ? token.replace(/^Bearer\s+/i, "").trim() : null;
 }
 
 function normalizeMetadata(value: unknown): Record<string, unknown> | null {

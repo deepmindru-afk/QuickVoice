@@ -9,7 +9,6 @@ import Link from "next/link";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,6 +29,7 @@ import {
 import OAuthButtons from "@/src/components/oauth-buttons";
 
 export function LoginForm() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -55,6 +55,8 @@ export function LoginForm() {
       setError(error.message || "Something went wrong");
     } else {
       toast.success("Login successful");
+      router.push("/dashboard");
+      router.refresh();
     }
     setLoading(false);
   };

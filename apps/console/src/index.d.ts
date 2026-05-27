@@ -22,7 +22,7 @@ declare global {
         slug: string;
         createdAt: Date;
         members: Member[];
-        invitations: any[];
+        invitations: unknown[];
     }
 
 }
