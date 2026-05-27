@@ -59,6 +59,11 @@ tasks:
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev down -v
 
+  dev:clear:
+    desc: Stop stale QuickVoice local dev processes
+    cmds:
+      - ./scripts/dev-clear-processes.sh
+
   db:migrate:
     desc: Apply Prisma migrations to the local development database
     deps:
@@ -86,6 +91,7 @@ tasks:
     desc: Prepare env, install deps, start Docker deps, migrate DB, and run local services
     cmds:
       - task: doctor
+      - task: dev:clear
       - task: env:dev
       - task: deps:node
       - task: deps:python
