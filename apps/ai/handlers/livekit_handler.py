@@ -3,6 +3,26 @@ from utils.logger import logger
 import os
 from livekit.agents import JobContext
 import uuid
+
+
+def recording_path(recording_id):
+    return f"Voice-agents/Recordings/{recording_id}.ogg"
+
+
+def get_recording_storage_config():
+    config = {
+        "access_key": os.getenv("AWS_ACCESS_KEY_ID") or os.getenv("ACCESS_KEY"),
+        "secret": os.getenv("AWS_SECRET_ACCESS_KEY") or os.getenv("SECRET_ACCESS_KEY"),
+        "session_token": os.getenv("AWS_SESSION_TOKEN"),
+        "bucket": os.getenv("S3_BUCKET_NAME") or os.getenv("BUCKET") or "quickintell-rcm",
+        "region": os.getenv("AWS_REGION") or os.getenv("REGION") or "us-east-1",
+    }
+    missing = [key for key in ("access_key", "secret", "bucket", "region") if not config[key]]
+    if missing:
+        raise RuntimeError(f"Missing recording storage env: {', '.join(missing)}")
+    return config
+
+
 def get_transcripts(agent):
     
     try:
@@ -27,8 +47,9 @@ def get_transcripts(agent):
 async def start_recording(ctx: JobContext):
     # ── Recording → S3 Storage ─────────────────────────────────────
     egress_id = None
-    recording_id=uuid.uuid4()
+    recording_id = str(uuid.uuid4())
     try:
+        storage = get_recording_storage_config()
         rec_api = api.LiveKitAPI(
             url=os.environ["LIVEKIT_URL"],
             api_key=os.environ["LIVEKIT_API_KEY"],
@@ -41,12 +62,13 @@ async def start_recording(ctx: JobContext):
                 file_outputs=[
                     api.EncodedFileOutput(
                         file_type=api.EncodedFileType.OGG,
-                        filepath=f"Voice-agents/Recordings/{recording_id}.ogg",
+                        filepath=recording_path(recording_id),
                         s3=api.S3Upload(
-                            access_key=os.environ["ACCESS_KEY"],
-                            secret=os.environ["SECRET_ACCESS_KEY"],
-                            bucket="quickintell-rcm",
-                            region=os.environ["REGION"],
+                            access_key=storage["access_key"],
+                            secret=storage["secret"],
+                            session_token=storage.get("session_token"),
+                            bucket=storage["bucket"],
+                            region=storage["region"],
                         ),
                     )
                 ],

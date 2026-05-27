@@ -12,12 +12,13 @@ from livekit.agents import (
 )
 from livekit.plugins import noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
+from handlers.calllog_handler import build_call_log_payload, post_call_log
 from handlers.config_handler import get_config
-from handlers.livekit_handler import get_transcripts, start_recording
+from handlers.livekit_handler import get_transcripts, recording_path as build_recording_path, start_recording
+from handlers.worker_handler import build_call_context, parse_metadata, speak_first_message
 from utils.logger import logger
-import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import sys
 
@@ -30,29 +31,23 @@ class Assistant(Agent):
 
 
 async def entrypoint(ctx: JobContext):
-    logger.info(f"Entrypoint called with context: {ctx}")
-    agent_number = None
-    user_number = None
-    agent_id = None
-    # Try metadata first (outbound dispatch)
-    metadata = ctx.job.metadata or ""
-    logger.info(f"Metadata: {metadata}")
-    if metadata:
-        try:
-            meta = json.loads(metadata)
-            agent_id = meta.get("agent_id")
-        except Exception:
-            pass
+    logger.info(f"Entrypoint called with room: {ctx.room.name}")
 
-    # Extract from SIP participants
-    print("room name: ", ctx.room.name)
-    agent_number = ctx.room.name.split("_")[0]
-    user_number = ctx.room.name.split("_")[1]
-    print("agent number: ", agent_number)
-    print("user number: ", user_number)
+    metadata = parse_metadata(ctx.job.metadata or "")
+    call_context = build_call_context(ctx.room.name, metadata)
+    logger.info(f"Call context: {call_context}")
 
-    config = await get_config(agent_id)
-    logger.info(f"Config: {config}")
+    config = await get_config(
+        call_context.get("agent_id"),
+        agent_number=call_context.get("agent_number"),
+    )
+    logger.info(f"Config loaded for agent: {config.get('agent_id')}")
+
+    if not call_context.get("agent_id") and config.get("agent_id"):
+        call_context["agent_id"] = config["agent_id"]
+    if not call_context.get("provider") and config.get("provider"):
+        call_context["provider"] = config["provider"]
+
     session = AgentSession(
         stt=inference.STT(
             model=config.get("stt_model", "deepgram/nova-3"),
@@ -64,7 +59,7 @@ async def entrypoint(ctx: JobContext):
         ),
         tts=inference.TTS(
             model=config.get("tts_model", "deepgram/aura-2"),
-            voice=config.get("voice", "athena"),
+            voice=config.get("voice", "aura-2-asteria-en"),
             language=LanguageCode(config.get("agent_language", "en-US")),
         ),
         vad=silero.VAD.load(),
@@ -91,21 +86,43 @@ async def entrypoint(ctx: JobContext):
             ),
         ),
     )
-    call_start_time = datetime.now()
+    speak_first_message(session, config)
+
+    call_start_time = datetime.now(timezone.utc)
     recording_id = await start_recording(ctx)
+    recording_path = build_recording_path(recording_id) if recording_id else None
+    shutdown_started = False
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):
+        nonlocal shutdown_started
         logger.info(f"[HANGUP] Participant disconnected: {participant.identity}")
-        asyncio.create_task(unified_shutdown_hook(ctx))
+        if shutdown_started:
+            return
+        shutdown_started = True
+        asyncio.create_task(unified_shutdown_hook())
 
-    async def unified_shutdown_hook(shutdown_ctx: JobContext):
-        duration = datetime.now() - call_start_time
+    async def unified_shutdown_hook():
+        ended_at = datetime.now(timezone.utc)
+        duration = ended_at - call_start_time
         logger.info(f"Call duration: {duration}")
         transcript = get_transcripts(agent)
-        logger.info(f"Transcript: {transcript}")
-        logger.info(f"Recording ID: {recording_id}")
-        
+        logger.info(f"Transcript messages: {len(transcript)}")
+        logger.info(f"Recording path: {recording_path}")
+
+        try:
+            payload = build_call_log_payload(
+                config=config,
+                call_context=call_context,
+                started_at=call_start_time,
+                ended_at=ended_at,
+                recording_path=recording_path,
+                transcripts=transcript,
+            )
+            await post_call_log(payload)
+            logger.info(f"Call log posted: {payload['callId']}")
+        except Exception as error:
+            logger.error(f"[CALL_LOG] Failed to post completed call: {error}")
 
 
 if __name__ == "__main__":
@@ -121,5 +138,8 @@ if __name__ == "__main__":
         raise SystemExit(0)
 
     agents.cli.run_app(
-        agents.WorkerOptions(entrypoint_fnc=entrypoint, agent_name="QuickVoice")
+        agents.WorkerOptions(
+            entrypoint_fnc=entrypoint,
+            agent_name=os.getenv("LIVEKIT_AGENT_NAME", "QuickVoice"),
+        )
     )

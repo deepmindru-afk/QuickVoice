@@ -1,4 +1,4 @@
-import { SipClient } from "livekit-server-sdk";
+import { AgentDispatchClient, SipClient } from "livekit-server-sdk";
 
 // SipClient expects an https:// host. LIVEKIT_URL is typically wss:// for the
 // realtime SDK — normalize it here so callers can use the same env var.
@@ -10,6 +10,14 @@ export const livekitSipClient = new SipClient(
   process.env.LIVEKIT_API_KEY,
   process.env.LIVEKIT_API_SECRET
 );
+
+export const livekitAgentDispatchClient = new AgentDispatchClient(
+  httpHost,
+  process.env.LIVEKIT_API_KEY,
+  process.env.LIVEKIT_API_SECRET
+);
+
+export const LIVEKIT_AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? "QuickVoice";
 
 // Singleton trunk IDs — provisioned manually in LiveKit and pinned in env.
 // One inbound trunk is shared by the whole app; outbound is split per provider
