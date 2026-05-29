@@ -29,7 +29,10 @@ export function buildAgentRuntimeConfig(input: RuntimeConfigSource) {
   const llm = normalizeLlmModel(input.configuration.llmModel ?? "gpt-4o-mini");
   const sttModel = normalizeSttModel(input.configuration.sttModel ?? "nova-3");
   const ttsModel = normalizeTtsModel(input.configuration.ttsModel ?? "aura-2");
-  const voiceId = input.configuration.voiceId ?? "aura-2-asteria-en";
+  const voiceId = normalizeTtsVoice(
+    ttsModel,
+    input.configuration.voiceId ?? "aura-2-asteria-en"
+  );
 
   return {
     agentId: input.agentId,
@@ -92,6 +95,29 @@ function inferTtsProvider(model: string) {
   if (lower.startsWith("gpt-")) return "openai";
   if (lower.startsWith("rime-")) return "rime";
   return "deepgram";
+}
+
+function normalizeTtsVoice(ttsModel: string, voiceId: string) {
+  const trimmed = voiceId.trim();
+  const provider = getTtsProvider(ttsModel);
+  if (provider !== "deepgram") return trimmed;
+
+  const catalogId = trimmed.split("/").at(-1) ?? trimmed;
+  const lower = catalogId.toLowerCase();
+  if (lower.startsWith("aura-2-") && lower.endsWith("-en")) {
+    return catalogId.slice("aura-2-".length, -"-en".length);
+  }
+  if (lower.startsWith("aura-2-")) {
+    return catalogId.slice("aura-2-".length);
+  }
+  return catalogId;
+}
+
+function getTtsProvider(model: string) {
+  if (model.includes("/")) {
+    return model.split("/", 1)[0]?.toLowerCase() ?? inferTtsProvider(model);
+  }
+  return inferTtsProvider(model);
 }
 
 function normalizeSttModel(model: string) {

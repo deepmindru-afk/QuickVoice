@@ -63,14 +63,14 @@ async def get_config(
     config = dict(DEFAULT_CONFIG)
     config["agent_id"] = agent_id
     config["agent_number"] = agent_number
-    return config
+    return normalize_config(config)
 
 
 def normalize_config(raw: dict[str, Any]) -> dict[str, Any]:
     llm = _normalize_llm_model(_pick(raw, "llmModel", "llm_model") or DEFAULT_CONFIG["llm_model"])
     stt = _normalize_stt_model(_pick(raw, "sttModel", "stt_model") or DEFAULT_CONFIG["stt_model"])
     tts = _normalize_tts_model(_pick(raw, "ttsModel", "tts_model") or DEFAULT_CONFIG["tts_model"])
-    voice = _pick(raw, "voiceId", "voice") or DEFAULT_CONFIG["voice"]
+    voice = _normalize_tts_voice(tts, _pick(raw, "voiceId", "voice") or DEFAULT_CONFIG["voice"])
 
     config = dict(DEFAULT_CONFIG)
     config.update(
@@ -147,6 +147,27 @@ def _infer_tts_provider(model: str) -> str:
     if lower.startswith("rime-"):
         return "rime"
     return "deepgram"
+
+
+def _normalize_tts_voice(tts_model: str, voice: str) -> str:
+    value = voice.strip()
+    provider = _tts_provider_from_model(tts_model)
+    if provider != "deepgram":
+        return value
+
+    voice_id = value.rsplit("/", 1)[-1]
+    lower = voice_id.lower()
+    if lower.startswith("aura-2-") and lower.endswith("-en"):
+        return voice_id[len("aura-2-") : -len("-en")]
+    if lower.startswith("aura-2-"):
+        return voice_id[len("aura-2-") :]
+    return voice_id
+
+
+def _tts_provider_from_model(model: str) -> str:
+    if "/" in model:
+        return model.split("/", 1)[0].lower()
+    return _infer_tts_provider(model)
 
 
 def _normalize_stt_model(model: str) -> str:

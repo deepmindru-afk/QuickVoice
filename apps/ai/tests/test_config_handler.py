@@ -45,7 +45,7 @@ class ConfigHandlerTests(unittest.TestCase):
         self.assertEqual(config["llm_provider"], "openai")
         self.assertEqual(config["stt_model"], "deepgram/nova-3")
         self.assertEqual(config["tts_model"], "deepgram/aura-2")
-        self.assertEqual(config["voice"], "aura-2-asteria-en")
+        self.assertEqual(config["voice"], "asteria")
         self.assertEqual(config["agent_language"], "en-US")
         self.assertTrue(config["use_rag"])
         self.assertEqual(config["data_needed"], [{"id": "name", "name": "Name"}])
@@ -91,6 +91,7 @@ class ConfigHandlerTests(unittest.TestCase):
         self.assertEqual(config["llm_provider"], "google")
         self.assertEqual(config["stt_model"], "assemblyai/universal-streaming")
         self.assertEqual(config["tts_model"], "elevenlabs/eleven-flash-v2.5")
+        self.assertEqual(config["voice"], "aura-2-hera-en")
         self.assertEqual(config["provider"], "TELNYX")
         self.assertEqual(len(calls), 1)
         url, headers = calls[0]

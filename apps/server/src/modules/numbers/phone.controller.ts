@@ -24,11 +24,11 @@ export const searchNumbers = authorized(async (req, res) => {
 export const listNumbers = authorized(async (req, res) => {
   const numbers = await phoneService.listOrgNumbers(req.auth.activeOrganizationId);
   res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Phone numbers fetched successfully",
-      data: numbers,
-    });
+    success: true,
+    message: "Phone numbers fetched successfully",
+    data: numbers,
   });
+});
 
 export const buyNumber = authorized(async (req, res) => {
   const number = await phoneService.buyNumber({

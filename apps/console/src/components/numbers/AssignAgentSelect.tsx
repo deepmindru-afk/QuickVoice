@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ export function AssignAgentSelect({
   phId: string;
   agentId: string | null;
 }) {
-  const { data: agents } = useAgents();
+  const { data: agents, isLoading: agentsLoading } = useAgents();
   const update = useUpdateNumber();
 
   function onChange(value: string) {
@@ -28,9 +29,16 @@ export function AssignAgentSelect({
   }
 
   return (
-    <Select value={agentId ?? UNASSIGNED} onValueChange={onChange}>
-      <SelectTrigger className="h-8 w-[180px] text-xs">
-        <SelectValue placeholder="Unassigned" />
+    <Select
+      value={agentId ?? UNASSIGNED}
+      onValueChange={onChange}
+      disabled={agentsLoading || update.isPending}
+    >
+      <SelectTrigger className="h-8 w-full min-w-0 text-xs sm:w-[200px]">
+        <div className="flex min-w-0 items-center gap-2">
+          {update.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
+          <SelectValue placeholder={agentsLoading ? "Loading agents..." : "Unassigned"} />
+        </div>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>

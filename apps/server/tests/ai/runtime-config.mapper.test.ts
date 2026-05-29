@@ -41,7 +41,7 @@ test("buildAgentRuntimeConfig maps console agent config to AI runtime config", (
     llmProvider: "openai",
     sttModel: "deepgram/nova-3",
     ttsModel: "deepgram/aura-2",
-    voiceId: "aura-2-asteria-en",
+    voiceId: "asteria",
     agent_language: "en-US",
     use_rag: true,
     data_needed: [{ id: "name", name: "Name" }],
