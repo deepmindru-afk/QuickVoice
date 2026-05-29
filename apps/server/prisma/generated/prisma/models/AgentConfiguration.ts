@@ -81,6 +81,8 @@ export type AgentConfigurationMinAggregateOutputType = {
   voice_stability: number | null
   zero_pii_retention: boolean | null
   llmModel: string | null
+  sttModel: string | null
+  ttsModel: string | null
   agent_language: string | null
   preemptive_generation: boolean | null
   timezone: string | null
@@ -113,6 +115,8 @@ export type AgentConfigurationMaxAggregateOutputType = {
   voice_stability: number | null
   zero_pii_retention: boolean | null
   llmModel: string | null
+  sttModel: string | null
+  ttsModel: string | null
   agent_language: string | null
   preemptive_generation: boolean | null
   timezone: string | null
@@ -147,6 +151,8 @@ export type AgentConfigurationCountAggregateOutputType = {
   voice_stability: number
   zero_pii_retention: number
   llmModel: number
+  sttModel: number
+  ttsModel: number
   agent_language: number
   initiation_webhook: number
   post_call_webhook: number
@@ -212,6 +218,8 @@ export type AgentConfigurationMinAggregateInputType = {
   voice_stability?: true
   zero_pii_retention?: true
   llmModel?: true
+  sttModel?: true
+  ttsModel?: true
   agent_language?: true
   preemptive_generation?: true
   timezone?: true
@@ -244,6 +252,8 @@ export type AgentConfigurationMaxAggregateInputType = {
   voice_stability?: true
   zero_pii_retention?: true
   llmModel?: true
+  sttModel?: true
+  ttsModel?: true
   agent_language?: true
   preemptive_generation?: true
   timezone?: true
@@ -278,6 +288,8 @@ export type AgentConfigurationCountAggregateInputType = {
   voice_stability?: true
   zero_pii_retention?: true
   llmModel?: true
+  sttModel?: true
+  ttsModel?: true
   agent_language?: true
   initiation_webhook?: true
   post_call_webhook?: true
@@ -402,6 +414,8 @@ export type AgentConfigurationGroupByOutputType = {
   voice_stability: number
   zero_pii_retention: boolean
   llmModel: string
+  sttModel: string
+  ttsModel: string
   agent_language: string
   initiation_webhook: runtime.JsonValue | null
   post_call_webhook: runtime.JsonValue | null
@@ -462,6 +476,8 @@ export type AgentConfigurationWhereInput = {
   voice_stability?: Prisma.FloatFilter<"AgentConfiguration"> | number
   zero_pii_retention?: Prisma.BoolFilter<"AgentConfiguration"> | boolean
   llmModel?: Prisma.StringFilter<"AgentConfiguration"> | string
+  sttModel?: Prisma.StringFilter<"AgentConfiguration"> | string
+  ttsModel?: Prisma.StringFilter<"AgentConfiguration"> | string
   agent_language?: Prisma.StringFilter<"AgentConfiguration"> | string
   initiation_webhook?: Prisma.JsonNullableFilter<"AgentConfiguration">
   post_call_webhook?: Prisma.JsonNullableFilter<"AgentConfiguration">
@@ -500,6 +516,8 @@ export type AgentConfigurationOrderByWithRelationInput = {
   voice_stability?: Prisma.SortOrder
   zero_pii_retention?: Prisma.SortOrder
   llmModel?: Prisma.SortOrder
+  sttModel?: Prisma.SortOrder
+  ttsModel?: Prisma.SortOrder
   agent_language?: Prisma.SortOrder
   initiation_webhook?: Prisma.SortOrderInput | Prisma.SortOrder
   post_call_webhook?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -541,6 +559,8 @@ export type AgentConfigurationWhereUniqueInput = Prisma.AtLeast<{
   voice_stability?: Prisma.FloatFilter<"AgentConfiguration"> | number
   zero_pii_retention?: Prisma.BoolFilter<"AgentConfiguration"> | boolean
   llmModel?: Prisma.StringFilter<"AgentConfiguration"> | string
+  sttModel?: Prisma.StringFilter<"AgentConfiguration"> | string
+  ttsModel?: Prisma.StringFilter<"AgentConfiguration"> | string
   agent_language?: Prisma.StringFilter<"AgentConfiguration"> | string
   initiation_webhook?: Prisma.JsonNullableFilter<"AgentConfiguration">
   post_call_webhook?: Prisma.JsonNullableFilter<"AgentConfiguration">
@@ -579,6 +599,8 @@ export type AgentConfigurationOrderByWithAggregationInput = {
   voice_stability?: Prisma.SortOrder
   zero_pii_retention?: Prisma.SortOrder
   llmModel?: Prisma.SortOrder
+  sttModel?: Prisma.SortOrder
+  ttsModel?: Prisma.SortOrder
   agent_language?: Prisma.SortOrder
   initiation_webhook?: Prisma.SortOrderInput | Prisma.SortOrder
   post_call_webhook?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -624,6 +646,8 @@ export type AgentConfigurationScalarWhereWithAggregatesInput = {
   voice_stability?: Prisma.FloatWithAggregatesFilter<"AgentConfiguration"> | number
   zero_pii_retention?: Prisma.BoolWithAggregatesFilter<"AgentConfiguration"> | boolean
   llmModel?: Prisma.StringWithAggregatesFilter<"AgentConfiguration"> | string
+  sttModel?: Prisma.StringWithAggregatesFilter<"AgentConfiguration"> | string
+  ttsModel?: Prisma.StringWithAggregatesFilter<"AgentConfiguration"> | string
   agent_language?: Prisma.StringWithAggregatesFilter<"AgentConfiguration"> | string
   initiation_webhook?: Prisma.JsonNullableWithAggregatesFilter<"AgentConfiguration">
   post_call_webhook?: Prisma.JsonNullableWithAggregatesFilter<"AgentConfiguration">
@@ -660,6 +684,8 @@ export type AgentConfigurationCreateInput = {
   voice_stability: number
   zero_pii_retention?: boolean
   llmModel?: string
+  sttModel?: string
+  ttsModel?: string
   agent_language?: string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -698,6 +724,8 @@ export type AgentConfigurationUncheckedCreateInput = {
   voice_stability: number
   zero_pii_retention?: boolean
   llmModel?: string
+  sttModel?: string
+  ttsModel?: string
   agent_language?: string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -734,6 +762,8 @@ export type AgentConfigurationUpdateInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -772,6 +802,8 @@ export type AgentConfigurationUncheckedUpdateInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -809,6 +841,8 @@ export type AgentConfigurationCreateManyInput = {
   voice_stability: number
   zero_pii_retention?: boolean
   llmModel?: string
+  sttModel?: string
+  ttsModel?: string
   agent_language?: string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -845,6 +879,8 @@ export type AgentConfigurationUpdateManyMutationInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -882,6 +918,8 @@ export type AgentConfigurationUncheckedUpdateManyInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -924,6 +962,8 @@ export type AgentConfigurationCountOrderByAggregateInput = {
   voice_stability?: Prisma.SortOrder
   zero_pii_retention?: Prisma.SortOrder
   llmModel?: Prisma.SortOrder
+  sttModel?: Prisma.SortOrder
+  ttsModel?: Prisma.SortOrder
   agent_language?: Prisma.SortOrder
   initiation_webhook?: Prisma.SortOrder
   post_call_webhook?: Prisma.SortOrder
@@ -973,6 +1013,8 @@ export type AgentConfigurationMaxOrderByAggregateInput = {
   voice_stability?: Prisma.SortOrder
   zero_pii_retention?: Prisma.SortOrder
   llmModel?: Prisma.SortOrder
+  sttModel?: Prisma.SortOrder
+  ttsModel?: Prisma.SortOrder
   agent_language?: Prisma.SortOrder
   preemptive_generation?: Prisma.SortOrder
   timezone?: Prisma.SortOrder
@@ -1005,6 +1047,8 @@ export type AgentConfigurationMinOrderByAggregateInput = {
   voice_stability?: Prisma.SortOrder
   zero_pii_retention?: Prisma.SortOrder
   llmModel?: Prisma.SortOrder
+  sttModel?: Prisma.SortOrder
+  ttsModel?: Prisma.SortOrder
   agent_language?: Prisma.SortOrder
   preemptive_generation?: Prisma.SortOrder
   timezone?: Prisma.SortOrder
@@ -1092,6 +1136,8 @@ export type AgentConfigurationCreateWithoutAgentInput = {
   voice_stability: number
   zero_pii_retention?: boolean
   llmModel?: string
+  sttModel?: string
+  ttsModel?: string
   agent_language?: string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1128,6 +1174,8 @@ export type AgentConfigurationUncheckedCreateWithoutAgentInput = {
   voice_stability: number
   zero_pii_retention?: boolean
   llmModel?: string
+  sttModel?: string
+  ttsModel?: string
   agent_language?: string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1180,6 +1228,8 @@ export type AgentConfigurationUpdateWithoutAgentInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1216,6 +1266,8 @@ export type AgentConfigurationUncheckedUpdateWithoutAgentInput = {
   voice_stability?: Prisma.FloatFieldUpdateOperationsInput | number
   zero_pii_retention?: Prisma.BoolFieldUpdateOperationsInput | boolean
   llmModel?: Prisma.StringFieldUpdateOperationsInput | string
+  sttModel?: Prisma.StringFieldUpdateOperationsInput | string
+  ttsModel?: Prisma.StringFieldUpdateOperationsInput | string
   agent_language?: Prisma.StringFieldUpdateOperationsInput | string
   initiation_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   post_call_webhook?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
@@ -1255,6 +1307,8 @@ export type AgentConfigurationSelect<ExtArgs extends runtime.Types.Extensions.In
   voice_stability?: boolean
   zero_pii_retention?: boolean
   llmModel?: boolean
+  sttModel?: boolean
+  ttsModel?: boolean
   agent_language?: boolean
   initiation_webhook?: boolean
   post_call_webhook?: boolean
@@ -1293,6 +1347,8 @@ export type AgentConfigurationSelectCreateManyAndReturn<ExtArgs extends runtime.
   voice_stability?: boolean
   zero_pii_retention?: boolean
   llmModel?: boolean
+  sttModel?: boolean
+  ttsModel?: boolean
   agent_language?: boolean
   initiation_webhook?: boolean
   post_call_webhook?: boolean
@@ -1331,6 +1387,8 @@ export type AgentConfigurationSelectUpdateManyAndReturn<ExtArgs extends runtime.
   voice_stability?: boolean
   zero_pii_retention?: boolean
   llmModel?: boolean
+  sttModel?: boolean
+  ttsModel?: boolean
   agent_language?: boolean
   initiation_webhook?: boolean
   post_call_webhook?: boolean
@@ -1369,6 +1427,8 @@ export type AgentConfigurationSelectScalar = {
   voice_stability?: boolean
   zero_pii_retention?: boolean
   llmModel?: boolean
+  sttModel?: boolean
+  ttsModel?: boolean
   agent_language?: boolean
   initiation_webhook?: boolean
   post_call_webhook?: boolean
@@ -1377,7 +1437,7 @@ export type AgentConfigurationSelectScalar = {
   timezone?: boolean
 }
 
-export type AgentConfigurationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"agentConfigId" | "agentId" | "systemPrompt" | "firstMessage" | "temperature" | "data_needed" | "data_evaluation" | "voiceId" | "concurrent_calls_limit" | "conversation_retention_days" | "daily_calls_limit" | "enable_auth_for_agent_api" | "max_conversation_duration_seconds" | "optimize_streaming_latency" | "silence_end_call_timeout_seconds" | "store_call_audio" | "tokenLimit" | "tts_output_format" | "turn_timeout_seconds" | "update_at" | "use_flash_call" | "use_rag" | "user_input_audio_format" | "voice_similarity_boost" | "voice_speed" | "voice_stability" | "zero_pii_retention" | "llmModel" | "agent_language" | "initiation_webhook" | "post_call_webhook" | "variables" | "preemptive_generation" | "timezone", ExtArgs["result"]["agentConfiguration"]>
+export type AgentConfigurationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"agentConfigId" | "agentId" | "systemPrompt" | "firstMessage" | "temperature" | "data_needed" | "data_evaluation" | "voiceId" | "concurrent_calls_limit" | "conversation_retention_days" | "daily_calls_limit" | "enable_auth_for_agent_api" | "max_conversation_duration_seconds" | "optimize_streaming_latency" | "silence_end_call_timeout_seconds" | "store_call_audio" | "tokenLimit" | "tts_output_format" | "turn_timeout_seconds" | "update_at" | "use_flash_call" | "use_rag" | "user_input_audio_format" | "voice_similarity_boost" | "voice_speed" | "voice_stability" | "zero_pii_retention" | "llmModel" | "sttModel" | "ttsModel" | "agent_language" | "initiation_webhook" | "post_call_webhook" | "variables" | "preemptive_generation" | "timezone", ExtArgs["result"]["agentConfiguration"]>
 export type AgentConfigurationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   agent?: boolean | Prisma.AgentDefaultArgs<ExtArgs>
 }
@@ -1422,6 +1482,8 @@ export type $AgentConfigurationPayload<ExtArgs extends runtime.Types.Extensions.
     voice_stability: number
     zero_pii_retention: boolean
     llmModel: string
+    sttModel: string
+    ttsModel: string
     agent_language: string
     initiation_webhook: runtime.JsonValue | null
     post_call_webhook: runtime.JsonValue | null
@@ -1880,6 +1942,8 @@ export interface AgentConfigurationFieldRefs {
   readonly voice_stability: Prisma.FieldRef<"AgentConfiguration", 'Float'>
   readonly zero_pii_retention: Prisma.FieldRef<"AgentConfiguration", 'Boolean'>
   readonly llmModel: Prisma.FieldRef<"AgentConfiguration", 'String'>
+  readonly sttModel: Prisma.FieldRef<"AgentConfiguration", 'String'>
+  readonly ttsModel: Prisma.FieldRef<"AgentConfiguration", 'String'>
   readonly agent_language: Prisma.FieldRef<"AgentConfiguration", 'String'>
   readonly initiation_webhook: Prisma.FieldRef<"AgentConfiguration", 'Json'>
   readonly post_call_webhook: Prisma.FieldRef<"AgentConfiguration", 'Json'>

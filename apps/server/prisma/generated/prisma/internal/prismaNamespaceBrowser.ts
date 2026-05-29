@@ -322,6 +322,8 @@ export const AgentConfigurationScalarFieldEnum = {
   voice_stability: 'voice_stability',
   zero_pii_retention: 'zero_pii_retention',
   llmModel: 'llmModel',
+  sttModel: 'sttModel',
+  ttsModel: 'ttsModel',
   agent_language: 'agent_language',
   initiation_webhook: 'initiation_webhook',
   post_call_webhook: 'post_call_webhook',

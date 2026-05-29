@@ -5,7 +5,6 @@ import {
   AudioLines,
   BookOpen,
   Bot,
-  Gauge,
   Settings,
   Webhook,
   Wrench,
@@ -13,7 +12,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { BehaviorTab } from "@/src/components/agents/tabs/BehaviorTab";
 import { VoiceTab } from "@/src/components/agents/tabs/VoiceTab";
-import { LimitsTab } from "@/src/components/agents/tabs/LimitsTab";
 import { WebhooksTab } from "@/src/components/agents/tabs/WebhooksTab";
 import { ToolsTab } from "@/src/components/agents/tabs/ToolsTab";
 import { KnowledgeTab } from "@/src/components/agents/tabs/KnowledgeTab";
@@ -21,8 +19,7 @@ import { AdvancedTab } from "@/src/components/agents/tabs/AdvancedTab";
 
 const TABS = [
   { id: "behavior", label: "Behavior", icon: Bot },
-  { id: "voice", label: "Voice", icon: AudioLines },
-  { id: "limits", label: "Limits", icon: Gauge },
+  { id: "voice", label: "Models & Voices", icon: AudioLines },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
@@ -69,9 +66,6 @@ export function AgentTabs({ agentId }: { agentId: string }) {
       </TabsContent>
       <TabsContent value="voice" className="mt-6 min-w-0">
         <VoiceTab agentId={agentId} />
-      </TabsContent>
-      <TabsContent value="limits" className="mt-6 min-w-0">
-        <LimitsTab />
       </TabsContent>
       <TabsContent value="webhooks" className="mt-6 min-w-0">
         <WebhooksTab agentId={agentId} />
