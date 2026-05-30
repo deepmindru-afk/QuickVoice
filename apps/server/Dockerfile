@@ -42,5 +42,5 @@ COPY --from=build --chown=server:nodejs /app/apps/server/dist ./dist
 COPY --from=build --chown=server:nodejs /app/apps/server/prisma ./prisma
 
 USER server
-EXPOSE 5000
+EXPOSE 8000
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/index.js"]
