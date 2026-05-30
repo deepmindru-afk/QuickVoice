@@ -96,3 +96,21 @@ export const getAgentConfig = async (
 
   return configuration;
 };
+
+export const getAgentConfigByNumber = async (phoneNumber: string) => {
+  const normalizedPhoneNumber = phoneNumber.trim();
+
+  if (!normalizedPhoneNumber) {
+    throw new BadRequestError("Phone number is required");
+  }
+
+  const configuration = await agentRepository.getAgentConfigByNumber(
+    normalizedPhoneNumber
+  );
+
+  if (!configuration) {
+    throw new NotFoundError("Agent configuration not found");
+  }
+
+  return configuration;
+};

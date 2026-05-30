@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import authMiddleware from "../../middleware/auth.middleware.js";
+import authMiddleware, { requireInternalApiKey } from "../../middleware/auth.middleware.js";
 import { requirePermission } from "../../middleware/authorize.middleware.js";
 import validate from "../../middleware/validate.middleware.js";
 import * as agentController from "./agent.controller.js";
@@ -46,6 +46,12 @@ router.get(
   requirePermission({ agentConfiguration: ["read"] }),
   agentController.getAgentConfig
 );
+
+router.get(
+  "/number-config/:phoneNumber",
+  requireInternalApiKey,
+  agentController.getAgentConfigByNumber
+)
 
 
 export default router;

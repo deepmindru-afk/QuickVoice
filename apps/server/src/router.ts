@@ -5,7 +5,6 @@ import calllogRouter from "./modules/calllogs/calllog.route.js";
 import dashboardRouter from "./modules/dashboard/dashboard.route.js";
 import kbRouter from "./modules/kb/kb.route.js";
 import phoneRouter from "./modules/numbers/phone.route.js";
-import runtimeConfigRouter from "./modules/ai/runtime-config.route.js";
 import outboundCallRouter from "./modules/outbound/outbound-call.route.js";
 
 const router = Router();
@@ -15,7 +14,6 @@ router.use("/numbers", phoneRouter);
 router.use("/calls", calllogRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/kb", kbRouter);
-router.use("/ai", runtimeConfigRouter);
 router.use("/outbound-calls", outboundCallRouter);
 
 export default router;

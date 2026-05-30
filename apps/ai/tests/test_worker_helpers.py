@@ -27,6 +27,24 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(context["to_number"], "+15551230000")
         self.assertEqual(context["call_id"], "+15551230000_+15550001111")
 
+    def test_build_call_context_uses_livekit_sip_attributes_for_inbound_numbers(self):
+        context = build_call_context(
+            room_name="call-_+918877645613_ASBJ52Wjd7uk",
+            metadata={
+                "agentId": "8d55565f-1111-4111-8111-f95fd03f0df2",
+                "sip.phoneNumber": "+918877645613",
+                "sip.trunkPhoneNumber": "+18005550100",
+                "sip.callID": "sip-call-123",
+            },
+        )
+
+        self.assertEqual(context["agent_id"], "8d55565f-1111-4111-8111-f95fd03f0df2")
+        self.assertEqual(context["agent_number"], "+18005550100")
+        self.assertEqual(context["user_number"], "+918877645613")
+        self.assertEqual(context["from_number"], "+918877645613")
+        self.assertEqual(context["to_number"], "+18005550100")
+        self.assertEqual(context["call_id"], "sip-call-123")
+
     def test_build_call_context_uses_outbound_metadata_numbers_when_present(self):
         context = build_call_context(
             room_name="outbound-room",

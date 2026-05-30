@@ -82,3 +82,18 @@ export const getAgentConfig = authorized(async (req, res) => {
     data: configuration,
   });
 });
+
+export const getAgentConfigByNumber = authorized(async (req, res) => {
+  const phoneNumber = req.params.phoneNumber;
+  if (typeof phoneNumber !== "string" || phoneNumber.length === 0) {
+    throw new BadRequestError("Phone number is required");
+  }
+
+  const configuration = await agentService.getAgentConfigByNumber(phoneNumber);
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Agent configuration fetched successfully",
+    data: configuration,
+  });
+});

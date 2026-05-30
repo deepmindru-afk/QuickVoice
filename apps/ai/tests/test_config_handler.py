@@ -95,9 +95,10 @@ class ConfigHandlerTests(unittest.TestCase):
         self.assertEqual(config["provider"], "TELNYX")
         self.assertEqual(len(calls), 1)
         url, headers = calls[0]
-        self.assertTrue(url.startswith("http://server.test/api/v1/ai/runtime-config?"))
-        self.assertIn("agentId=8d55565f-1111-4111-8111-f95fd03f0df2", url)
-        self.assertIn("phoneNumber=%2B15551230000", url)
+        self.assertEqual(
+            url,
+            "http://server.test/api/v1/agents/number-config/%2B15551230000",
+        )
         self.assertEqual(headers["Authorization"], "Bearer internal-secret")
 
 

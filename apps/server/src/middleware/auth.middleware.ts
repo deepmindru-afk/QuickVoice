@@ -170,4 +170,27 @@ function safeJsonParse(value: string): Record<string, unknown> | null {
   }
 }
 
+export const requireInternalApiKey=async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  try {
+    // 1. Internal server-to-server bypass
+    const bearerToken = getBearerToken(req.headers.authorization);
+    if (!bearerToken) {
+      throw new UnauthenticatedError("Unauthorized")
+    }
+
+    if(bearerToken!=process.env.INTERNAL_API_KEY){
+      throw new UnauthenticatedError("Unauthorized")
+    }
+
+    return next()
+  }
+  catch(error){
+    next(error)
+  }
+}
+
 export default authMiddleware;

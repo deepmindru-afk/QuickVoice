@@ -33,7 +33,17 @@ class Assistant(Agent):
 async def entrypoint(ctx: JobContext):
     logger.info(f"Entrypoint called with room: {ctx.room.name}")
 
+    await ctx.connect()
     metadata = parse_metadata(ctx.job.metadata or "")
+    try:
+        participant = await asyncio.wait_for(ctx.wait_for_participant(), timeout=10)
+        participant_attributes = getattr(participant, "attributes", {}) or {}
+        metadata.update(participant_attributes)
+    except asyncio.TimeoutError:
+        logger.warning("Timed out waiting for room participant before loading config")
+    except RuntimeError as error:
+        logger.warning(f"Could not read room participant before loading config: {error}")
+
     call_context = build_call_context(ctx.room.name, metadata)
     logger.info(f"Call context: {call_context}")
 

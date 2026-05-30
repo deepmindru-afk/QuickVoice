@@ -145,3 +145,22 @@ export const agentExistsInOrg = async (
   });
   return row !== null;
 };
+
+export const getAgentConfigByNumber= async (
+  phoneNumber:string
+)=>{
+  const phone = await prisma.phoneNumber.findUnique({
+    where: {
+      number: phoneNumber,
+    },
+    include: {
+      agent: {
+        include: {
+          configuration: true,
+        },
+      },
+    },
+  });
+  
+  return phone?.agent?.configuration ?? null;
+}

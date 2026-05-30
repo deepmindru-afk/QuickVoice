@@ -2,8 +2,10 @@ import asyncio
 import json
 import os
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import quote
 from urllib.request import Request, urlopen
+
+from loguru import logger
 
 
 DEFAULT_CONFIG = {
@@ -44,20 +46,13 @@ async def get_config(
     base_url = (server_api_url or os.getenv("SERVER_API_URL") or "").rstrip("/")
     api_key = internal_api_key or os.getenv("INTERNAL_API_KEY")
 
-    if base_url and api_key and (agent_id or agent_number):
-        query = urlencode(
-            {
-                key: value
-                for key, value in {
-                    "agentId": agent_id,
-                    "phoneNumber": agent_number,
-                }.items()
-                if value
-            }
-        )
-        url = f"{base_url}/ai/runtime-config?{query}"
+    if base_url and api_key and agent_number:
+        encoded_agent_number = quote(agent_number or "", safe="")
+        api_base_url = base_url if base_url.endswith("/api/v1") else f"{base_url}/api/v1"
+        url = f"{api_base_url}/agents/number-config/{encoded_agent_number}"
         headers = {"Authorization": f"Bearer {api_key}"}
         response = await (get_json or _get_json)(url, headers)
+        logger.info("Payload: {}", response.get("data"))
         return normalize_config(response.get("data", response))
 
     config = dict(DEFAULT_CONFIG)

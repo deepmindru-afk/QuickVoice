@@ -1,6 +1,6 @@
 import json
 from typing import Any
-
+from utils.logger import logger
 
 def parse_metadata(metadata: str | None) -> dict[str, Any]:
     if not metadata:
@@ -14,29 +14,47 @@ def parse_metadata(metadata: str | None) -> dict[str, Any]:
 
 def build_call_context(room_name: str, metadata: dict[str, Any]) -> dict[str, Any]:
     room_agent_number, room_user_number = _numbers_from_room(room_name)
-    direction = metadata.get("direction") or "inbound"
+    direction = _pick(metadata, "direction", "callDirection") or "inbound"
 
     if direction == "outbound":
-        agent_number = metadata.get("from_number") or room_agent_number
-        user_number = metadata.get("to_number") or room_user_number
+        agent_number = _pick(metadata, "agent_number", "agentNumber", "from_number", "fromNumber") or room_agent_number
+        user_number = _pick(metadata, "user_number", "userNumber", "to_number", "toNumber") or room_user_number
         from_number = agent_number
         to_number = user_number
     else:
-        agent_number = metadata.get("agent_number") or metadata.get("to_number") or room_agent_number
-        user_number = metadata.get("user_number") or metadata.get("from_number") or room_user_number
+        agent_number = _pick(
+            metadata,
+            "agent_number",
+            "agentNumber",
+            "to_number",
+            "toNumber",
+            "sip.trunkPhoneNumber",
+            "sip_trunk_phone_number",
+            "trunkPhoneNumber",
+        ) or room_agent_number
+        user_number = _pick(
+            metadata,
+            "user_number",
+            "userNumber",
+            "from_number",
+            "fromNumber",
+            "sip.phoneNumber",
+            "sip_phone_number",
+            "phoneNumber",
+        ) or room_user_number
         from_number = user_number
         to_number = agent_number
 
     return {
-        "call_id": metadata.get("call_id") or room_name,
-        "agent_id": metadata.get("agent_id"),
+        "call_id": _pick(metadata, "call_id", "callId", "sip.callID", "sip_call_id") or room_name,
+        "agent_id": _pick(metadata, "agent_id", "agentId"),
         "agent_number": agent_number,
         "user_number": user_number,
         "direction": direction,
         "from_number": from_number,
         "to_number": to_number,
-        "outbound_id": metadata.get("outbound_id"),
-        "provider": metadata.get("provider"),
+        "outbound_id": _pick(metadata, "outbound_id", "outboundId"),
+        "provider": _pick(metadata, "provider"),
     }
 
 
@@ -52,3 +70,11 @@ def _numbers_from_room(room_name: str):
     if len(parts) == 2:
         return parts[0], parts[1]
     return None, None
+
+
+def _pick(source: dict[str, Any], *keys: str):
+    for key in keys:
+        value = source.get(key)
+        if value not in (None, ""):
+            return value
+    return None
