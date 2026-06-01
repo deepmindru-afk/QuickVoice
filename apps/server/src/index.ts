@@ -5,6 +5,7 @@ import morgan from "morgan";
 import helmet from "helmet";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
+import { trustedOrigins } from "./config/origins.js";
 
 import authMiddleware from "./middleware/auth.middleware.js";
 import notFound from "./middleware/notFound.middleware.js";
@@ -51,7 +52,7 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: trustedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })

@@ -10,11 +10,16 @@ import { stripeClient } from "../config/stripe.js";
 import { sendEmail } from "./mailer.js";
 import { ac, roles } from "./permissions.js";
 import { plans } from "../../data/plans.js";
+import {
+  serverBaseUrl,
+  trustedOrigins,
+} from "../config/origins.js";
 
 // ─── Better Auth server instance ────────────────────────────────────────────
 export const auth = betterAuth({
+  baseURL: serverBaseUrl,
   basePath: `/api/${process.env.API_VERSION! || "v1"}/auth`,
-  trustedOrigins: [process.env.CLIENT_URL || "http://localhost:3000"],
+  trustedOrigins,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
