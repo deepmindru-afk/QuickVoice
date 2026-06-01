@@ -3,6 +3,7 @@ import { RegisterForm } from "@/src/components/forms/auth/register-form";
 import Link from "next/link";
 import LoginBg from "@/src/components/login-bg";
 import Logo1 from "@/src/components/logo1";
+import { LANDING_URL } from "@/src/lib/links";
 
 export default function LoginPage() {
   
@@ -14,7 +15,10 @@ export default function LoginPage() {
       </div>
       <div className="flex flex-col gap-4 p-6 md:p-10 h-full relative overflow-hidden">
         <div className="flex justify-center gap-2 md:justify-start">
-          <Link href="/" className="flex items-center gap-2 font-medium z-10">
+          <Link
+            href={LANDING_URL}
+            className="flex items-center gap-2 font-medium z-10"
+          >
             
             <Logo1 />
           </Link>

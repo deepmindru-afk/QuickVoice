@@ -1,10 +1,8 @@
 import axios, { AxiosInstance } from "axios";
+import { apiPath } from "@/src/lib/links";
 import { toApiError } from "@/src/lib/errors";
 
-const authBase = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:5000";
-const apiVersion = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
-
-export const apiBaseUrl = `${authBase}/api/${apiVersion}`;
+export const apiBaseUrl = apiPath("");
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: apiBaseUrl,

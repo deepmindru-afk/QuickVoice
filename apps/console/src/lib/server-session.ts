@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { apiPath } from "@/src/lib/links";
 
 export interface ConsoleSession {
   userId: string;
@@ -23,10 +24,7 @@ interface RawSessionResponse {
 }
 
 function sessionUrl() {
-  const base =
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:5000";
-  const version = process.env.NEXT_PUBLIC_API_VERSION ?? "v1";
-  return `${base}/api/${version}/auth/get-session`;
+  return apiPath("/auth/get-session");
 }
 
 // Fetches the Better Auth session over HTTP, forwarding the browser cookies.
