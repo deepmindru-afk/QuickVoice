@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Link from "next/link";
 import { ArrowRight, Users, Sparkles } from 'lucide-react';
+import { REGISTER_URL } from "@/lib/links";
 
 export function AboutUsCtaSection() {
   return (
@@ -42,7 +43,7 @@ export function AboutUsCtaSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link href="/register" className="cursor-pointer">
+                <Link href={REGISTER_URL} className="cursor-pointer">
                   <Button
                     size="lg"
                     className="group/btn bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg font-semibold rounded-full shadow-lg shadow-[rgba(15,23,42,0.45)] hover:shadow-[0_24px_80px_rgba(var(--primary-rgb),0.75)] transition-all duration-300"

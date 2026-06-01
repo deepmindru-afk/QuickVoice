@@ -5,6 +5,7 @@ import { Mic, MessageSquare, Globe, ArrowRight, Settings, Plug, TrendingUp } fro
 import Image from "next/image";
 import Link from "next/link";
 import Img from "@/data/use-cases/appointment-scheduling.json"
+import { REGISTER_URL } from "@/lib/links";
 
 const voiceFeatures = [
   {
@@ -215,7 +216,7 @@ export function AppointmentSchedulingVoiceSection() {
           className="mt-16 text-center"
         >
           <Link
-            href="/register"
+            href={REGISTER_URL}
             className="inline-flex items-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-lg shadow-[rgba(var(--primary-rgb),0.35)] transition-all duration-200 hover:scale-105 hover:shadow-[0_24px_80px_rgba(var(--primary-rgb),0.5)] cursor-pointer"
           >
             Book a Free Demo

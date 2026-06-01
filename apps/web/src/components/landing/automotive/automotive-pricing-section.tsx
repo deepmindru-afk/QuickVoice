@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Check, Star } from "lucide-react";
 import Link from "next/link";
+import { REGISTER_URL } from "@/lib/links";
 
 export function AutomotivePricingSection() {
   const plans = [
@@ -141,7 +142,7 @@ export function AutomotivePricingSection() {
                 </ul>
 
                 <Link
-                  href={plan.name === "Enterprise" ? "/contact" : "/register"}
+                  href={plan.name === "Enterprise" ? "/contact" : REGISTER_URL}
                   className={`w-full inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-200 ${
                     plan.popular
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105'

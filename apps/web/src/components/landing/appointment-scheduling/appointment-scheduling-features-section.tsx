@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
+import { REGISTER_URL } from "@/lib/links";
   Zap,
   DollarSign,
   Headphones,
@@ -134,7 +135,7 @@ export function AppointmentSchedulingFeaturesSection() {
               operations.
             </p>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-lg shadow-[rgba(var(--primary-rgb),0.35)] transition-all duration-200 hover:scale-105 hover:shadow-[0_24px_80px_rgba(var(--primary-rgb),0.5)] cursor-pointer"
             >
               Get Started Today

@@ -5,6 +5,7 @@ import { Gift, Heart, TrendingUp, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import Img from "@/data/use-cases/sales-lead-gen.json";
+import { REGISTER_URL } from "@/lib/links";
 
 const postPurchaseFeatures = [
   {
@@ -180,7 +181,7 @@ export function SalesLeadGenPostPurchaseSection() {
 
             <div className="mt-16 text-center">
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-bold text-primary shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-900/20"
               >
                 Start Your Customer Journey

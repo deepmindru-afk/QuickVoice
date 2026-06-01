@@ -8,6 +8,7 @@ import AudioPlayer from "react-h5-audio-player";
 import { Player } from "@/components/audioPlayer";
 import { TypingTranscript, type TranscriptLine } from "@/components/TypingTranscript";
 import hrRecruitingData from "@/data/industries/hr-recruiting-images.json";
+import { REGISTER_URL } from "@/lib/links";
 
 const audioUrl = hrRecruitingData.hr;
 
@@ -61,7 +62,7 @@ export function HrRecruitingHeroSection() {
             </motion.p>
 
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-block rounded-full border px-8 py-4"
             >
               Book a Free Demo

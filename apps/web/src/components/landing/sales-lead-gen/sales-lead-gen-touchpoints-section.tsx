@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { DollarSign, TrendingUp, Headphones, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { REGISTER_URL } from "@/lib/links";
 
 const touchpoints = [
   {
@@ -110,7 +111,7 @@ export function SalesLeadGenTouchpointsSection() {
               See how our AI sales agents can help you convert more leads and increase revenue.
             </p>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center rounded-full bg-primary px-8 py-4 text-lg font-semibold text-primary-foreground shadow-lg shadow-[rgba(var(--primary-rgb),0.35)] transition-all duration-200 hover:scale-105 hover:shadow-[0_24px_80px_rgba(var(--primary-rgb),0.5)]"
             >
               Book a Free Demo

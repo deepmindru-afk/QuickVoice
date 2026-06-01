@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
+import { REGISTER_URL } from "@/lib/links";
   MessageSquare,
   CheckCircle,
   ArrowRight,
@@ -135,7 +136,7 @@ export function CustomerSupportDemoSection() {
 
             <motion.div variants={itemVariants} className="pt-4">
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="group inline-flex items-center rounded-full bg-primary px-8 py-4 text-primary-foreground font-semibold shadow-lg shadow-[rgba(var(--primary-rgb),0.35)] hover:bg-primary/90 hover:shadow-[0_18px_60px_rgba(var(--primary-rgb),0.45)] hover:-translate-y-0.5 hover:scale-[1.02] transition-all duration-200"
               >
                 Try Demo Now

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
+import { REGISTER_URL } from "@/lib/links";
   Users,
   Shield,
   Zap,
@@ -221,7 +222,7 @@ export function OrderStatusReturnsBenefitsSection() {
               </p>
               <div className="flex justify-center">
                 <a
-                  href="/register"
+                  href={REGISTER_URL}
                   className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white px-8 py-4 text-base font-semibold text-primary shadow-lg shadow-[rgba(15,23,42,0.45)] transition-all duration-200 hover:scale-105 hover:shadow-[0_24px_80px_rgba(15,23,42,0.75)] hover:bg-white/90"
                 >
                   Book a Free Demo

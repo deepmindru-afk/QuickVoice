@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DEMO_BOOKING_URL } from "@/lib/links";
+import { DEMO_BOOKING_URL, REGISTER_URL } from "@/lib/links";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ const PLANS = [
     ],
     bestFor: "Trying the builder before a production launch",
     cta: "Get Started",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -56,7 +56,7 @@ const PLANS = [
     ],
     bestFor: "Low-volume teams that want usage-based billing",
     cta: "Get Started",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -323,7 +323,7 @@ export default function PricingPage() {
                 Book a Demo
               </Link>
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
               >
                 Try the Builder
@@ -749,7 +749,7 @@ export default function PricingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
             >
               Get Started Free

@@ -1,5 +1,6 @@
 import MarkdownRenderer from "@/components/blog/MarkdownRenderer";
 import Link from "next/link";
+import { REGISTER_URL } from "@/lib/links";
 
 interface Props {
   content: string;
@@ -9,7 +10,7 @@ interface Props {
 
 export function GuideContentSection({
   content,
-  ctaHref = "/register",
+  ctaHref = REGISTER_URL,
   ctaLabel = "Start Free Trial",
 }: Props) {
   return (

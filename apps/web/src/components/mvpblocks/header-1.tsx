@@ -6,7 +6,7 @@ import { Menu, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import Logo1 from "../logo1";
-import { DEMO_BOOKING_URL } from "@/lib/links";
+import { DEMO_BOOKING_URL, LOGIN_URL, REGISTER_URL } from "@/lib/links";
 
 interface NavItem {
   name: string;
@@ -238,13 +238,13 @@ export default function Header1() {
           <div className="flex items-center gap-2">
             <div className="hidden lg:flex items-center gap-2">
               <Button variant="ghost" asChild>
-                <Link href="/login">Log in</Link>
+                <Link href={LOGIN_URL}>Log in</Link>
               </Button>
               <Button asChild>
                 <Link href={DEMO_BOOKING_URL}>Book a Demo</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link href="/register">Get Started</Link>
+                <Link href={REGISTER_URL}>Get Started</Link>
               </Button>
             </div>
             <Link
@@ -374,7 +374,7 @@ export default function Header1() {
             </ul>
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
               <Button variant="outline" asChild className="w-full">
-                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href={LOGIN_URL} onClick={() => setIsMobileMenuOpen(false)}>
                   Log in
                 </Link>
               </Button>
@@ -388,7 +388,7 @@ export default function Header1() {
               </Button>
               <Button asChild className="w-full">
                 <Link
-                  href="/register"
+                  href={REGISTER_URL}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Get Started

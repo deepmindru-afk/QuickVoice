@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { REGISTER_URL } from "@/lib/links";
 
 export const metadata: Metadata = {
   title: "Pricing — AI Voice Agent Plans",
@@ -36,7 +37,7 @@ const PLANS = [
       "15 test minutes per month",
     ],
     cta: "Get Started",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -53,7 +54,7 @@ const PLANS = [
       "1 workspace",
     ],
     cta: "Get Started",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -70,7 +71,7 @@ const PLANS = [
       "Telephony enabled",
     ],
     cta: "Subscribe",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -87,7 +88,7 @@ const PLANS = [
       "Telephony enabled",
     ],
     cta: "Subscribe",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: false,
   },
   {
@@ -104,7 +105,7 @@ const PLANS = [
       "Reserved concurrency",
     ],
     cta: "Subscribe",
-    ctaHref: "/register",
+    ctaHref: REGISTER_URL,
     popular: true,
   },
   {
@@ -620,7 +621,7 @@ export default function PricingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
             >
               Get Started Free

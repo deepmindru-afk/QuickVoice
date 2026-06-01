@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
+import { REGISTER_URL } from "@/lib/links";
   Building2,
   Heart,
   DollarSign,
@@ -125,7 +126,7 @@ export function SalesLeadGenIndustriesSection() {
               tailored to your industry and business needs.
             </p>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-primary shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
             >
               Book a Free Demo

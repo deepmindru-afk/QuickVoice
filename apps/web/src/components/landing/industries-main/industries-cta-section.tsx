@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { REGISTER_URL } from "@/lib/links";
 
 export function IndustriesCtaSection() {
   return (
@@ -57,7 +58,7 @@ export function IndustriesCtaSection() {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 font-medium text-white transition-all duration-200 hover:shadow-lg hover:shadow-primary/50"
                 style={{
                   backgroundImage:

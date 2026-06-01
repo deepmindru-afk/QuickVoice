@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DEMO_BOOKING_URL } from "@/lib/links";
+import { DEMO_BOOKING_URL, REGISTER_URL } from "@/lib/links";
 import Link from "next/link";
 import {
   Phone,
@@ -374,7 +374,7 @@ export default function AIReceptionistPage() {
               Book a Demo
             </Link>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               Try the Builder
@@ -592,7 +592,7 @@ export default function AIReceptionistPage() {
               Book a Demo
             </Link>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-8 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-muted"
             >
               Try the Builder

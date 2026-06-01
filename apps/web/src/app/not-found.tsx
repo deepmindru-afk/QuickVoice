@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Home, ArrowRight, PhoneOff, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
+import { LOGIN_URL } from "@/lib/links";
 
 
 
@@ -88,7 +89,7 @@ export default function NotFound() {
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="rounded-full px-8">
-            <Link href="/login">
+            <Link href={LOGIN_URL}>
               <LogIn className="ml-2 h-4 w-4" />
               Login
             </Link>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { DEMO_BOOKING_URL } from "@/lib/links";
+import { DEMO_BOOKING_URL, REGISTER_URL } from "@/lib/links";
 
 export default function Globe3D() {
   return (
@@ -46,7 +46,7 @@ export default function Globe3D() {
               Book a Demo
             </Link>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="neumorphic-button relative w-full overflow-hidden rounded-full border px-8 py-4 text-center text-foreground shadow-lg transition-all duration-300 bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10 dark:hover:border-primary/30 dark:hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)] sm:w-auto"
             >
               Try the Builder

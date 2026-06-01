@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
+import { REGISTER_URL } from "@/lib/links";
   Calendar,
   Clock,
   User,
@@ -301,7 +302,7 @@ export default async function BlogPostPage({ params }: Props) {
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
-                  href="/register"
+                  href={REGISTER_URL}
                   className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-lg"
                   style={{ backgroundImage: "linear-gradient(to right, var(--primary), #1e40af)" }}
                 >
@@ -364,7 +365,7 @@ export default async function BlogPostPage({ params }: Props) {
                 Deploy an AI voice agent in under 30 minutes. No code, no credit card, 14-day free trial.
               </p>
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="block text-center rounded-full py-2 text-sm font-medium text-white transition-all hover:shadow-md"
                 style={{ backgroundImage: "linear-gradient(to right, var(--primary), #1e40af)" }}
               >

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { REGISTER_URL } from "@/lib/links";
 
 export function SaasCtaSection() {
   return (
@@ -67,7 +68,7 @@ export function SaasCtaSection() {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="group flex w-full items-center justify-between rounded-full border-2 border-white bg-transparent px-6 py-3.5 text-white sm:w-[240px] transition-all duration-300 hover:bg-white/10 hover:shadow-lg"
               >
                 <span className="font-semibold">Book a Demo</span>

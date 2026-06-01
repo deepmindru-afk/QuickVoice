@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { CheckCircle, MessageSquare, HelpCircle, Phone, Bot } from "lucide-react";
 import Image from "next/image";
 import Img from "@/data/use-cases/customer-support.json";
+import { REGISTER_URL } from "@/lib/links";
 
 const useCases = [
   {
@@ -153,7 +154,7 @@ export function CustomerSupportUseCasesSection() {
 
           <div className="mt-10 flex justify-center">
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-[rgba(var(--primary-rgb),0.35)] transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_60px_rgba(var(--primary-rgb),0.5)]"
             >
               Create Free Account

@@ -2,6 +2,7 @@ import { getAllCaseStudies, getAllIndustries } from "@/lib/case-studies";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+import { REGISTER_URL } from "@/lib/links";
   ChevronRight,
   Building2,
   TrendingUp,
@@ -228,7 +229,7 @@ export default function CaseStudiesIndexPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 font-medium text-white transition-all hover:shadow-lg"
               style={{ backgroundImage: "linear-gradient(to right, var(--primary), #1e40af)" }}
             >

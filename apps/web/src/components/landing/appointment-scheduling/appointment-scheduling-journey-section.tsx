@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Clock, Smartphone, RotateCcw, CheckCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { REGISTER_URL } from "@/lib/links";
 
 const journeyFeatures = [
   {
@@ -173,7 +174,7 @@ export function AppointmentSchedulingJourneySection() {
 
             <div className="mt-12 text-center">
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-primary shadow-lg shadow-[rgba(15,23,42,0.45)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(255,255,255,0.35)] cursor-pointer"
               >
                 Experience the Journey

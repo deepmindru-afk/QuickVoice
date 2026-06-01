@@ -2,6 +2,7 @@ import { getAllPosts, getAllCategories } from "@/lib/blog";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, Clock, ChevronRight, BookOpen, TrendingUp, Layers, BarChart2, GitCompare, Building2 } from "lucide-react";
+import { REGISTER_URL } from "@/lib/links";
 
 export const metadata: Metadata = {
   title: "Blog — AI Voice Agent Guides & Insights",
@@ -294,7 +295,7 @@ export default function BlogIndexPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 font-medium text-white transition-all hover:shadow-lg"
               style={{ backgroundImage: "linear-gradient(to right, var(--primary), #1e40af)" }}
             >

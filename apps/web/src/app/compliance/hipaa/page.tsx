@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+import { REGISTER_URL } from "@/lib/links";
   Shield,
   Lock,
   CheckCircle,
@@ -278,7 +279,7 @@ export default function HipaaCompliancePage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/register"
+              href={REGISTER_URL}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-6 py-3 text-sm font-semibold transition hover:bg-muted"
             >
               Start Free Trial
@@ -558,7 +559,7 @@ export default function HipaaCompliancePage() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
               >
                 Start Free Trial

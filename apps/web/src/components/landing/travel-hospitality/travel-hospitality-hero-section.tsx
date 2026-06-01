@@ -9,6 +9,7 @@ import AudioPlayer from "react-h5-audio-player";
 import { Player } from "@/components/audioPlayer";
 import { TypingTranscript, TranscriptLine } from "@/components/TypingTranscript";
 import travelHospitalityData from "@/data/industries/travel-hospitality-images.json";
+import { REGISTER_URL } from "@/lib/links";
 
 function normalizeTranscript(
   transcript: { time: number; speaker: string; text: string }[]
@@ -98,7 +99,7 @@ export function TravelHospitalityHeroSection() {
               className="flex justify-start"
             >
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="relative w-full sm:w-auto overflow-hidden rounded-full border px-8 py-4 text-foreground shadow-lg transition-all duration-300
                 bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md
                 dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10

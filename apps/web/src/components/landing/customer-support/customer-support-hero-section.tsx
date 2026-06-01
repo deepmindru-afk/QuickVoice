@@ -10,6 +10,7 @@ import { Player } from "@/components/audioPlayer";
 import { TypingTranscript, type TranscriptLine } from "@/components/TypingTranscript";
 
 import { useEffect, useState, useRef } from "react";
+import { REGISTER_URL } from "@/lib/links";
 const audioUrl = transcript.customersupport;
 
 export function CustomerSupportHeroSection() {
@@ -79,7 +80,7 @@ export function CustomerSupportHeroSection() {
               className="flex justify-start"
             >
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="relative w-full sm:w-auto overflow-hidden rounded-full border px-8 py-4 text-foreground shadow-lg transition-all duration-300
                            bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md
                            dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10

@@ -10,6 +10,7 @@ import AudioPlayer from "react-h5-audio-player";
 import { Player } from "@/components/audioPlayer";
 import { TypingTranscript, type TranscriptLine } from "@/components/TypingTranscript";
 import transcript from "@/data/industries/manufacturing-engineering-images.json";
+import { REGISTER_URL } from "@/lib/links";
 
 // Assuming JSON structure aligns with the other files
 const audioUrl = transcript.manufacturing;
@@ -81,7 +82,7 @@ export function ManufacturingHeroSection() {
               className="flex justify-start"
             >
               <Link
-                href="/register"
+                href={REGISTER_URL}
                 className="relative w-full sm:w-auto overflow-hidden rounded-full border px-8 py-4 text-foreground shadow-lg transition-all duration-300
                         bg-gradient-to-b from-white/80 to-white/60 hover:border-gray-300 hover:shadow-md
                         dark:bg-gradient-to-b dark:from-white/10 dark:to-white/5 dark:border-white/10 dark:hover:border-primary/30 dark:hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)]"
