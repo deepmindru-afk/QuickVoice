@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
 import { REGISTER_URL } from "@/lib/links";
+import {
   MessageSquare,
   CheckCircle,
   ArrowRight,

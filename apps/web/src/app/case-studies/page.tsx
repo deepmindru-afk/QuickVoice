@@ -1,8 +1,8 @@
 import { getAllCaseStudies, getAllIndustries } from "@/lib/case-studies";
 import type { Metadata } from "next";
 import Link from "next/link";
-import {
 import { REGISTER_URL } from "@/lib/links";
+import {
   ChevronRight,
   Building2,
   TrendingUp,

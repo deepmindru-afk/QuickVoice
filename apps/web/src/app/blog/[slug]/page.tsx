@@ -3,8 +3,8 @@ import MarkdownRenderer from "@/components/blog/MarkdownRenderer";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import {
 import { REGISTER_URL } from "@/lib/links";
+import {
   Calendar,
   Clock,
   User,
