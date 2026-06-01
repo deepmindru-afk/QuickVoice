@@ -97,7 +97,7 @@ function buildHtml(content: EmailContent, url: string, fullName: string) {
 
 function createClient() {
   return new SendMailClient({
-    url: process.env.ZEPTOMAIL_URL ?? "zeptomail.zoho.com/",
+    url: process.env.SMTP_HOST! ,
     token: getZeptoMailToken(),
   });
 }
@@ -110,7 +110,7 @@ export async function sendEmail(
 ) {
   const content = contentFor(type);
   const fromEmail = requireEnv("FROM_EMAIL");
-  const fromName = process.env.FROM_NAME ;
+  const fromName = "Console|Quickvoice" ;
 
   await createClient().sendMail({
     from: {
