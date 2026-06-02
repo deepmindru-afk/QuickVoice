@@ -17,13 +17,16 @@ import { queryKeys } from "@/src/lib/query-keys";
 
 const PAGE_SIZE = 20;
 
-export function useCalls(params: Omit<CallListParams, "cursor" | "limit">) {
+export function useCalls(
+  params: Omit<CallListParams, "cursor" | "limit">,
+  limit: number = PAGE_SIZE
+) {
   return useInfiniteQuery({
-    queryKey: queryKeys.calls.list(params),
+    queryKey: queryKeys.calls.list({ ...params, limit }),
     queryFn: ({ pageParam }) =>
       callsApi.list({
         ...params,
-        limit: PAGE_SIZE,
+        limit,
         cursor: pageParam as string | undefined,
       }),
     getNextPageParam: (last) => last.nextCursor ?? undefined,

@@ -35,8 +35,8 @@ export default function CallsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Call logs"
-        description="Every inbound and outbound call across your organization."
+        title="Call History"
+        description="View and manage all inbound and outbound call recordings."
       />
       <CallFilters />
       <CallsTable filters={filters} />

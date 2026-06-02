@@ -42,17 +42,39 @@ export const getByIdForOrg = async (phId: string, organizationId: string) => {
 export const linkAgent = async (
   phId: string,
   organizationId: string,
-  agentId: string | null
+  agentId: string | null,
+  priorAgentId: string | null
 ) => {
-  // updateMany with the composite predicate is the tenant-safe write — a row
-  // owned by another org yields count: 0 instead of being updated. Mirrors
-  // the pattern in agent.repository.ts:updateAgent.
-  const result = await prisma.phoneNumber.updateMany({
-    where: { phId, organizationId },
-    data: { agentId },
+  return prisma.$transaction(async (tx) => {
+    // updateMany with the composite predicate is the tenant-safe write — a row
+    // owned by another org yields count: 0 instead of being updated. Mirrors
+    // the pattern in agent.repository.ts:updateAgent.
+    const result = await tx.phoneNumber.updateMany({
+      where: { phId, organizationId },
+      data: { agentId },
+    });
+    if (result.count === 0) return null;
+
+    // Recount from the source of truth rather than increment/decrement so stale
+    // counter values self-heal on the next link/unlink operation.
+    if (priorAgentId !== null) {
+      const count = await tx.phoneNumber.count({ where: { agentId: priorAgentId } });
+      await tx.agent.update({
+        where: { agentId: priorAgentId },
+        data: { phoneNumbersCount: count },
+      });
+    }
+
+    if (agentId !== null) {
+      const count = await tx.phoneNumber.count({ where: { agentId } });
+      await tx.agent.update({
+        where: { agentId },
+        data: { phoneNumbersCount: count },
+      });
+    }
+
+    return tx.phoneNumber.findUnique({ where: { phId } });
   });
-  if (result.count === 0) return null;
-  return prisma.phoneNumber.findUnique({ where: { phId } });
 };
 
 export const deletePhoneNumber = async (

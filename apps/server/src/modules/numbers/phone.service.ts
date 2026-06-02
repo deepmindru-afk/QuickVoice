@@ -234,7 +234,8 @@ export const linkAgentToNumber = async (args: UpdateNumberArgs) => {
     const updated = await phoneRepository.linkAgent(
       phId,
       organizationId,
-      agentId
+      agentId,
+      existing.agentId
     );
     if (!updated) {
       throw new NotFoundError("Phone number not found");

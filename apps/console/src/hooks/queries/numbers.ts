@@ -61,6 +61,7 @@ export function useUpdateNumber() {
     }) => numbersApi.update(phId, input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.numbers.list() });
+      qc.invalidateQueries({ queryKey: queryKeys.agents.list() });
     },
     onError: (err: Error) => {
       toast.error(err.message || "Could not update number");
