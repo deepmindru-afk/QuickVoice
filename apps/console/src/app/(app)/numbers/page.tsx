@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import {
-    Bot,
+    AlertCircle,
     Check,
     Copy,
     Hash,
     Phone,
     RefreshCw,
     Route,
-    ShieldCheck,
+    Signal,
+    X,
 } from "lucide-react";
 
 import { PageHeader } from "@/src/components/common/PageHeader";
 import { EmptyState } from "@/src/components/common/EmptyState";
-import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -25,10 +25,18 @@ import {
     TableHeader,
     TableRow,
 } from "@/src/components/ui/table";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { BuyNumberDrawer } from "@/src/components/numbers/BuyNumberDrawer";
 import { AssignAgentSelect } from "@/src/components/numbers/AssignAgentSelect";
 import { useNumbers } from "@/src/hooks/queries/numbers";
 import type { PhoneNumber } from "@/src/lib/api/types";
+import { cn } from "@/src/lib/utils";
+
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(value: string) {
     return new Date(value).toLocaleDateString([], {
@@ -38,16 +46,37 @@ function formatDate(value: string) {
     });
 }
 
-function providerLabel(provider: PhoneNumber["provider"]) {
-    return provider.toUpperCase();
+// ── provider chip ─────────────────────────────────────────────────────────────
+
+const PROVIDER_META: Record<
+    PhoneNumber["provider"],
+    { label: string; cls: string }
+> = {
+    twilio:  { label: "TWILIO",  cls: "border-violet-500/20 bg-violet-500/10 text-violet-400" },
+    telnyx:  { label: "TELNYX",  cls: "border-teal-500/20 bg-teal-500/10 text-teal-400" },
+};
+
+function ProviderChip({ provider }: { provider: PhoneNumber["provider"] }) {
+    const meta = PROVIDER_META[provider] ?? { label: provider.toUpperCase(), cls: "border-muted bg-muted/30 text-muted-foreground" };
+    return (
+        <span className={cn(
+            "inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide",
+            meta.cls
+        )}>
+            <Signal className="size-3" />
+            {meta.label}
+        </span>
+    );
 }
+
+// ── skeleton ──────────────────────────────────────────────────────────────────
 
 function NumbersPageSkeleton() {
     return (
         <div className="space-y-6">
             <div className="grid gap-3 sm:grid-cols-3">
-                {[...Array(3)].map((_, index) => (
-                    <Skeleton key={index} className="h-24 w-full" />
+                {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-lg" />
                 ))}
             </div>
             <div className="overflow-hidden border bg-card">
@@ -55,8 +84,8 @@ function NumbersPageSkeleton() {
                     <Skeleton className="h-5 w-40" />
                 </div>
                 <div className="divide-y">
-                    {[...Array(6)].map((_, index) => (
-                        <div key={index} className="grid gap-3 p-4 sm:grid-cols-5">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="grid gap-3 p-4 sm:grid-cols-5">
                             <Skeleton className="h-5 w-full" />
                             <Skeleton className="h-5 w-full" />
                             <Skeleton className="h-5 w-24" />
@@ -70,17 +99,14 @@ function NumbersPageSkeleton() {
     );
 }
 
+// ── page ──────────────────────────────────────────────────────────────────────
+
 export default function NumbersPage() {
     const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
-    const {
-        data: numbers,
-        isLoading,
-        isError,
-        isFetching,
-        refetch,
-    } = useNumbers();
+    const [bannerDismissed, setBannerDismissed] = useState(false);
+    const { data: numbers, isLoading, isError, isFetching, refetch } = useNumbers();
 
-    const assignedCount = numbers?.filter((number) => number.agentId).length ?? 0;
+    const assignedCount   = numbers?.filter((n) => n.agentId).length ?? 0;
     const unassignedCount = (numbers?.length ?? 0) - assignedCount;
 
     async function copyNumber(phoneNumber: string) {
@@ -119,48 +145,77 @@ export default function NumbersPage() {
                 />
             ) : (
                 <>
+                    {/* ── stat cards ── */}
                     <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="border bg-card p-4">
+                        {/* Total */}
+                        <div className="rounded-lg border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Total numbers
-                                </p>
+                                <p className="text-sm font-medium text-muted-foreground">Total numbers</p>
                                 <Phone className="size-4 text-primary" />
                             </div>
-                            <p className="mt-3 text-2xl font-semibold text-foreground">
-                                {numbers.length}
-                            </p>
+                            <p className="mt-3 text-2xl font-semibold text-foreground">{numbers.length}</p>
                         </div>
-                        <div className="border bg-card p-4">
+
+                        {/* Assigned */}
+                        <div className="rounded-lg border bg-card p-4 transition-all hover:border-primary/30 hover:shadow-sm">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Assigned
-                                </p>
+                                <p className="text-sm font-medium text-muted-foreground">Assigned</p>
                                 <Route className="size-4 text-primary" />
                             </div>
-                            <p className="mt-3 text-2xl font-semibold text-foreground">
-                                {assignedCount}
-                            </p>
+                            <p className="mt-3 text-2xl font-semibold text-foreground">{assignedCount}</p>
                         </div>
-                        <div className="border bg-card p-4">
+
+                        {/* Needs routing — amber accent when > 0 */}
+                        <div className={cn(
+                            "rounded-lg border p-4 transition-all hover:shadow-sm",
+                            unassignedCount > 0
+                                ? "border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50"
+                                : "border bg-card hover:border-primary/30"
+                        )}>
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-sm font-medium text-muted-foreground">
+                                <p className={cn(
+                                    "text-sm font-medium",
+                                    unassignedCount > 0 ? "text-amber-400" : "text-muted-foreground"
+                                )}>
                                     Needs routing
                                 </p>
-                                <Bot className="size-4 text-primary" />
+                                <AlertCircle className={cn(
+                                    "size-4",
+                                    unassignedCount > 0 ? "text-amber-400" : "text-primary"
+                                )} />
                             </div>
-                            <p className="mt-3 text-2xl font-semibold text-foreground">
+                            <p className={cn(
+                                "mt-3 text-2xl font-semibold",
+                                unassignedCount > 0 ? "text-amber-400" : "text-foreground"
+                            )}>
                                 {unassignedCount}
                             </p>
                         </div>
                     </div>
 
+                    {/* ── routing warning banner ── */}
+                    {unassignedCount > 0 && !bannerDismissed ? (
+                        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                            <AlertCircle className="size-4 shrink-0" />
+                            <span className="flex-1">
+                                {unassignedCount} number{unassignedCount > 1 ? "s" : ""} need
+                                routing — assign an agent to start receiving calls.
+                            </span>
+                            <button
+                                onClick={() => setBannerDismissed(true)}
+                                aria-label="Dismiss"
+                                className="shrink-0 rounded p-0.5 opacity-70 transition-opacity hover:opacity-100"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                    ) : null}
+
+                    {/* ── routing table ── */}
                     <section className="overflow-hidden border bg-card">
                         <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h2 className="text-base font-semibold text-foreground">
-                                    Routing table
-                                </h2>
+                                <h2 className="text-base font-semibold text-foreground">Routing table</h2>
                                 <p className="text-sm text-muted-foreground">
                                     Assign each inbound number to the agent that should answer it.
                                 </p>
@@ -172,9 +227,7 @@ export default function NumbersPage() {
                                 disabled={isFetching}
                                 className="w-full sm:w-auto"
                             >
-                                <RefreshCw
-                                    className={isFetching ? "animate-spin" : undefined}
-                                />
+                                <RefreshCw className={isFetching ? "animate-spin" : undefined} />
                                 Refresh
                             </Button>
                         </div>
@@ -182,7 +235,7 @@ export default function NumbersPage() {
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
+                                    <TableRow className="bg-muted/20 hover:bg-muted/20">
                                         <TableHead>Number</TableHead>
                                         <TableHead>Provider</TableHead>
                                         <TableHead>Routing</TableHead>
@@ -192,10 +245,14 @@ export default function NumbersPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {numbers.map((number) => (
-                                        <TableRow key={number.phId}>
+                                        <TableRow
+                                            key={number.phId}
+                                            className="transition-colors hover:bg-muted/10"
+                                        >
+                                            {/* number + copy */}
                                             <TableCell className="min-w-[220px]">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex size-9 shrink-0 items-center justify-center border bg-muted/30 text-primary">
+                                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30 text-primary">
                                                         <Phone className="size-4" />
                                                     </div>
                                                     <div className="min-w-0">
@@ -206,14 +263,14 @@ export default function NumbersPage() {
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
-                                                                size="icon-xs"
+                                                                size="icon-sm"
                                                                 aria-label={`Copy ${number.number}`}
                                                                 onClick={() => copyNumber(number.number)}
                                                             >
                                                                 {copiedNumber === number.number ? (
-                                                                    <Check className="size-3 text-emerald-600" />
+                                                                    <Check className="size-3.5 text-emerald-500" />
                                                                 ) : (
-                                                                    <Copy className="size-3" />
+                                                                    <Copy className="size-3.5" />
                                                                 )}
                                                             </Button>
                                                         </div>
@@ -223,39 +280,43 @@ export default function NumbersPage() {
                                                     </div>
                                                 </div>
                                             </TableCell>
+
+                                            {/* provider chip */}
                                             <TableCell>
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="gap-1 uppercase tracking-wide"
-                                                >
-                                                    <ShieldCheck className="size-3" />
-                                                    {providerLabel(number.provider)}
-                                                </Badge>
+                                                <ProviderChip provider={number.provider} />
                                             </TableCell>
+
+                                            {/* routing select */}
                                             <TableCell className="min-w-[220px]">
                                                 <AssignAgentSelect
                                                     phId={number.phId}
                                                     agentId={number.agentId}
                                                 />
                                             </TableCell>
-                                            <TableCell className="whitespace-nowrap text-sm">
-                                                <div className="space-y-0.5">
-                                                    <p className="text-foreground">
-                                                        Created {formatDate(number.createdAt)}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
+
+                                            {/* timeline */}
+                                            <TableCell className="whitespace-nowrap">
+                                                <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                                                    <span>Created {formatDate(number.createdAt)}</span>
+                                                    <span className="text-muted-foreground/60">
                                                         Modified {formatDate(number.updatedAt)}
-                                                    </p>
+                                                    </span>
                                                 </div>
                                             </TableCell>
+
+                                            {/* SID with tooltip */}
                                             <TableCell className="text-right">
-                                                <span
-                                                    title={number.sid}
-                                                    className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground"
-                                                >
-                                                    <Hash className="size-3" />
-                                                    {number.sid.slice(0, 12)}
-                                                </span>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="inline-flex cursor-help items-center gap-1 font-mono text-xs text-muted-foreground">
+                                                            <Hash className="size-3" />
+                                                            {number.sid.slice(0, 10)}…
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="left" className="font-mono text-xs">
+                                                        {number.sid}
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </TableCell>
                                         </TableRow>
                                     ))}

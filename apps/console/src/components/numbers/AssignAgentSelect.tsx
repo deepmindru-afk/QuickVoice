@@ -34,7 +34,7 @@ export function AssignAgentSelect({
       onValueChange={onChange}
       disabled={agentsLoading || update.isPending}
     >
-      <SelectTrigger className="h-8 w-full min-w-0 text-xs sm:w-[200px]">
+      <SelectTrigger className="h-9 w-full min-w-0 text-sm sm:w-[200px]">
         <div className="flex min-w-0 items-center gap-2">
           {update.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
           <SelectValue placeholder={agentsLoading ? "Loading agents..." : "Unassigned"} />

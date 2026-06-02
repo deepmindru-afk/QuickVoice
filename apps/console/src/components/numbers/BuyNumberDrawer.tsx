@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Phone, Search, Plus } from "lucide-react";
+import { Loader2, Phone, PhoneCall, Search, Plus } from "lucide-react";
 
 import {
     Sheet,
@@ -26,6 +26,7 @@ import {
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -151,6 +152,9 @@ export function BuyNumberDrawer() {
                                                 }
                                             />
                                         </FormControl>
+                                        <FormDescription className="text-[11px]">
+                                            ISO 3166-1 alpha-2, e.g. US, GB, IN
+                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -218,15 +222,20 @@ export function BuyNumberDrawer() {
                                     key={n.phoneNumber}
                                     className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
                                 >
-                                    <div className="min-w-0">
-                                        <p className="font-mono text-sm font-medium">
-                                            {n.phoneNumber}
-                                        </p>
-                                        <p className="truncate text-xs text-muted-foreground">
-                                            {[n.locality, n.region, n.isoCountry]
-                                                .filter(Boolean)
-                                                .join(" - ")}
-                                        </p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
+                                            <PhoneCall className="size-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-mono text-sm font-semibold text-foreground">
+                                                {n.phoneNumber}
+                                            </p>
+                                            <p className="truncate text-xs text-muted-foreground">
+                                                {[n.locality, n.region, n.isoCountry]
+                                                    .filter(Boolean)
+                                                    .join(" · ")}
+                                            </p>
+                                        </div>
                                     </div>
                                     <Button
                                         size="sm"
@@ -235,7 +244,7 @@ export function BuyNumberDrawer() {
                                         className="w-full sm:w-auto"
                                     >
                                         {buyingNumber === n.phoneNumber ? (
-                                            <Loader2 className="animate-spin" />
+                                            <><Loader2 className="animate-spin" /> Buying…</>
                                         ) : (
                                             "Buy"
                                         )}
