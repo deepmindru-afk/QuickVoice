@@ -44,20 +44,22 @@ export function LoginForm() {
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setError(null);
     setLoading(true);
-    const { error } = await authClient.signIn.email({
+    await authClient.signIn.email({
       email: data.email,
       password: data.password,
       rememberMe: data.remember,
-      callbackURL: "/dashboard",
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Login successful");
+          router.push("/dashboard");
+        },
+        onError: (ctx) => {
+          const msg = ctx.error.message || "Something went wrong";
+          toast.error(msg);
+          setError(msg);
+        },
+      },
     });
-    if (error) {
-      toast.error(error.message || "Something went wrong");
-      setError(error.message || "Something went wrong");
-    } else {
-      toast.success("Login successful");
-      router.push("/dashboard");
-      router.refresh();
-    }
     setLoading(false);
   };
 

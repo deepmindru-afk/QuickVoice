@@ -11,6 +11,7 @@ import { sendEmail } from "./mailer.js";
 import { ac, roles } from "./permissions.js";
 import { plans } from "../../data/plans.js";
 import {
+  isSecureServerUrl,
   serverBaseUrl,
   trustedOrigins,
 } from "../config/origins.js";
@@ -20,6 +21,13 @@ export const auth = betterAuth({
   baseURL: serverBaseUrl,
   basePath: `/api/${process.env.API_VERSION! || "v1"}/auth`,
   trustedOrigins,
+  advanced: {
+    useSecureCookies: isSecureServerUrl,
+    crossSubDomainCookies: {
+      enabled: !!process.env.COOKIE_DOMAIN,
+      domain: process.env.COOKIE_DOMAIN,
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
