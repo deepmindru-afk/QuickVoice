@@ -183,7 +183,9 @@ async def process_documents(payload: dict) -> list[dict]:
     Process each document in the payload. Returns a list of
     {kbId, status} dicts — 'ok' on success, 'error' on failure.
     """
-    agent_id: str = payload["agentId"]
+    agent_id: str = payload.get("agentId") or ""
+    if not agent_id:
+        raise ValueError("agentId is required — KB sources must be assigned to an agent before processing")
     documents: list[dict] = payload["documents"]
     results: list[dict] = []
 

@@ -1,9 +1,13 @@
+import { BadRequestError } from "../../common/errors/badRequest.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
 import * as kbRepository from "./kb.repository.js";
 import { kbQueue } from "../../queues/kb.queue.js";
 import type { CreateKbArgs, ListKbArgs } from "./kb.schema.js";
 
 export const createKnowledgeSources = async (args: CreateKbArgs) => {
+  if (!args.agentId) {
+    throw new BadRequestError("An agent must be selected — KB sources require an agent for vector storage");
+  }
   const { rows, docs } = await kbRepository.createKnowledgeSources(args);
 
   await kbQueue.add("process", {

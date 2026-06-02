@@ -29,7 +29,7 @@ import { kbApi } from "@/src/lib/api/resources/kb";
 import { authClient } from "@/src/lib/auth-client";
 import type { KbSourceType } from "@/src/lib/api/types";
 
-const UNASSIGNED = "__none__";
+const UNSELECTED = "";
 
 const ACCEPTED_TYPES: Record<string, KbSourceType> = {
   "application/pdf": "PDF",
@@ -63,14 +63,14 @@ export function UploadDialog({ defaultAgentId }: { defaultAgentId?: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Shared
-  const [agentId, setAgentId] = useState(defaultAgentId ?? UNASSIGNED);
+  const [agentId, setAgentId] = useState(defaultAgentId ?? UNSELECTED);
 
   const { data: agents } = useAgents();
   const create = useCreateKb();
   const { data: session } = authClient.useSession();
 
   function reset() {
-    setUrlName(""); setUrl(""); setFile(null); setFileName(""); setAgentId(defaultAgentId ?? UNASSIGNED);
+    setUrlName(""); setUrl(""); setFile(null); setFileName(""); setAgentId(defaultAgentId ?? UNSELECTED);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -81,14 +81,15 @@ export function UploadDialog({ defaultAgentId }: { defaultAgentId?: string }) {
     }
     const org = session.session.activeOrganizationId;
     const user = session.user.id;
-    const resolvedAgent = agentId === UNASSIGNED ? null : agentId;
+
+    if (!agentId) { toast.error("Please select an agent"); return; }
 
     setBusy(true);
     try {
       if (tab === "url") {
         if (!urlName.trim() || !url.trim()) { toast.error("Name and URL are required"); return; }
         await create.mutateAsync({
-          organizationId: org, userId: user, agentId: resolvedAgent,
+          organizationId: org, userId: user, agentId: agentId,
           documents: [{ name: urlName.trim(), sourceType: "URL", url: url.trim() }],
         });
       } else {
@@ -105,7 +106,7 @@ export function UploadDialog({ defaultAgentId }: { defaultAgentId?: string }) {
         if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status}`);
         // 3. Create KB record (triggers BullMQ processing)
         await create.mutateAsync({
-          organizationId: org, userId: user, agentId: resolvedAgent,
+          organizationId: org, userId: user, agentId: agentId,
           documents: [{ name: fileName.trim(), sourceType, s3Key, originalFileName: file.name }],
         });
       }
@@ -195,16 +196,23 @@ export function UploadDialog({ defaultAgentId }: { defaultAgentId?: string }) {
 
           {/* agent selector */}
           <div className="space-y-1.5">
-            <Label>Attach to agent (optional)</Label>
-            <Select value={agentId} onValueChange={setAgentId} disabled={busy}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNASSIGNED}>Leave unassigned</SelectItem>
-                {(agents ?? []).map((a) => (
-                  <SelectItem key={a.agentId} value={a.agentId}>{a.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Agent <span className="text-destructive">*</span></Label>
+            {(agents ?? []).length === 0 ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+                No agents found. Create an agent first before adding knowledge sources.
+              </p>
+            ) : (
+              <Select value={agentId} onValueChange={setAgentId} disabled={busy}>
+                <SelectTrigger className={!agentId ? "border-destructive/50" : ""}>
+                  <SelectValue placeholder="Select an agent…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(agents ?? []).map((a) => (
+                    <SelectItem key={a.agentId} value={a.agentId}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
