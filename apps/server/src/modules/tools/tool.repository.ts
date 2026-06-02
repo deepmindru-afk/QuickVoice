@@ -1,5 +1,24 @@
 import prisma from "../../config/prisma.js";
+import { Prisma } from "../../../prisma/generated/prisma/client.js";
 import type { CreateToolArgs, UpdateToolInput } from "./tool.schema.js";
+
+const normalizeCreateToolData = (data: CreateToolArgs): Prisma.ToolUncheckedCreateInput => ({
+  ...data,
+  api_headers: data.api_headers === null ? Prisma.JsonNull : data.api_headers,
+  api_body: data.api_body === null ? Prisma.JsonNull : data.api_body,
+  api_query_params: data.api_query_params === null ? Prisma.JsonNull : data.api_query_params,
+  api_path_params: data.api_path_params === null ? Prisma.JsonNull : data.api_path_params,
+  dynamic_variables: data.dynamic_variables === null ? Prisma.JsonNull : data.dynamic_variables,
+});
+
+const normalizeUpdateToolData = (data: UpdateToolInput): Prisma.ToolUncheckedUpdateManyInput => ({
+  ...data,
+  api_headers: data.api_headers === null ? Prisma.JsonNull : data.api_headers,
+  api_body: data.api_body === null ? Prisma.JsonNull : data.api_body,
+  api_query_params: data.api_query_params === null ? Prisma.JsonNull : data.api_query_params,
+  api_path_params: data.api_path_params === null ? Prisma.JsonNull : data.api_path_params,
+  dynamic_variables: data.dynamic_variables === null ? Prisma.JsonNull : data.dynamic_variables,
+});
 
 export const listTools = (organizationId: string) =>
   prisma.tool.findMany({
@@ -12,7 +31,7 @@ export const findTool = (organizationId: string, toolId: string) =>
   prisma.tool.findFirst({ where: { toolId, organizationId } });
 
 export const createTool = (data: CreateToolArgs) =>
-  prisma.tool.create({ data });
+  prisma.tool.create({ data: normalizeCreateToolData(data) });
 
 export const updateTool = async (
   organizationId: string,
@@ -21,7 +40,7 @@ export const updateTool = async (
 ) => {
   const result = await prisma.tool.updateMany({
     where: { toolId, organizationId },
-    data,
+    data: normalizeUpdateToolData(data),
   });
   if (result.count === 0) return null;
   return prisma.tool.findUnique({ where: { toolId } });
