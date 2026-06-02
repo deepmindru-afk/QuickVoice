@@ -154,7 +154,7 @@ export function NewAgentDialog() {
                                                 }
                                             }}
                                             className={cn(
-                                                "cursor-pointer border bg-card p-3 text-left transition-colors hover:border-primary/60 hover:bg-accent/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none",
+                                                "cursor-pointer rounded-lg border bg-card p-3 text-left transition-colors hover:border-primary/60 hover:bg-accent/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40 focus-visible:outline-none",
                                                 isSelected &&
                                                 "border-primary bg-accent/60 shadow-[0_0_0_1px_rgba(var(--primary-rgb),0.18)]"
                                             )}
@@ -162,7 +162,7 @@ export function NewAgentDialog() {
                                             <div className="mb-2 flex items-center gap-2">
                                                 <span
                                                     className={cn(
-                                                        "flex size-8 items-center justify-center border text-muted-foreground",
+                                                        "flex size-8 items-center justify-center rounded-lg border text-muted-foreground",
                                                         isSelected &&
                                                         "border-primary bg-primary text-primary-foreground"
                                                     )}
@@ -185,7 +185,7 @@ export function NewAgentDialog() {
                             control={form.control}
                             name="isActive"
                             render={({ field }) => (
-                                <FormItem className="flex items-center justify-between border p-4">
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4">
                                     <div className="space-y-0.5">
                                         <Label>{field.value ? "Active" : "Paused"}</Label>
                                         <p className="text-xs text-muted-foreground">

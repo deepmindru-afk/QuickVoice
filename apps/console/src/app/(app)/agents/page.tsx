@@ -3,13 +3,12 @@
 import { Bot } from "lucide-react";
 import { PageHeader } from "@/src/components/common/PageHeader";
 import { EmptyState } from "@/src/components/common/EmptyState";
-import { AgentCard } from "@/src/components/agents/AgentCard";
+import { AgentsTable } from "@/src/components/agents/AgentsTable";
 import { NewAgentDialog } from "@/src/components/agents/NewAgentDialog";
-import { Skeleton } from "@/src/components/ui/skeleton";
 import { useAgents } from "@/src/hooks/queries/agents";
 
 export default function AgentsPage() {
-    const { data: agents, isLoading } = useAgents();
+    const { data: agents = [], isLoading } = useAgents();
 
     return (
         <div className="flex flex-col gap-6">
@@ -19,13 +18,7 @@ export default function AgentsPage() {
                 actions={<NewAgentDialog />}
             />
 
-            {isLoading ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[...Array(6)].map((_, i) => (
-                        <Skeleton key={i} className="h-44 " />
-                    ))}
-                </div>
-            ) : !agents?.length ? (
+            {!isLoading && agents.length === 0 ? (
                 <EmptyState
                     icon={Bot}
                     title="No agents yet"
@@ -33,11 +26,7 @@ export default function AgentsPage() {
                     action={<NewAgentDialog />}
                 />
             ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {agents.map((a) => (
-                        <AgentCard key={a.agentId} agent={a} />
-                    ))}
-                </div>
+                <AgentsTable agents={agents} isLoading={isLoading} />
             )}
         </div>
     );
