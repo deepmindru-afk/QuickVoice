@@ -71,7 +71,7 @@ export function AgentTabs({ agentId }: { agentId: string }) {
         <WebhooksTab agentId={agentId} />
       </TabsContent>
       <TabsContent value="tools" className="mt-6 min-w-0">
-        <ToolsTab />
+        <ToolsTab agentId={agentId} />
       </TabsContent>
       <TabsContent value="knowledge" className="mt-6 min-w-0">
         <KnowledgeTab agentId={agentId} />

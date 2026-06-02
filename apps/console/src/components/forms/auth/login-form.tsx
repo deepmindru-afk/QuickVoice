@@ -44,23 +44,30 @@ export function LoginForm() {
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     setError(null);
     setLoading(true);
-    await authClient.signIn.email({
-      email: data.email,
-      password: data.password,
-      rememberMe: data.remember,
-      fetchOptions: {
-        onSuccess: () => {
-          toast.success("Login successful");
-          router.push("/dashboard");
+    try {
+      await authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+        rememberMe: data.remember,
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Login successful");
+            router.push("/dashboard");
+          },
+          onError: (ctx) => {
+            const msg = ctx.error.message || "Something went wrong";
+            toast.error(msg);
+            setError(msg);
+          },
         },
-        onError: (ctx) => {
-          const msg = ctx.error.message || "Something went wrong";
-          toast.error(msg);
-          setError(msg);
-        },
-      },
-    });
-    setLoading(false);
+      });
+    } catch {
+      const msg = "Unable to reach the server. Please try again.";
+      toast.error(msg);
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

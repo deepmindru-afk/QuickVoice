@@ -148,6 +148,40 @@ export interface KnowledgeSource {
   uploadedAt: string;
 }
 
+export interface KVPair {
+  key: string;
+  value: string;
+}
+
+export interface ToolParam {
+  name: string;
+  type: "String" | "Number" | "Boolean";
+  valueType: "LLM Prompt" | "Static Value" | "Dynamic Variable";
+  description: string;
+  allowedValues: string[];
+  required: boolean;
+}
+
+export interface Tool {
+  toolId: string;
+  organizationId: string;
+  name: string;
+  description: string;
+  api_url: string;
+  api_method: string;
+  api_headers: KVPair[] | null;
+  api_body: ToolParam[] | null;
+  api_query_params: ToolParam[] | null;
+  api_path_params: ToolParam[] | null;
+  response_timeout_secs: number | null;
+  dynamic_variables: KVPair[] | null;
+  disable_interruptions: boolean;
+  force_pre_tool_speech: boolean;
+  createdAt: string;
+  updatedAt: string;
+  agent: { agentId: string; name: string }[];
+}
+
 export interface CursorPage<T> {
   data: T[];
   nextCursor: string | null;

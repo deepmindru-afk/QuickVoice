@@ -44,4 +44,10 @@ export const queryKeys = {
     subscription: () => [...queryKeys.billing.all, "subscription"] as const,
     usage: () => [...queryKeys.billing.all, "usage"] as const,
   },
+  tools: {
+    all: ["tools"] as const,
+    list: () => [...queryKeys.tools.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.tools.all, "detail", id] as const,
+    agentTools: (agentId: string) => [...queryKeys.tools.all, "agent", agentId] as const,
+  },
 };

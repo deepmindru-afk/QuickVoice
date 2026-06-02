@@ -8,6 +8,7 @@ import {
   PhoneCall,
   BookOpen,
   Settings2,
+  Wrench,
 } from "lucide-react";
 
 import {
@@ -28,6 +29,7 @@ const primaryNav: NavItem[] = [
   { title: "Phone numbers", href: "/numbers", icon: Phone },
   { title: "Call logs", href: "/calls", icon: PhoneCall },
   { title: "Knowledge base", href: "/kb", icon: BookOpen },
+  { title: "Tools", href: "/tools", icon: Wrench },
 ];
 
 const settingsNav: NavItem[] = [
