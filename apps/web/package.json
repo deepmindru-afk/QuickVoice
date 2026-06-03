@@ -1,7 +1,9 @@
 {
   "name": "web",
   "version": "0.1.0",
+  "description": "QuickVoice marketing site, legal pages, industry pages, use cases, and blog.",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -1,6 +1,13 @@
 {
   "name": "QuickVoice",
+  "description": "Source-available AI voice agent platform for automating phone calls, scheduling, support, reminders, and sales workflows.",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://quickvoice.co",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allgpt-co/QuickVoice.git"
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",

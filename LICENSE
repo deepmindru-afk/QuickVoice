@@ -1,0 +1,98 @@
+QuickVoice Source Available License
+Version 1.0
+
+Copyright (c) QuickVoice. All rights reserved.
+
+This license governs use of the QuickVoice software source code and related
+materials in this repository (the "Software").
+
+1. Definitions
+
+"You" means the individual or legal entity exercising rights under this
+license.
+
+"Organization" means any company, partnership, nonprofit, government agency,
+institution, or other legal entity.
+
+"Annual Gross Revenue" means an Organization's total gross revenue during its
+most recently completed fiscal year, measured in United States dollars.
+
+"Enterprise License" means a separate written commercial license or agreement
+issued by QuickVoice.
+
+2. Permitted use for individuals and smaller organizations
+
+If You are an individual, or if You are an Organization with Annual Gross
+Revenue of US $1,000,000 or less, QuickVoice grants You a non-exclusive,
+worldwide, royalty-free, revocable license to:
+
+- read, copy, and modify the Software;
+- run and self-host the Software;
+- use the Software for internal, personal, evaluation, development, testing,
+  and production purposes; and
+- create derivative works based on the Software.
+
+3. Enterprise license requirement
+
+If You are an Organization with Annual Gross Revenue over US $1,000,000, You
+must obtain an Enterprise License from QuickVoice before using, copying,
+modifying, running, hosting, distributing, or creating derivative works based on
+the Software.
+
+Enterprise licenses are available from QuickVoice at:
+
+https://quickvoice.co
+
+4. Conditions
+
+You must keep this license notice and any copyright notices included with the
+Software in all copies or substantial portions of the Software.
+
+You may not remove, obscure, or alter QuickVoice trademarks, service marks, or
+branding except as necessary for truthful identification or as permitted by a
+separate written agreement with QuickVoice.
+
+You may not sublicense the Software or use this license to grant rights to any
+third party that would be required to obtain an Enterprise License.
+
+You may not use the Software in violation of applicable law.
+
+5. Third-party software
+
+Third-party dependencies, libraries, services, and other materials included in
+or used by the Software are licensed under their own terms. This license does
+not change or replace those third-party license terms.
+
+6. Ownership
+
+QuickVoice and its licensors retain all right, title, and interest in and to
+the Software, including all intellectual property rights not expressly granted
+by this license.
+
+7. Termination
+
+This license terminates automatically if You violate its terms. Upon
+termination, You must stop using the Software and destroy all copies in Your
+possession or control, unless You have obtained an Enterprise License that
+allows continued use.
+
+8. Disclaimer of warranty
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY
+KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING WITHOUT
+LIMITATION WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+TITLE, AND NON-INFRINGEMENT.
+
+9. Limitation of liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, QUICKVOICE WILL NOT BE LIABLE FOR ANY
+INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES,
+OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, GOODWILL, OR BUSINESS OPPORTUNITY,
+ARISING OUT OF OR RELATED TO THE SOFTWARE OR THIS LICENSE, EVEN IF QUICKVOICE
+HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+10. No legal advice
+
+This license text is provided for the Software and is not legal advice. You
+should consult qualified legal counsel before relying on this license for
+commercial distribution or enforcement.

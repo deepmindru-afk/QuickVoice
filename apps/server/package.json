@@ -1,8 +1,8 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
+  "description": "QuickVoice API server for voice agents, calls, organizations, billing, and runtime configuration.",
+  "license": "SEE LICENSE IN LICENSE",
   "author": "",
   "private": true,
   "type": "module",

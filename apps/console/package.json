@@ -1,7 +1,9 @@
 {
   "name": "console",
   "version": "0.1.0",
+  "description": "QuickVoice customer console for managing agents, calls, numbers, knowledge bases, billing, and settings.",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

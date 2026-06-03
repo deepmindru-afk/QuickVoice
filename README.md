@@ -1,5 +1,28 @@
 # QuickVoice
 
+QuickVoice is a source-available AI voice agent platform for building, deploying, and operating automated phone workflows. It includes a marketing site, customer console, API server, AI worker, and local development tooling for teams building voice automation across scheduling, support, reminders, collections, sales follow-up, and operations.
+
+Website: [quickvoice.co](https://quickvoice.co)
+
+## What is included
+
+- `apps/web` - Next.js marketing site for QuickVoice, industry pages, use cases, blog content, pricing, and legal pages.
+- `apps/console` - Next.js product console for managing organizations, agents, phone numbers, calls, knowledge bases, API keys, billing, and settings.
+- `apps/server` - Express API server with auth, organization permissions, agent configuration, phone number management, call logs, outbound calls, runtime AI config, Stripe, Twilio, Telnyx, LiveKit, S3, and Inngest integrations.
+- `apps/ai` - Python AI service and LiveKit worker handlers for call runtime configuration, call logging, and voice-agent execution.
+- `packages/eslint-config` and `packages/typescript-config` - Shared monorepo linting and TypeScript configuration.
+- `scripts`, `Taskfile.yml`, and `docker-compose.dev.yml` - Local development orchestration for Node services, Python services, Prisma, and Postgres.
+
+## License
+
+QuickVoice is source-available under the [QuickVoice Source Available License](./LICENSE).
+
+You may use, modify, and self-host this repository if you are an individual or an organization with annual gross revenue of US $1,000,000 or less. Organizations with annual gross revenue over US $1,000,000 must buy an enterprise license from QuickVoice before using the software.
+
+Enterprise licensing: [quickvoice.co](https://quickvoice.co)
+
+This is not an OSI-approved license because it includes a revenue-based commercial restriction. Third-party dependencies remain under their own licenses.
+
 ## Local development
 
 This repo is wired for local SSH development through Go Task. The main command is:
@@ -50,164 +73,25 @@ task ai:api
 task ai:worker
 ```
 
----
+## Development notes
 
-# Turborepo starter
+- Package manager: `pnpm@9.0.0`
+- Node.js: `>=18`
+- Monorepo runner: Turborepo
+- Database: Postgres with Prisma migrations in `apps/server/prisma`
+- Auth: Better Auth
+- Telephony and voice runtime integrations: LiveKit, Twilio, Telnyx
+- Payments: Stripe
 
-This Turborepo starter is maintained by the Turborepo core team.
-
-## Using this example
-
-Run the following command:
-
-```sh
-npx create-turbo@latest
-```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Common root commands:
 
 ```sh
-cd my-turborepo
-turbo build
+pnpm build
+pnpm lint
+pnpm check-types
+pnpm test:dev-orchestration
 ```
 
-Without global `turbo`, use your package manager:
+## Enterprise licensing
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+If your organization has annual gross revenue over US $1,000,000, you need an enterprise license before using QuickVoice. Visit [quickvoice.co](https://quickvoice.co) to buy or request enterprise terms.
