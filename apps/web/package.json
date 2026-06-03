@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "QuickVoice marketing site, legal pages, industry pages, use cases, and blog.",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

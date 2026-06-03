@@ -1,8 +1,8 @@
 {
   "name": "QuickVoice",
-  "description": "Source-available AI voice agent platform for automating phone calls, scheduling, support, reminders, and sales workflows.",
+  "description": "The open-source alternative to Retell for AI phone agents.",
   "private": true,
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "AGPL-3.0-only",
   "homepage": "https://quickvoice.co",
   "repository": {
     "type": "git",
