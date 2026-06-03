@@ -2,7 +2,7 @@ import { apiClient } from "@/src/lib/api/client";
 import type {
   AgentMcpConnection,
   ApiEnvelope,
-  McpCatalogItem,
+  McpCatalogPage,
   McpConnection,
 } from "@/src/lib/api/types";
 
@@ -12,14 +12,22 @@ export interface ConnectMcpInput {
   displayName?: string;
 }
 
+export interface McpCatalogParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  verified?: boolean;
+  sort?: "popular" | "name";
+}
+
 const normalizeConnection = (connection: McpConnection): McpConnection => ({
   ...connection,
   tools: Array.isArray(connection.tools) ? connection.tools : [],
 });
 
 export const mcpApi = {
-  catalog: async (): Promise<McpCatalogItem[]> => {
-    const res = await apiClient.get<ApiEnvelope<McpCatalogItem[]>>("/mcp/catalog");
+  catalog: async (params: McpCatalogParams = {}): Promise<McpCatalogPage> => {
+    const res = await apiClient.get<ApiEnvelope<McpCatalogPage>>("/mcp/catalog", { params });
     return res.data.data;
   },
   connections: async (): Promise<McpConnection[]> => {

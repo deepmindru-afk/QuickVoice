@@ -3,6 +3,16 @@ import prisma from "../../config/prisma.js";
 
 type JsonValue = Prisma.InputJsonValue | typeof Prisma.JsonNull;
 
+export type CatalogSort = "popular" | "name";
+
+export interface CatalogListParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+  verified?: boolean;
+  sort: CatalogSort;
+}
+
 const jsonOrNull = (value: unknown): JsonValue =>
   value === undefined || value === null
     ? Prisma.JsonNull
@@ -16,6 +26,51 @@ export const listConnections = (organizationId: string) =>
       agents: { include: { agent: { select: { agentId: true, name: true } } } },
     },
     orderBy: { createdAt: "desc" },
+  });
+
+export const listCatalogItems = async (params: CatalogListParams) => {
+  const search = params.search?.trim();
+  const baseWhere: Prisma.McpServerCatalogItemWhereInput = {
+    organizationId: null,
+    source: "SMITHERY",
+  };
+  const where: Prisma.McpServerCatalogItemWhereInput = {
+    ...baseWhere,
+    ...(params.verified ? { verified: true } : {}),
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+            { mcpUrl: { contains: search, mode: "insensitive" } },
+            { smitheryServerKey: { contains: search, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+  const orderBy: Prisma.McpServerCatalogItemOrderByWithRelationInput[] =
+    params.sort === "name"
+      ? [{ name: "asc" }]
+      : [{ verified: "desc" }, { toolCount: "desc" }, { name: "asc" }];
+
+  const [items, totalCount, catalogCount] = await prisma.$transaction([
+    prisma.mcpServerCatalogItem.findMany({
+      where,
+      orderBy,
+      skip: (params.page - 1) * params.pageSize,
+      take: params.pageSize,
+    }),
+    prisma.mcpServerCatalogItem.count({ where }),
+    prisma.mcpServerCatalogItem.count({ where: baseWhere }),
+  ]);
+
+  return { items, totalCount, catalogCount };
+};
+
+export const findCatalogItemBySlug = (slug: string) =>
+  prisma.mcpServerCatalogItem.findFirst({
+    where: { organizationId: null, source: "SMITHERY", slug },
   });
 
 export const findConnection = (organizationId: string, mcpConnectionId: string) =>

@@ -6,6 +6,29 @@ import * as repository from "./mcp.repository.js";
 import type { ConnectMcpInput, ExecuteMcpToolInput } from "./mcp.schema.js";
 
 type McpStatus = "PENDING" | "CONNECTED" | "AUTH_REQUIRED" | "INPUT_REQUIRED" | "ERROR" | "DISCONNECTED";
+type CatalogSort = "popular" | "name";
+type CatalogListParams = {
+  page: number;
+  pageSize: number;
+  search?: string;
+  verified?: boolean;
+  sort: CatalogSort;
+};
+type CatalogItemLike = {
+  mcpServerId?: string | null;
+  slug: string;
+  name: string;
+  description: string;
+  provider: string;
+  source: "SMITHERY" | "CUSTOM";
+  mcpUrl: string;
+  smitheryServerKey?: string | null;
+  authType: string;
+  categories: string[];
+  verified: boolean;
+  toolCount: number;
+  metadata?: Record<string, unknown> | null;
+};
 
 const SMITHERY_NAMESPACE = process.env.SMITHERY_NAMESPACE || "quickvoice";
 const SMITHERY_RUN_BASE_URL = process.env.SMITHERY_RUN_BASE_URL || "https://smithery.run";
@@ -67,6 +90,55 @@ const isGoogleDriveMcp = (mcpUrl: string) =>
 
 const metadataObject = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const normalizeCatalogItem = (item: {
+  mcpServerId?: string | null;
+  slug: string;
+  name: string;
+  description: string;
+  provider: string;
+  source: "SMITHERY" | "CUSTOM";
+  mcpUrl: string;
+  smitheryServerKey?: string | null;
+  authType: string;
+  categories: unknown;
+  verified: boolean;
+  toolCount: number;
+  metadata?: unknown;
+}): CatalogItemLike => {
+  const metadata = metadataObject(item.metadata);
+  return {
+    mcpServerId: item.mcpServerId ?? null,
+    slug: item.slug,
+    name: item.name,
+    description: item.description,
+    provider: item.provider,
+    source: item.source,
+    mcpUrl: item.mcpUrl,
+    smitheryServerKey: item.smitheryServerKey,
+    authType: item.authType,
+    categories: stringArray(item.categories),
+    verified: item.verified,
+    toolCount: item.toolCount,
+    metadata,
+  };
+};
+
+const catalogResponseItem = (item: CatalogItemLike) => {
+  const metadata = metadataObject(item.metadata);
+  return {
+    ...item,
+    iconUrl: typeof metadata.iconUrl === "string" ? metadata.iconUrl : null,
+    homepage: typeof metadata.homepage === "string" ? metadata.homepage : null,
+    qualifiedName: typeof metadata.qualifiedName === "string" ? metadata.qualifiedName : item.smitheryServerKey ?? item.slug,
+    namespace: typeof metadata.namespace === "string" ? metadata.namespace : null,
+    useCount: typeof metadata.useCount === "number" ? metadata.useCount : item.toolCount,
+    metadata,
+  };
+};
 
 const isInsufficientGoogleScope = (value: unknown) => {
   const text = JSON.stringify(value ?? "").toLowerCase();
@@ -181,18 +253,68 @@ const syncTools = async (namespace: string, connectionId: string) => {
   }));
 };
 
-export const listCatalog = async (organizationId: string) => {
-  const connections = await repository.listConnections(organizationId);
-  const connectionByUrl = new Map(connections.map((connection) => [connection.mcpUrl, connection]));
+const filterCuratedCatalog = (params: CatalogListParams) => {
+  const term = params.search?.trim().toLowerCase();
+  return curatedMcpCatalog
+    .filter((item) => {
+      if (params.verified && !item.verified) return false;
+      if (!term) return true;
+      return [
+        item.name,
+        item.description,
+        item.slug,
+        item.mcpUrl,
+        item.smitheryServerKey,
+        ...item.categories,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    })
+    .sort((a, b) => {
+      if (params.sort === "name") return a.name.localeCompare(b.name);
+      return (b.toolCount ?? 0) - (a.toolCount ?? 0) || a.name.localeCompare(b.name);
+    });
+};
 
-  return curatedMcpCatalog.map((item) => ({
-    ...item,
-    mcpConnectionId: connectionByUrl.get(item.mcpUrl)?.mcpConnectionId ?? null,
-    connectionStatus: connectionByUrl.get(item.mcpUrl)?.status ?? null,
-    setupUrl: connectionByUrl.get(item.mcpUrl)?.setupUrl ?? null,
-    metadata: connectionByUrl.get(item.mcpUrl)?.metadata ?? null,
-    connected: connectionByUrl.get(item.mcpUrl)?.status === "CONNECTED",
-  }));
+export const listCatalog = async (organizationId: string, params: CatalogListParams) => {
+  const [connections, catalogResult] = await Promise.all([
+    repository.listConnections(organizationId),
+    repository.listCatalogItems(params),
+  ]);
+  const connectionByUrl = new Map(connections.map((connection) => [connection.mcpUrl, connection]));
+  const useCuratedFallback = catalogResult.catalogCount === 0;
+  const fallbackCatalog = useCuratedFallback ? filterCuratedCatalog(params) : [];
+  const baseCatalog = useCuratedFallback
+    ? fallbackCatalog
+        .slice((params.page - 1) * params.pageSize, params.page * params.pageSize)
+        .map((item) => normalizeCatalogItem({ ...item, metadata: null }))
+    : catalogResult.items.map(normalizeCatalogItem);
+  const totalCount = useCuratedFallback ? fallbackCatalog.length : catalogResult.totalCount;
+  const totalPages = Math.max(1, Math.ceil(totalCount / params.pageSize));
+
+  const items = baseCatalog.map((item) => {
+    const connection = connectionByUrl.get(item.mcpUrl);
+    return {
+      ...catalogResponseItem(item),
+      mcpConnectionId: connection?.mcpConnectionId ?? null,
+      connectionStatus: connection?.status ?? null,
+      setupUrl: connection?.setupUrl ?? null,
+      metadata: { ...metadataObject(item.metadata), ...metadataObject(connection?.metadata) },
+      connected: connection?.status === "CONNECTED",
+    };
+  });
+
+  return {
+    items,
+    pagination: {
+      page: params.page,
+      pageSize: params.pageSize,
+      totalCount,
+      totalPages,
+    },
+  };
 };
 
 export const listConnections = (organizationId: string) =>
@@ -206,7 +328,14 @@ export const connect = async (
   userId: string | null,
   input: ConnectMcpInput
 ) => {
-  const catalogItem = input.catalogSlug ? findCuratedMcp(input.catalogSlug) : null;
+  const dbCatalogItem = input.catalogSlug
+    ? await repository.findCatalogItemBySlug(input.catalogSlug)
+    : null;
+  const catalogItem = dbCatalogItem
+    ? normalizeCatalogItem(dbCatalogItem)
+    : input.catalogSlug
+      ? findCuratedMcp(input.catalogSlug)
+      : null;
   if (input.catalogSlug && !catalogItem) {
     throw new NotFoundError("MCP catalog item not found");
   }
@@ -216,7 +345,8 @@ export const connect = async (
   assertSafeRemoteUrl(mcpUrl);
 
   const displayName = input.displayName || catalogItem?.name || new URL(mcpUrl).hostname;
-  const connectionKey = catalogItem?.smitheryServerKey ?? `custom-${slugify(displayName)}-${randomUUID().slice(0, 8)}`;
+  const rawConnectionKey = catalogItem?.smitheryServerKey ?? `custom-${slugify(displayName)}-${randomUUID().slice(0, 8)}`;
+  const connectionKey = slugify(rawConnectionKey);
   const smitheryConnectionId = `${organizationId.slice(0, 8)}-${connectionKey}`.slice(0, 96);
   const customSlug = slugify(displayName);
   const persistedCatalogItem = catalogItem
@@ -279,7 +409,7 @@ export const connect = async (
   return repository.upsertConnection({
     organizationId,
     userId,
-    catalogItemId: persistedCatalogItem?.mcpServerId ?? null,
+    catalogItemId: dbCatalogItem?.mcpServerId ?? persistedCatalogItem?.mcpServerId ?? null,
     displayName,
     mcpUrl,
     smitheryNamespace: SMITHERY_NAMESPACE,

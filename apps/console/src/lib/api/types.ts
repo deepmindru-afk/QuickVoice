@@ -206,7 +206,24 @@ export interface McpCatalogItem {
   mcpConnectionId?: string | null;
   connectionStatus?: McpConnectionStatus | null;
   setupUrl?: string | null;
+  iconUrl?: string | null;
+  homepage?: string | null;
+  qualifiedName?: string | null;
+  namespace?: string | null;
+  useCount?: number | null;
   metadata?: Record<string, unknown> | null;
+}
+
+export interface PagePagination {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface McpCatalogPage {
+  items: McpCatalogItem[];
+  pagination: PagePagination;
 }
 
 export interface McpToolDescriptor {

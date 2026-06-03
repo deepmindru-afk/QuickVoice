@@ -10,8 +10,25 @@ const getStringParam = (value: string | string[] | undefined, name: string) => {
   return value;
 };
 
+const getQueryString = (value: unknown) =>
+  typeof value === "string" ? value : undefined;
+
+const getPositiveInt = (value: unknown, fallback: number, max?: number) => {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return max ? Math.min(parsed, max) : parsed;
+};
+
 export const listCatalog = authorized(async (req, res) => {
-  const catalog = await mcpService.listCatalog(req.auth.activeOrganizationId);
+  const sort = getQueryString(req.query.sort) === "name" ? "name" : "popular";
+  const verified = getQueryString(req.query.verified) === "true";
+  const catalog = await mcpService.listCatalog(req.auth.activeOrganizationId, {
+    page: getPositiveInt(req.query.page, 1),
+    pageSize: getPositiveInt(req.query.pageSize, 24, 100),
+    search: getQueryString(req.query.search)?.trim() || undefined,
+    verified,
+    sort,
+  });
   res.status(StatusCodes.OK).json({ success: true, message: "MCP catalog fetched successfully", data: catalog });
 });
 

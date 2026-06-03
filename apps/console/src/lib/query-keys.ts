@@ -52,7 +52,8 @@ export const queryKeys = {
   },
   mcp: {
     all: ["mcp"] as const,
-    catalog: () => [...queryKeys.mcp.all, "catalog"] as const,
+    catalog: (params?: unknown) =>
+      [...queryKeys.mcp.all, "catalog", params ?? {}] as const,
     connections: () => [...queryKeys.mcp.all, "connections"] as const,
     agentConnections: (agentId: string) => [...queryKeys.mcp.all, "agent", agentId] as const,
   },

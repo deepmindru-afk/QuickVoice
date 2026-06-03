@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { mcpApi, type ConnectMcpInput } from "@/src/lib/api/resources/mcp";
+import { mcpApi, type ConnectMcpInput, type McpCatalogParams } from "@/src/lib/api/resources/mcp";
 import { queryKeys } from "@/src/lib/query-keys";
 
 const openSetupAndPoll = (
@@ -25,7 +25,7 @@ const openSetupAndPoll = (
     attempts += 1;
     try {
       const connection = await mcpApi.refresh(mcpConnectionId);
-      qc.invalidateQueries({ queryKey: queryKeys.mcp.catalog() });
+      qc.invalidateQueries({ queryKey: queryKeys.mcp.all });
       qc.invalidateQueries({ queryKey: queryKeys.mcp.connections() });
       if (connection.status === "CONNECTED") {
         window.clearInterval(intervalId);
@@ -46,10 +46,10 @@ const openSetupAndPoll = (
   window.addEventListener("focus", refresh);
 };
 
-export function useMcpCatalog() {
+export function useMcpCatalog(params: McpCatalogParams = {}) {
   return useQuery({
-    queryKey: queryKeys.mcp.catalog(),
-    queryFn: () => mcpApi.catalog(),
+    queryKey: queryKeys.mcp.catalog(params),
+    queryFn: () => mcpApi.catalog(params),
     retry: false,
   });
 }
@@ -74,7 +74,7 @@ export function useConnectMcp() {
   return useMutation({
     mutationFn: (input: ConnectMcpInput) => mcpApi.connect(input),
     onSuccess: (connection) => {
-      qc.invalidateQueries({ queryKey: queryKeys.mcp.catalog() });
+      qc.invalidateQueries({ queryKey: queryKeys.mcp.all });
       qc.invalidateQueries({ queryKey: queryKeys.mcp.connections() });
       if (connection.setupUrl) {
         toast.info("Setup is required. Click the Setup button to continue.");
