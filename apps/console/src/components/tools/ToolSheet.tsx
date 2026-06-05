@@ -64,7 +64,8 @@ const formSchema = z.object({
   force_pre_tool_speech: z.boolean(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormInput = z.input<typeof formSchema>;
+type FormValues = z.output<typeof formSchema>;
 
 const EMPTY_PARAM: ToolParam = {
   name: "",
@@ -75,7 +76,7 @@ const EMPTY_PARAM: ToolParam = {
   required: false,
 };
 
-const DEFAULT_VALUES: FormValues = {
+const DEFAULT_VALUES: FormInput = {
   name: "",
   description: "",
   api_url: "",
@@ -90,7 +91,7 @@ const DEFAULT_VALUES: FormValues = {
   force_pre_tool_speech: true,
 };
 
-function toFormValues(tool: Tool): FormValues {
+function toFormValues(tool: Tool): FormInput {
   return {
     name: tool.name,
     description: tool.description,
@@ -202,7 +203,7 @@ export function ToolSheet({ mode, tool, open, onOpenChange }: ToolSheetProps) {
     getValues,
     setValue,
     formState: { errors },
-  } = useForm<FormValues>({
+  } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: DEFAULT_VALUES,
   });

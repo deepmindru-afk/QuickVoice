@@ -30,6 +30,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "../server/src/lib/auth.ts", "../server/src/lib/mailer.ts", "../server/src/lib/permissions.ts"  ],
+  ],
   "exclude": ["node_modules", "../server/prisma/generated"]
 }

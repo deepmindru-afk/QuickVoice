@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, FileText, Link as LinkIcon } from "lucide-react";
+import {
+ ArrowRight,
+ BookOpen,
+ FileSpreadsheet,
+ FileText,
+ Link as LinkIcon,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { EmptyState } from "@/src/components/common/EmptyState";
@@ -17,6 +23,8 @@ const SOURCE_ICON: Record<KbSourceType, typeof FileText> = {
  TXT: FileText,
  DOCX: FileText,
  CSV: FileText,
+ XLSX: FileSpreadsheet,
+ XLS: FileSpreadsheet,
  URL: LinkIcon,
 };
 
