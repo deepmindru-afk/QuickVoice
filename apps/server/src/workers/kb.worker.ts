@@ -2,12 +2,12 @@ import { Worker } from "bullmq";
 import { redisConnection } from "../config/redis.js";
 import { generateDownloadUrl } from "../config/s3.js";
 import * as kbRepository from "../modules/kb/kb.repository.js";
-import type { KbJobData } from "../queues/kb.queue.js";
+import type { KbJobData, KbJobName } from "../queues/kb.queue.js";
 
 const AI_API_URL = process.env.AI_API_URL ?? "http://localhost:8000";
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY ?? "";
 
-export const kbWorker = new Worker<KbJobData>(
+export const kbWorker = new Worker<KbJobData, void, KbJobName>(
   "kb-ingest",
   async (job) => {
     const { kbIds, agentId, organizationId, documents } = job.data;

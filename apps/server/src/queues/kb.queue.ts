@@ -1,6 +1,8 @@
 import { Queue } from "bullmq";
 import { redisConnection } from "../config/redis.js";
 
+export type KbJobName = "process";
+
 export interface KbJobDocument {
   kbId: string;
   name: string;
@@ -17,7 +19,7 @@ export interface KbJobData {
   documents: KbJobDocument[];
 }
 
-export const kbQueue = new Queue<KbJobData>("kb-ingest", {
+export const kbQueue = new Queue<KbJobData, void, KbJobName>("kb-ingest", {
   connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
