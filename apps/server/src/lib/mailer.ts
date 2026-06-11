@@ -1,5 +1,3 @@
-import { SendMailClient } from "zeptomail";
-
 type AuthEmailType = "verifyEmail" | "resetPassword";
 
 interface EmailContent {
@@ -18,13 +16,45 @@ function requireEnv(name: string) {
 }
 
 function getZeptoMailToken() {
-  const token =  process.env.SMTP_PASSWORD;
+  const token = process.env.ZEPTOMAIL_TOKEN || process.env.SMTP_PASSWORD;
   if (!token) {
     throw new Error(
       "Missing required email environment variable: ZEPTOMAIL_TOKEN or SMTP_PASSWORD",
     );
   }
   return token;
+}
+
+function getZeptoMailEndpoint() {
+  const rawUrl = process.env.ZEPTOMAIL_URL || process.env.SMTP_HOST;
+  if (!rawUrl) {
+    throw new Error(
+      "Missing required email environment variable: ZEPTOMAIL_URL or SMTP_HOST",
+    );
+  }
+
+  const urlWithProtocol = /^https?:\/\//i.test(rawUrl)
+    ? rawUrl
+    : `https://${rawUrl}`;
+  const endpoint = new URL(urlWithProtocol);
+
+  if (endpoint.hostname.startsWith("smtp.zeptomail.")) {
+    endpoint.hostname = endpoint.hostname.replace(/^smtp\./, "api.");
+  }
+
+  const path = endpoint.pathname.replace(/\/+$/, "");
+  if (!path) {
+    endpoint.pathname = "/v1.1/email";
+  } else if (path === "/v1.1") {
+    endpoint.pathname = "/v1.1/email";
+  } else {
+    endpoint.pathname = path;
+  }
+
+  endpoint.search = "";
+  endpoint.hash = "";
+
+  return endpoint.toString();
 }
 
 function escapeHtml(value: string) {
@@ -95,13 +125,6 @@ function buildHtml(content: EmailContent, url: string, fullName: string) {
 </html>`;
 }
 
-function createClient() {
-  return new SendMailClient({
-    url: process.env.SMTP_HOST! ,
-    token: getZeptoMailToken(),
-  });
-}
-
 export async function sendEmail(
   type: AuthEmailType,
   email: string,
@@ -110,9 +133,9 @@ export async function sendEmail(
 ) {
   const content = contentFor(type);
   const fromEmail = requireEnv("FROM_EMAIL");
-  const fromName = "Console|Quickvoice" ;
+  const fromName = "Console|Quickvoice";
 
-  await createClient().sendMail({
+  const payload = {
     from: {
       address: fromEmail,
       name: fromName,
@@ -128,5 +151,26 @@ export async function sendEmail(
     subject: content.subject,
     textbody: buildText(content, url, fullName),
     htmlbody: buildHtml(content, url, fullName),
-  });
+  };
+
+  try {
+    const response = await fetch(getZeptoMailEndpoint(), {
+      method: "POST",
+      headers: {
+        Authorization: getZeptoMailToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.text();
+
+    if (!response.ok) {
+      throw new Error(
+        `ZeptoMail responded with ${response.status} ${response.statusText}: ${body}`,
+      );
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to send ${type} email via ZeptoMail: ${message}`);
+  }
 }
