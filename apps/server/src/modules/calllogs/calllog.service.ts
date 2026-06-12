@@ -1,10 +1,37 @@
 import { NotFoundError } from "../../common/errors/notFound.js";
+import { generateDownloadUrl } from "../../config/s3.js";
 import * as calllogRepository from "./calllog.repository.js";
 import type {
   IngestCallLogArgs,
   ListCallLogsArgs,
   ListTranscriptsArgs,
 } from "./calllog.schema.js";
+
+type RecordingSigner = (key: string) => Promise<string>;
+type CallWithRecording = { audioRecordingPath: string | null };
+
+const isHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+export const signCallRecordingUrl = async <T extends CallWithRecording>(
+  call: T,
+  signer: RecordingSigner = generateDownloadUrl
+): Promise<T> => {
+  if (!call.audioRecordingPath || isHttpUrl(call.audioRecordingPath)) {
+    return call;
+  }
+
+  return {
+    ...call,
+    audioRecordingPath: await signer(call.audioRecordingPath),
+  };
+};
 
 export const ingestCallLog = (args: IngestCallLogArgs) =>{
   return calllogRepository.saveCallLog(args);
@@ -17,7 +44,10 @@ export const listCallLogs = async (args: ListCallLogsArgs) => {
   const hasMore = rows.length > args.limit;
   const items = hasMore ? rows.slice(0, args.limit) : rows;
   const nextCursor = hasMore ? items[items.length - 1]!.callId : null;
-  return { items, nextCursor };
+  return {
+    items: await Promise.all(items.map((item) => signCallRecordingUrl(item))),
+    nextCursor,
+  };
 };
 
 export const getCallLog = async (organizationId: string, callId: string) => {
@@ -25,7 +55,7 @@ export const getCallLog = async (organizationId: string, callId: string) => {
   if (!row) {
     throw new NotFoundError("Call log not found");
   }
-  return row;
+  return signCallRecordingUrl(row);
 };
 
 export const getTranscripts = async (args: ListTranscriptsArgs) => {
