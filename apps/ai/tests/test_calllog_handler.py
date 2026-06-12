@@ -78,6 +78,24 @@ class CallLogHandlerTests(unittest.TestCase):
         self.assertEqual(headers["x-user-id"], "user_123")
         self.assertEqual(body["callId"], "room-123")
 
+    def test_post_call_log_appends_api_version_when_server_url_is_origin(self):
+        calls = []
+
+        async def fake_post_json(url, headers, body):
+            calls.append((url, headers, body))
+            return {"success": True, "data": {"callId": body["callId"]}}
+
+        asyncio.run(
+            post_call_log(
+                {"callId": "room-123", "organizationId": "org_123", "userId": "user_123"},
+                server_api_url="https://api.quickvoice.co",
+                internal_api_key="internal-secret",
+                post_json=fake_post_json,
+            )
+        )
+
+        self.assertEqual(calls[0][0], "https://api.quickvoice.co/api/v1/calls")
+
 
 if __name__ == "__main__":
     unittest.main()

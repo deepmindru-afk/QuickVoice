@@ -48,7 +48,7 @@ async def post_call_log(
     internal_api_key: str | None = None,
     post_json=None,
 ):
-    base_url = (server_api_url or os.getenv("SERVER_API_URL") or "").rstrip("/")
+    base_url = _api_base_url(server_api_url or os.getenv("SERVER_API_URL") or "")
     api_key = internal_api_key or os.getenv("INTERNAL_API_KEY")
     if not base_url:
         raise RuntimeError("SERVER_API_URL is required to post call logs")
@@ -65,6 +65,13 @@ async def post_call_log(
         headers["x-user-id"] = user_id
 
     return await (post_json or _post_json)(f"{base_url}/calls", headers, payload)
+
+
+def _api_base_url(server_api_url: str) -> str:
+    base_url = server_api_url.rstrip("/")
+    if not base_url:
+        return ""
+    return base_url if base_url.endswith("/api/v1") else f"{base_url}/api/v1"
 
 
 def _normalize_transcript_item(item: dict[str, Any], index: int) -> dict[str, str]:
