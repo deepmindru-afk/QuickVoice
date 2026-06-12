@@ -153,9 +153,14 @@ export const getAgentConfigByNumber= async (
     where: {
       number: phoneNumber,
     },
-    include: {
+    select: {
+      number: true,
+      organizationId: true,
+      userId: true,
+      provider: true,
       agent: {
-        include: {
+        select: {
+          userId: true,
           configuration: true,
           tools: true,
           mcpConnections: {
@@ -173,6 +178,10 @@ export const getAgentConfigByNumber= async (
 
   return {
     ...phone.agent.configuration,
+    organizationId: phone.organizationId,
+    userId: phone.userId ?? phone.agent.userId,
+    agentNumber: phone.number,
+    provider: phone.provider,
     tools: phone.agent.tools,
     mcpConnections: phone.agent.mcpConnections.map((item) => item.mcpConnection),
   };
