@@ -114,3 +114,21 @@ export const getAgentConfigByNumber = async (phoneNumber: string) => {
 
   return configuration;
 };
+
+export const getAgentConfigByIdForRuntime = async (agentId: string) => {
+  const normalizedAgentId = agentId.trim();
+
+  if (!normalizedAgentId) {
+    throw new BadRequestError("Agent id is required");
+  }
+
+  const configuration = await agentRepository.getAgentConfigByIdForRuntime(
+    normalizedAgentId
+  );
+
+  if (!configuration) {
+    throw new NotFoundError("Agent configuration not found");
+  }
+
+  return configuration;
+};

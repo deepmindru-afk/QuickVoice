@@ -17,7 +17,12 @@ from handlers.calllog_handler import build_call_log_payload, post_call_log
 from handlers.config_handler import get_config
 from handlers.livekit_handler import get_transcripts, recording_path as build_recording_path, start_recording
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
-from handlers.worker_handler import build_call_context, parse_metadata, speak_first_message
+from handlers.worker_handler import (
+    apply_metadata_overrides,
+    build_call_context,
+    parse_metadata,
+    speak_first_message,
+)
 from utils.logger import logger
 import asyncio
 import json
@@ -134,6 +139,7 @@ async def entrypoint(ctx: JobContext):
         call_context.get("agent_id"),
         agent_number=call_context.get("agent_number"),
     )
+    config = apply_metadata_overrides(config, metadata)
     logger.info(f"Config loaded for agent: {config.get('agent_id')}")
 
     if not call_context.get("agent_id") and config.get("agent_id"):

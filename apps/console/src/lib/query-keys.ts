@@ -21,6 +21,10 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.calls.all, "detail", id] as const,
     transcript: (id: string) => [...queryKeys.calls.all, "transcript", id] as const,
   },
+  outbound: {
+    all: ["outbound"] as const,
+    quick: () => [...queryKeys.outbound.all, "quick"] as const,
+  },
   kb: {
     all: ["kb"] as const,
     list: (agentId?: string) => [...queryKeys.kb.all, "list", agentId ?? null] as const,

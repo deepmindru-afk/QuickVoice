@@ -63,8 +63,6 @@ test("POST /quick validates and dispatches a quick outbound call", async () => {
       agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
       phoneNumber: "+15550001111",
       fromNumber: "+15551230000",
-      provider: "telnyx",
-      sid: "carrier-sid-123",
       username: "Ada",
     }),
   });
@@ -80,8 +78,6 @@ test("POST /quick validates and dispatches a quick outbound call", async () => {
     agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
     phoneNumber: "+15550001111",
     fromNumber: "+15551230000",
-    provider: "TELNYX",
-    sid: "carrier-sid-123",
     username: "Ada",
   });
 });

@@ -1,4 +1,9 @@
-import { CallStatus, OutboundCallMode, TelephonyProvider } from "../../../prisma/generated/prisma/client.js";
+import {
+  CallStatus,
+  OutboundCallMode,
+  Prisma,
+  TelephonyProvider,
+} from "../../../prisma/generated/prisma/client.js";
 import {
   LIVEKIT_AGENT_NAME,
   LIVEKIT_SIP_OUTBOUND_TRUNK_TELNYX_ID,
@@ -11,6 +16,7 @@ import type { QuickOutboundCallArgs } from "./outbound-call.schema.js";
 import * as outboundCallRepository from "./outbound-call.repository.js";
 
 type OutboundCallRepository = {
+  getDialableNumber: typeof outboundCallRepository.getDialableNumber;
   createQuickCall: typeof outboundCallRepository.createQuickCall;
   markInProgress: typeof outboundCallRepository.markInProgress;
   markFailed: typeof outboundCallRepository.markFailed;
@@ -57,25 +63,45 @@ export async function createQuickOutboundCall(
   const dispatchClient = deps.dispatchClient ?? livekitAgentDispatchClient;
   const outboundTrunks = deps.outboundTrunks ?? defaultOutboundTrunks;
   const agentName = deps.agentName ?? LIVEKIT_AGENT_NAME;
-  const trunkId = outboundTrunks[args.provider];
+  const dialableNumber = await repository.getDialableNumber({
+    organizationId: args.organizationId,
+    agentId: args.agentId,
+    fromNumber: args.fromNumber,
+  });
+
+  if (!dialableNumber) {
+    throw new BadRequestError(
+      "From number must belong to this organization and be linked to the selected agent"
+    );
+  }
+
+  const provider = args.provider ?? dialableNumber.provider;
+  const sid = args.sid ?? dialableNumber.sid;
+  const trunkId = outboundTrunks[provider];
 
   if (!trunkId) {
-    throw new BadRequestError(`LiveKit outbound trunk is not configured for ${args.provider}`);
+    throw new BadRequestError(`LiveKit outbound trunk is not configured for ${provider}`);
   }
 
   const outbound = await repository.createQuickCall({
     ...args,
+    provider,
+    sid,
     status: CallStatus.SCHEDULED,
     mode: OutboundCallMode.quick,
     optionalData: {
       username: args.username ?? null,
-      sid: args.sid,
+      provider,
+      sid,
     },
   });
 
   try {
     const roomName = `outbound_${outbound.outboundId}`;
-    const metadata = buildOutboundMetadata(args, outbound.outboundId);
+    const metadata = buildOutboundMetadata(
+      { ...args, provider, sid },
+      outbound.outboundId
+    );
     const metadataJson = JSON.stringify(metadata);
     const agentDispatch = await dispatchClient.createDispatch(roomName, agentName, {
       metadata: metadataJson,
@@ -97,9 +123,10 @@ export async function createQuickOutboundCall(
       outbound.outboundId,
       {
         username: args.username ?? null,
-        sid: args.sid,
-        livekitParticipant,
-        agentDispatch,
+        provider,
+        sid,
+        livekitParticipant: toJsonValue(livekitParticipant),
+        agentDispatch: toJsonValue(agentDispatch),
       }
     );
 
@@ -125,4 +152,13 @@ function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) 
     system_prompt: args.systemPrompt ?? null,
     username: args.username ?? null,
   };
+}
+
+function toJsonValue(value: unknown): Prisma.InputJsonValue | null {
+  if (value === undefined) return null;
+  try {
+    return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+  } catch {
+    return String(value);
+  }
 }

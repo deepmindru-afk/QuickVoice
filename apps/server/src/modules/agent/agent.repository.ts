@@ -186,3 +186,44 @@ export const getAgentConfigByNumber= async (
     mcpConnections: phone.agent.mcpConnections.map((item) => item.mcpConnection),
   };
 }
+
+export const getAgentConfigByIdForRuntime = async (agentId: string) => {
+  const agent = await prisma.agent.findUnique({
+    where: { agentId },
+    select: {
+      organizationId: true,
+      userId: true,
+      configuration: true,
+      phoneNumbers: {
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+        select: {
+          number: true,
+          provider: true,
+          userId: true,
+        },
+      },
+      tools: true,
+      mcpConnections: {
+        where: { enabled: true },
+        include: {
+          mcpConnection: true,
+        },
+      },
+    },
+  });
+
+  if (!agent?.configuration) return null;
+
+  const phone = agent.phoneNumbers[0] ?? null;
+
+  return {
+    ...agent.configuration,
+    organizationId: agent.organizationId,
+    userId: phone?.userId ?? agent.userId,
+    agentNumber: phone?.number ?? null,
+    provider: phone?.provider ?? null,
+    tools: agent.tools,
+    mcpConnections: agent.mcpConnections.map((item) => item.mcpConnection),
+  };
+};

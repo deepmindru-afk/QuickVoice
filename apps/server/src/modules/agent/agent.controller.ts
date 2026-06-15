@@ -1,4 +1,5 @@
 import { StatusCodes } from "http-status-codes";
+import type { Request, Response } from "express";
 
 import * as agentService from "./agent.service.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
@@ -97,3 +98,18 @@ export const getAgentConfigByNumber = authorized(async (req, res) => {
     data: configuration,
   });
 });
+
+export const getAgentConfigByIdForRuntime = async (req: Request, res: Response) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || agentId.length === 0) {
+    throw new BadRequestError("Agent id is required");
+  }
+
+  const configuration = await agentService.getAgentConfigByIdForRuntime(agentId);
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Agent configuration fetched successfully",
+    data: configuration,
+  });
+};

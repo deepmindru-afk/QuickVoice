@@ -18,6 +18,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
   agents: "Agents",
   numbers: "Phone numbers",
+  outbound: "Outbound",
   calls: "Call logs",
   kb: "Knowledge base",
   settings: "Settings",

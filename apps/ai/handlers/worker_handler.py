@@ -58,6 +58,20 @@ def build_call_context(room_name: str, metadata: dict[str, Any]) -> dict[str, An
     }
 
 
+def apply_metadata_overrides(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+    updated = dict(config)
+    if _pick(metadata, "direction", "callDirection") != "outbound":
+        return updated
+
+    first_message = _pick(metadata, "first_message", "firstMessage")
+    system_prompt = _pick(metadata, "system_prompt", "systemPrompt")
+    if first_message:
+        updated["first_message"] = first_message
+    if system_prompt:
+        updated["system_prompt"] = system_prompt
+    return updated
+
+
 def speak_first_message(session: Any, config: dict[str, Any]):
     first_message = (config.get("first_message") or "").strip()
     if not first_message:

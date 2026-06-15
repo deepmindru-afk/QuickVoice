@@ -48,6 +48,12 @@ router.get(
 );
 
 router.get(
+  "/internal-config/:agentId",
+  requireInternalApiKey,
+  agentController.getAgentConfigByIdForRuntime
+);
+
+router.get(
   "/number-config/:phoneNumber",
   requireInternalApiKey,
   agentController.getAgentConfigByNumber
