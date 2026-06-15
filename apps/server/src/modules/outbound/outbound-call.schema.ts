@@ -13,8 +13,8 @@ export const quickOutboundCallSchema = z.object({
   firstMessage: z.string().optional(),
   systemPrompt: z.string().optional(),
   username: z.string().optional(),
-  provider: providerSchema,
-  sid: z.string().min(1, "Provider SID is required"),
+  provider: providerSchema.optional(),
+  sid: z.string().min(1, "Provider SID is required").optional(),
 });
 
 export type QuickOutboundCallInput = z.infer<typeof quickOutboundCallSchema>;

@@ -20,8 +20,8 @@ const openSetupAndPoll = (
   toast.info("Complete setup in the new tab. QuickVoice will refresh automatically.");
   let attempts = 0;
   const maxAttempts = 24;
-  let intervalId: number;
-  const refresh = async () => {
+  const intervalId = window.setInterval(refresh, 5000);
+  async function refresh() {
     attempts += 1;
     try {
       const connection = await mcpApi.refresh(mcpConnectionId);
@@ -40,9 +40,8 @@ const openSetupAndPoll = (
       window.clearInterval(intervalId);
       window.removeEventListener("focus", refresh);
     }
-  };
+  }
 
-  intervalId = window.setInterval(refresh, 5000);
   window.addEventListener("focus", refresh);
 };
 

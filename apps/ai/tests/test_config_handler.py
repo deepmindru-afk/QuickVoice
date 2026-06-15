@@ -101,6 +101,42 @@ class ConfigHandlerTests(unittest.TestCase):
         )
         self.assertEqual(headers["Authorization"], "Bearer internal-secret")
 
+    def test_get_config_fetches_runtime_config_by_agent_id_without_number(self):
+        calls = []
+
+        async def fake_get_json(url, headers):
+            calls.append((url, headers))
+            return {
+                "success": True,
+                "data": {
+                    "agentId": "8d55565f-1111-4111-8111-f95fd03f0df2",
+                    "organizationId": "org_123",
+                    "userId": "user_123",
+                    "firstMessage": "Hello from agent id.",
+                    "systemPrompt": "Agent id prompt.",
+                    "provider": "TWILIO",
+                },
+            }
+
+        config = asyncio.run(
+            get_config(
+                "8d55565f-1111-4111-8111-f95fd03f0df2",
+                server_api_url="http://server.test/api/v1",
+                internal_api_key="internal-secret",
+                get_json=fake_get_json,
+            )
+        )
+
+        self.assertEqual(config["organization_id"], "org_123")
+        self.assertEqual(config["first_message"], "Hello from agent id.")
+        self.assertEqual(len(calls), 1)
+        url, headers = calls[0]
+        self.assertEqual(
+            url,
+            "http://server.test/api/v1/agents/internal-config/8d55565f-1111-4111-8111-f95fd03f0df2",
+        )
+        self.assertEqual(headers["Authorization"], "Bearer internal-secret")
+
 
 if __name__ == "__main__":
     unittest.main()

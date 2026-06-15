@@ -5,7 +5,7 @@ import unittest
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-from handlers.worker_handler import build_call_context, parse_metadata, speak_first_message
+from handlers.worker_handler import apply_metadata_overrides, build_call_context, parse_metadata, speak_first_message
 
 
 class WorkerHandlerTests(unittest.TestCase):
@@ -78,6 +78,26 @@ class WorkerHandlerTests(unittest.TestCase):
 
         self.assertEqual(result, "speech-handle")
         self.assertEqual(session.calls, [("Hello caller.", {"allow_interruptions": True})])
+
+    def test_apply_metadata_overrides_uses_outbound_prompt_and_first_message(self):
+        config = {
+            "first_message": "Default greeting.",
+            "system_prompt": "Default prompt.",
+            "provider": "TWILIO",
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "direction": "outbound",
+                "first_message": "Quick outbound hello.",
+                "system_prompt": "Keep this outbound call short.",
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Quick outbound hello.")
+        self.assertEqual(result["system_prompt"], "Keep this outbound call short.")
+        self.assertEqual(config["first_message"], "Default greeting.")
 
 
 if __name__ == "__main__":

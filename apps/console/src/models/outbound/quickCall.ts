@@ -7,6 +7,6 @@ export const quickCallSchema = z.object({
   firstMessage: z.string().optional(),
   systemPrompt: z.string().optional(),
   username: z.string().optional(),
-  provider: z.enum(["twilio", "telnyx"]),
-  sid: z.string(),
 });
+
+export type QuickCallInput = z.infer<typeof quickCallSchema>;

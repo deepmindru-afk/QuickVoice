@@ -25,14 +25,38 @@ export async function createQuickCall(input: CreateQuickCallInput) {
   });
 }
 
-export async function markInProgress(outboundId: string, livekitParticipant: unknown) {
+export async function getDialableNumber(args: {
+  organizationId: string;
+  agentId: string;
+  fromNumber: string;
+}) {
+  return prisma.phoneNumber.findFirst({
+    where: {
+      organizationId: args.organizationId,
+      agentId: args.agentId,
+      number: args.fromNumber,
+      agent: {
+        isActive: true,
+        isConfigured: true,
+      },
+    },
+    select: {
+      number: true,
+      sid: true,
+      provider: true,
+    },
+  });
+}
+
+export async function markInProgress(
+  outboundId: string,
+  optionalData: Prisma.InputJsonObject
+) {
   return prisma.outboundCall.update({
     where: { outboundId },
     data: {
       status: CallStatus.IN_PROGRESS,
-      optionalData: {
-        livekitParticipant,
-      } as Prisma.InputJsonObject,
+      optionalData,
     },
   });
 }
