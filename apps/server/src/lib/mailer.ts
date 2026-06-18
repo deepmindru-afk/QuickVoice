@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 type AuthEmailType = "verifyEmail" | "resetPassword";
 
 interface EmailContent {
@@ -16,22 +18,19 @@ function requireEnv(name: string) {
 }
 
 function getZeptoMailToken() {
-  const token = process.env.ZEPTOMAIL_TOKEN || process.env.SMTP_PASSWORD;
+  const token = process.env.ZEPTOMAIL_TOKEN;
   if (!token) {
-    throw new Error(
-      "Missing required email environment variable: ZEPTOMAIL_TOKEN or SMTP_PASSWORD",
-    );
+    throw new Error("Missing required email environment variable: ZEPTOMAIL_TOKEN");
   }
-  return token;
+  const trimmedToken = token.trim();
+  if (/^zoho-enczapikey\s+/i.test(trimmedToken)) {
+    return trimmedToken;
+  }
+  return `zoho-enczapikey ${trimmedToken}`;
 }
 
 function getZeptoMailEndpoint() {
-  const rawUrl = process.env.ZEPTOMAIL_URL || process.env.SMTP_HOST;
-  if (!rawUrl) {
-    throw new Error(
-      "Missing required email environment variable: ZEPTOMAIL_URL or SMTP_HOST",
-    );
-  }
+  const rawUrl = process.env.ZEPTOMAIL_URL || process.env.SMTP_HOST || "api.zeptomail.com";
 
   const urlWithProtocol = /^https?:\/\//i.test(rawUrl)
     ? rawUrl
@@ -55,6 +54,28 @@ function getZeptoMailEndpoint() {
   endpoint.hash = "";
 
   return endpoint.toString();
+}
+
+function getSmtpPort() {
+  const rawPort = process.env.SMTP_PORT || "587";
+  const port = Number.parseInt(rawPort, 10);
+  if (!Number.isFinite(port)) {
+    throw new Error("Invalid email environment variable: SMTP_PORT");
+  }
+  return port;
+}
+
+function getSmtpTransport() {
+  const port = getSmtpPort();
+  return nodemailer.createTransport({
+    host: requireEnv("SMTP_HOST"),
+    port,
+    secure: port === 465,
+    auth: {
+      user: requireEnv("SMTP_USERNAME"),
+      pass: requireEnv("SMTP_PASSWORD"),
+    },
+  });
 }
 
 function escapeHtml(value: string) {
@@ -134,6 +155,8 @@ export async function sendEmail(
   const content = contentFor(type);
   const fromEmail = requireEnv("FROM_EMAIL");
   const fromName = "Console|Quickvoice";
+  const text = buildText(content, url, fullName);
+  const html = buildHtml(content, url, fullName);
 
   const payload = {
     from: {
@@ -149,28 +172,52 @@ export async function sendEmail(
       },
     ],
     subject: content.subject,
-    textbody: buildText(content, url, fullName),
-    htmlbody: buildHtml(content, url, fullName),
+    textbody: text,
+    htmlbody: html,
   };
 
-  try {
-    const response = await fetch(getZeptoMailEndpoint(), {
-      method: "POST",
-      headers: {
-        Authorization: getZeptoMailToken(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const body = await response.text();
+  if (process.env.ZEPTOMAIL_TOKEN) {
+    try {
+      const response = await fetch(getZeptoMailEndpoint(), {
+        method: "POST",
+        headers: {
+          Authorization: getZeptoMailToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.text();
 
-    if (!response.ok) {
-      throw new Error(
-        `ZeptoMail responded with ${response.status} ${response.statusText}: ${body}`,
-      );
+      if (!response.ok) {
+        throw new Error(
+          `ZeptoMail responded with ${response.status} ${response.statusText}: ${body}`,
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to send ${type} email via ZeptoMail: ${message}`);
     }
+    return;
+  }
+
+  try {
+    await getSmtpTransport().sendMail({
+      from: {
+        address: fromEmail,
+        name: fromName,
+      },
+      to: [
+        {
+          address: email,
+          name: fullName,
+        },
+      ],
+      subject: content.subject,
+      text,
+      html,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to send ${type} email via ZeptoMail: ${message}`);
+    throw new Error(`Failed to send ${type} email via SMTP: ${message}`);
   }
 }
