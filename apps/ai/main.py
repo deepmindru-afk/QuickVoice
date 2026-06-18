@@ -118,6 +118,48 @@ class Assistant(Agent):
         self._config = config
         self._call_context = call_context
 
+    def _rag_enabled(self) -> bool:
+        return bool(self._config.get("use_rag"))
+
+    def _agent_id(self) -> str:
+        return (
+            self._config.get("agent_id")
+            or self._call_context.get("agent_id")
+            or ""
+        )
+
+    async def on_user_turn_completed(self, turn_ctx, new_message) -> None:
+        if not self._rag_enabled():
+            return
+
+        agent_id = self._agent_id()
+        if not agent_id:
+            logger.warning("[rag] skipped retrieval because agent_id is missing")
+            return
+
+        query = new_message.text_content if hasattr(new_message, "text_content") else ""
+        if callable(query):
+            query = query()
+        query = str(query or "").strip()
+        if not query:
+            return
+
+        context = await get_rag_context(agent_id=agent_id, query=query)
+        if not context:
+            logger.info(f"[rag] no context returned for agent={agent_id}")
+            return
+
+        turn_ctx.add_message(
+            role="system",
+            content=(
+                "Relevant knowledge base context for the user's latest question. "
+                "Use this context to answer accurately. If it does not contain the answer, "
+                "say you do not have that information in the knowledge base.\n\n"
+                f"{context}"
+            ),
+        )
+        logger.info(f"[rag] injected context for agent={agent_id}")
+
     @function_tool
     async def search_knowledge_base(self, query: str, top_k: int = 5) -> str:
         """
@@ -127,10 +169,10 @@ class Assistant(Agent):
             query: The user question or the topic to search for.
             top_k: Maximum number of matching chunks to retrieve.
         """
-        if not self._config.get("use_rag"):
+        if not self._rag_enabled():
             return "Knowledge base search is disabled for this agent."
 
-        agent_id = self._call_context.get("agent_id") or self._config.get("agent_id")
+        agent_id = self._agent_id()
         if not agent_id:
             return "Knowledge base search is unavailable because this call has no agent_id."
 
