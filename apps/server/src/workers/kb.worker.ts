@@ -1,6 +1,7 @@
 import { Worker } from "bullmq";
 import { redisConnection } from "../config/redis.js";
 import { generateDownloadUrl } from "../config/s3.js";
+import { assertKbProcessingSucceeded } from "../modules/kb/kb-processing-result.js";
 import * as kbRepository from "../modules/kb/kb.repository.js";
 import type { KbJobData, KbJobName } from "../queues/kb.queue.js";
 
@@ -34,6 +35,9 @@ export const kbWorker = new Worker<KbJobData, void, KbJobName>(
       const body = await res.text().catch(() => "");
       throw new Error(`KB processing failed (${res.status}): ${body}`);
     }
+
+    const body = await res.json();
+    assertKbProcessingSucceeded(body, kbIds);
 
     // 3. Mark all sources as ACTIVE
     await kbRepository.markActive(kbIds, agentId);
