@@ -5,18 +5,30 @@ import { toast } from "sonner";
 import { mcpApi, type ConnectMcpInput, type McpCatalogParams } from "@/src/lib/api/resources/mcp";
 import { queryKeys } from "@/src/lib/query-keys";
 
+const isSafeSetupUrl = (setupUrl: string) => {
+  try {
+    const url = new URL(setupUrl);
+    if (url.protocol === "https:") return true;
+    return (
+      url.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "::1"].includes(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+};
+
 const openSetupAndPoll = (
   setupUrl: string,
   mcpConnectionId: string,
   qc: ReturnType<typeof useQueryClient>
 ) => {
-  const targetWindow = window.open(setupUrl, "_blank");
-  if (!targetWindow) {
-    toast.error("Could not open setup. Use the Setup button and allow popups for this site.");
+  if (!isSafeSetupUrl(setupUrl)) {
+    toast.error("Setup URL is invalid or uses an unsupported protocol.");
     return;
   }
 
-  targetWindow.opener = null;
+  window.open(setupUrl, "_blank", "noopener,noreferrer");
   toast.info("Complete setup in the new tab. QuickVoice will refresh automatically.");
   let attempts = 0;
   const maxAttempts = 24;

@@ -32,7 +32,7 @@ Voice agents are becoming core business infrastructure. The teams building them 
 - `apps/server` - Express API server with auth, permissions, agent configuration, phone numbers, call logs, outbound calls, Stripe, Twilio, Telnyx, LiveKit, S3, and Inngest integrations.
 - `apps/ai` - Python AI service and LiveKit worker handlers for runtime configuration, call logging, and voice-agent execution.
 - `packages/eslint-config` and `packages/typescript-config` - Shared monorepo linting and TypeScript configuration.
-- `scripts`, `Taskfile.yml`, and `docker-compose.dev.yml` - Local orchestration for Node services, Python services, Prisma, and Postgres.
+- `scripts`, `Taskfile.yml`, and `docker-compose.dev.yml` - Local orchestration for Node services, Python services, Prisma, Postgres, and Redis.
 
 ## Stack
 
@@ -70,15 +70,21 @@ Reconnect the SSH session after changing Docker group membership. Then run:
 task up:dev
 ```
 
-The task creates local env files from `*.env.dev.example`, activates `pnpm@9.0.0`, installs Node dependencies, creates the AI Python virtualenv, starts Postgres through `docker-compose.dev.yml`, runs Prisma migrations, and launches:
+The task creates local env files from `*.env.dev.example`, activates `pnpm@9.0.0`, installs Node dependencies with the frozen lockfile, creates the AI Python virtualenv, starts Postgres and Redis through `docker-compose.dev.yml`, runs Prisma migrations, and launches:
 
 - Console: `http://localhost:3000`
 - Marketing site: `http://localhost:3001`
 - API: `http://localhost:5000/api/v1/health`
 - API docs: `http://localhost:5000/api/v1/docs`
-- AI API: `http://localhost:8000/health`
+- AI API: `http://localhost:5555/health`
 
-Edit the generated env files after the first run if you need real Google, Stripe, LiveKit, Twilio, Telnyx, or AWS credentials. Generated env files are ignored by git.
+The Docker Compose database credentials are dev-only placeholders (`quickvoice` / `quickvoice`) and the Postgres and Redis ports are bound to `127.0.0.1`. Edit the generated env files after the first run if you need real Google, Stripe, LiveKit, Twilio, Telnyx, or AWS credentials. Generated env files are ignored by git.
+
+An optional local mail substitute is available through a Docker Compose profile:
+
+```sh
+docker compose -f docker-compose.dev.yml --env-file .env.dev --profile mail up -d mailpit
+```
 
 Useful individual tasks:
 
@@ -87,6 +93,7 @@ task doctor
 task env:dev
 task docker:up
 task db:migrate
+task ci
 task server:dev
 task console:dev
 task web:dev
@@ -100,7 +107,9 @@ Common root commands:
 pnpm build
 pnpm lint
 pnpm check-types
-pnpm test:dev-orchestration
+pnpm test
+pnpm ci:local
+pnpm audit:deps -- --audit-level high
 ```
 
 ## Open Source And Commercial Use

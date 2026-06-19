@@ -7,6 +7,7 @@ export interface RequestAuth {
   activeOrganizationId: string | null;
   authMethod: "session" | "apiKey" | "internal";
   session: BetterAuthSession;
+  apiKeyPermissions?: Record<string, string[]>;
 }
 
 declare module "express-serve-static-core" {

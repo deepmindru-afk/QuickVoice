@@ -38,10 +38,13 @@ import {
 import { useAgents } from "@/src/hooks/queries/agents";
 import type { Tool, KVPair, ToolParam } from "@/src/lib/api/types";
 
-const kvPair = z.object({ key: z.string(), value: z.string() });
+const kvPair = z.object({
+  key: z.string().trim().min(1, "Key is required"),
+  value: z.string(),
+});
 
 const toolParam = z.object({
-  name: z.string(),
+  name: z.string().trim().min(1, "Name is required"),
   type: z.enum(["String", "Number", "Boolean"]),
   valueType: z.enum(["LLM Prompt", "Static Value", "Dynamic Variable"]),
   description: z.string(),

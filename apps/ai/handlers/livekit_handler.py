@@ -1,8 +1,8 @@
-from livekit import api
-from utils.logger import logger
+from utils.logger import logger, redact_sensitive
+from utils.metrics import emit_metric
 import os
-from livekit.agents import JobContext
 import uuid
+from typing import Any
 
 
 def recording_path(recording_id):
@@ -27,27 +27,28 @@ def get_transcripts(agent):
     
     try:
         messages = agent.chat_ctx.messages
-        logger.info(f"Messages: {messages}")
         if callable(messages):
             messages = messages()
         transcript = []
-        logger.info(f"Messages: {messages}")
         for msg in messages:
             if getattr(msg, "role", None) in ("user", "assistant"):
                 content = getattr(msg, "content", "")
                 if isinstance(content, list):
                     content = " ".join(str(c) for c in content if isinstance(c, str))
                 transcript.append({"role": msg.role, "content": content,"time": msg.created_at})
-        logger.info(f"Transcript: {transcript}")
+        logger.info("[TRANSCRIPT] collected {} messages", len(transcript))
     except Exception as e:
-        logger.error(f"[SHUTDOWN] Transcript read failed: {e}")
+        logger.error("[SHUTDOWN] Transcript read failed: {}", redact_sensitive(str(e)))
         transcript = []
     return transcript
 
-async def start_recording(ctx: JobContext):
+async def start_recording(ctx: Any):
     # ── Recording → S3 Storage ─────────────────────────────────────
+    from livekit import api  # type: ignore
+
     egress_id = None
     recording_id = str(uuid.uuid4())
+    rec_api = None
     try:
         storage = get_recording_storage_config()
         rec_api = api.LiveKitAPI(
@@ -75,9 +76,16 @@ async def start_recording(ctx: JobContext):
             )
         )
         egress_id = egress_resp.egress_id
-        await rec_api.aclose()
+        emit_metric("recording_start", status="ok", room=getattr(ctx.room, "name", ""))
         logger.info(f"[RECORDING] Started egress: {egress_id}")
         return recording_id
     except Exception as e:
-        logger.warning(f"[RECORDING] Failed to start recording: {e}")
+        emit_metric("recording_start", status="error", room=getattr(ctx.room, "name", ""))
+        logger.warning("[RECORDING] Failed to start recording: {}", redact_sensitive(str(e)))
         return None
+    finally:
+        if rec_api is not None:
+            try:
+                await rec_api.aclose()
+            except Exception as close_error:
+                logger.warning("[RECORDING] Failed to close LiveKit API client: {}", redact_sensitive(str(close_error)))

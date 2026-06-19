@@ -232,7 +232,61 @@ export default function NumbersPage() {
                             </Button>
                         </div>
 
-                        <div className="overflow-x-auto">
+                        <div className="divide-y md:hidden">
+                            {numbers.map((number) => (
+                                <div key={number.phId} className="space-y-4 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30 text-primary">
+                                            <Phone className="size-4" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <p className="truncate font-mono text-sm font-semibold text-foreground">
+                                                    {number.number}
+                                                </p>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    aria-label={`Copy ${number.number}`}
+                                                    onClick={() => copyNumber(number.number)}
+                                                >
+                                                    {copiedNumber === number.number ? (
+                                                        <Check className="size-3.5 text-emerald-500" />
+                                                    ) : (
+                                                        <Copy className="size-3.5" />
+                                                    )}
+                                                </Button>
+                                            </div>
+                                            <p className="truncate text-xs text-muted-foreground">
+                                                {number.friendlyName || "No friendly name"}
+                                            </p>
+                                        </div>
+                                        <ProviderChip provider={number.provider} />
+                                    </div>
+                                    <div>
+                                        <p className="mb-2 text-xs font-medium text-muted-foreground">Routing</p>
+                                        <AssignAgentSelect phId={number.phId} agentId={number.agentId} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                                        <div>
+                                            <p>Created</p>
+                                            <p className="mt-1 text-foreground">{formatDate(number.createdAt)}</p>
+                                        </div>
+                                        <div>
+                                            <p>Modified</p>
+                                            <p className="mt-1 text-foreground">{formatDate(number.updatedAt)}</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <p>SID</p>
+                                            <p className="mt-1 truncate font-mono text-foreground">{number.sid}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="hidden overflow-x-auto md:block">
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-muted/20 hover:bg-muted/20">

@@ -1,4 +1,5 @@
 import { CallStatus, OutboundCallMode, Prisma } from "../../../prisma/generated/prisma/client.js";
+import { plans } from "../../../data/plans.js";
 import prisma from "../../config/prisma.js";
 import type { QuickOutboundCallArgs } from "./outbound-call.schema.js";
 
@@ -71,4 +72,35 @@ export async function markFailed(outboundId: string, reason: string) {
       } as Prisma.InputJsonObject,
     },
   });
+}
+
+export async function getMonthlyUsage(organizationId: string, now = new Date()) {
+  const [organization, usage] = await prisma.$transaction([
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { plan: true },
+    }),
+    prisma.callLog.aggregate({
+      where: {
+        organizationId,
+        deleted: false,
+        startTime: { gte: startOfUtcMonth(now) },
+      },
+      _sum: { durationSeconds: true },
+    }),
+  ]);
+
+  const plan = organization?.plan ?? "free";
+  const includedMinutes =
+    plans.find((item) => item.id === plan)?.minutes ?? null;
+
+  return {
+    plan,
+    includedMinutes,
+    usedSeconds: usage._sum.durationSeconds ?? 0,
+  };
+}
+
+function startOfUtcMonth(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 }

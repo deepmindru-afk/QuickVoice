@@ -1,10 +1,19 @@
 import asyncio
 import json
 import os
+import re
+import time
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from urllib.request import Request, urlopen
 
+from utils.metrics import emit_metric
+
+QUEUE_DIR_ENV = "AI_CALL_LOG_QUEUE_DIR"
+DEFAULT_QUEUE_DIR = "/tmp/quickvoice-ai-calllogs"
+DEAD_LETTER_DIR_NAME = "dead-letter"
+MAX_QUEUE_ATTEMPTS = 5
 
 def build_call_log_payload(
     *,
@@ -67,6 +76,90 @@ async def post_call_log(
     return await (post_json or _post_json)(f"{base_url}/calls", headers, payload)
 
 
+async def post_call_log_with_retry(
+    payload: dict[str, Any],
+    *,
+    attempts: int = 3,
+    backoff_seconds: float = 0.25,
+    queue_dir: str | Path | None = None,
+    server_api_url: str | None = None,
+    internal_api_key: str | None = None,
+    post_json=None,
+):
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return await post_call_log(
+                payload,
+                server_api_url=server_api_url,
+                internal_api_key=internal_api_key,
+                post_json=post_json,
+            )
+        except Exception as error:
+            last_error = error
+            if attempt < attempts - 1:
+                await asyncio.sleep(backoff_seconds * (2**attempt))
+
+    queued_path = enqueue_call_log(payload, queue_dir=queue_dir)
+    emit_metric("call_log_delivery", status="queued", call_id=payload.get("callId"))
+    raise RuntimeError(f"call log delivery failed; queued at {queued_path}") from last_error
+
+
+def enqueue_call_log(payload: dict[str, Any], *, queue_dir: str | Path | None = None) -> Path:
+    directory = _queue_dir(queue_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    call_id = _safe_filename(str(payload.get("callId") or "unknown-call"))
+    path = directory / f"{int(time.time() * 1000)}-{call_id}.json"
+    path.write_text(json.dumps({"attempts": 0, "payload": payload}, sort_keys=True), encoding="utf-8")
+    return path
+
+
+async def flush_call_log_queue(
+    *,
+    queue_dir: str | Path | None = None,
+    server_api_url: str | None = None,
+    internal_api_key: str | None = None,
+    post_json=None,
+) -> dict[str, int]:
+    directory = _queue_dir(queue_dir)
+    if not directory.exists():
+        return {"posted": 0, "failed": 0, "dead_lettered": 0}
+
+    posted = 0
+    failed = 0
+    dead_lettered = 0
+    for path in sorted(directory.glob("*.json")):
+        envelope: dict[str, Any] = {}
+        payload: dict[str, Any] = {}
+        try:
+            envelope = json.loads(path.read_text(encoding="utf-8"))
+            payload = envelope.get("payload", envelope)
+            await post_call_log(
+                payload,
+                server_api_url=server_api_url,
+                internal_api_key=internal_api_key,
+                post_json=post_json,
+            )
+            path.unlink(missing_ok=True)
+            posted += 1
+            emit_metric("call_log_queue", status="posted", call_id=payload.get("callId"))
+        except Exception:
+            failed += 1
+            attempts = int(envelope.get("attempts", 0)) + 1
+            if attempts >= MAX_QUEUE_ATTEMPTS:
+                dead_letter_dir = directory / DEAD_LETTER_DIR_NAME
+                dead_letter_dir.mkdir(parents=True, exist_ok=True)
+                path.replace(dead_letter_dir / path.name)
+                dead_lettered += 1
+            else:
+                path.write_text(
+                    json.dumps({"attempts": attempts, "payload": payload}, sort_keys=True),
+                    encoding="utf-8",
+                )
+
+    return {"posted": posted, "failed": failed, "dead_lettered": dead_lettered}
+
+
 def _api_base_url(server_api_url: str) -> str:
     base_url = server_api_url.rstrip("/")
     if not base_url:
@@ -106,7 +199,9 @@ def _isoformat(value: Any) -> str:
             return f"{value[:-6]}Z"
         return value
 
-    if isinstance(value, datetime):
+    if isinstance(value, (int, float)):
+        dt = datetime.fromtimestamp(float(value), tz=timezone.utc)
+    elif isinstance(value, datetime):
         dt = value
     else:
         dt = datetime.now(timezone.utc)
@@ -131,3 +226,11 @@ def _blocking_post_json(url: str, headers: dict[str, str], body: dict[str, Any])
     with urlopen(request, timeout=10) as response:
         payload = response.read().decode("utf-8")
     return json.loads(payload)
+
+
+def _queue_dir(queue_dir: str | Path | None = None) -> Path:
+    return Path(queue_dir or os.getenv(QUEUE_DIR_ENV) or DEFAULT_QUEUE_DIR)
+
+
+def _safe_filename(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-") or "call"

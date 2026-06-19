@@ -14,7 +14,14 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "test:dev-orchestration": "node --test tests/dev-orchestration.test.mjs"
+    "test": "node --test tests/*.test.mjs && pnpm --filter server test",
+    "test:dev-orchestration": "node --test tests/dev-orchestration.test.mjs",
+    "check:tasks": "node scripts/verify-turbo-tasks.mjs",
+    "check:configs": "pnpm --filter @repo/eslint-config lint && pnpm --filter @repo/typescript-config lint",
+    "ci:python": "cd apps/ai && if [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests; else python3 -m pytest tests; fi",
+    "ci:docker": "scripts/ci-docker-build.sh",
+    "ci:local": "pnpm check:tasks && pnpm check:configs && pnpm lint && pnpm check-types && pnpm build && pnpm test && pnpm ci:python && pnpm ci:docker",
+    "audit:deps": "node scripts/security-audit.mjs"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

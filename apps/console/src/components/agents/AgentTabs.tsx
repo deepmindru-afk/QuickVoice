@@ -5,6 +5,7 @@ import {
   AudioLines,
   BookOpen,
   Bot,
+  Gauge,
   Settings,
   Webhook,
   Wrench,
@@ -16,6 +17,7 @@ import { WebhooksTab } from "@/src/components/agents/tabs/WebhooksTab";
 import { ToolsTab } from "@/src/components/agents/tabs/ToolsTab";
 import { KnowledgeTab } from "@/src/components/agents/tabs/KnowledgeTab";
 import { AdvancedTab } from "@/src/components/agents/tabs/AdvancedTab";
+import { LimitsTab } from "@/src/components/agents/tabs/LimitsTab";
 
 const TABS = [
   { id: "behavior", label: "Behavior", icon: Bot },
@@ -23,6 +25,7 @@ const TABS = [
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
+  { id: "limits", label: "Limits", icon: Gauge },
   { id: "advanced", label: "Advanced", icon: Settings },
 ] as const;
 
@@ -75,6 +78,9 @@ export function AgentTabs({ agentId }: { agentId: string }) {
       </TabsContent>
       <TabsContent value="knowledge" className="mt-6 min-w-0">
         <KnowledgeTab agentId={agentId} />
+      </TabsContent>
+      <TabsContent value="limits" className="mt-6 min-w-0">
+        <LimitsTab />
       </TabsContent>
       <TabsContent value="advanced" className="mt-6 min-w-0">
         <AdvancedTab agentId={agentId} />

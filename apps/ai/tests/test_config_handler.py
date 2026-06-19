@@ -54,6 +54,34 @@ class ConfigHandlerTests(unittest.TestCase):
         self.assertTrue(config["preemptive_generation"])
         self.assertEqual(config["timezone"], "America/New_York")
 
+    def test_normalize_config_maps_runtime_privacy_controls(self):
+        config = normalize_config(
+            {
+                "agentId": "agent_123",
+                "organizationId": "org_123",
+                "store_call_audio": False,
+                "zero_pii_retention": True,
+                "retention_days": 7,
+            }
+        )
+
+        self.assertFalse(config["store_call_audio"])
+        self.assertTrue(config["zero_pii_retention"])
+        self.assertEqual(config["retention_days"], 7)
+
+    def test_normalize_config_parses_string_privacy_booleans(self):
+        config = normalize_config(
+            {
+                "agentId": "agent_123",
+                "organizationId": "org_123",
+                "storeCallAudio": "false",
+                "zeroPiiRetention": "true",
+            }
+        )
+
+        self.assertFalse(config["store_call_audio"])
+        self.assertTrue(config["zero_pii_retention"])
+
     def test_get_config_fetches_runtime_config_from_server_with_internal_auth(self):
         calls = []
 
@@ -100,6 +128,30 @@ class ConfigHandlerTests(unittest.TestCase):
             "http://server.test/api/v1/agents/number-config/%2B15551230000",
         )
         self.assertEqual(headers["Authorization"], "Bearer internal-secret")
+
+    def test_get_config_fails_closed_when_runtime_backend_is_not_configured(self):
+        with self.assertRaisesRegex(RuntimeError, "SERVER_API_URL and INTERNAL_API_KEY"):
+            asyncio.run(
+                get_config(
+                    "agent_123",
+                    server_api_url="",
+                    internal_api_key="",
+                )
+            )
+
+    def test_get_config_allows_default_config_only_in_explicit_local_dev_mode(self):
+        config = asyncio.run(
+            get_config(
+                "agent_123",
+                agent_number="+15551230000",
+                server_api_url="",
+                internal_api_key="",
+                allow_default_config=True,
+            )
+        )
+
+        self.assertEqual(config["agent_id"], "agent_123")
+        self.assertEqual(config["agent_number"], "+15551230000")
 
     def test_get_config_fetches_runtime_config_by_agent_id_without_number(self):
         calls = []

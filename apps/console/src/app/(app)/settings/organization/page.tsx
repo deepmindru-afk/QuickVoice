@@ -35,6 +35,16 @@ import {
  DialogTrigger,
 } from "@/src/components/ui/dialog";
 import {
+ AlertDialog,
+ AlertDialogAction,
+ AlertDialogCancel,
+ AlertDialogContent,
+ AlertDialogDescription,
+ AlertDialogFooter,
+ AlertDialogHeader,
+ AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import {
  Select,
  SelectContent,
  SelectItem,
@@ -51,8 +61,54 @@ const orgSchema = z.object({
 
 const inviteSchema = z.object({
  email: z.string().email(),
- role: z.enum(["member", "admin", "owner"]),
+ role: z.string().min(1, "Role is required"),
 });
+
+interface Member {
+ id: string;
+ role: string;
+ user: {
+ id: string;
+ name: string | null;
+ email: string;
+ image?: string | null;
+ };
+}
+
+interface Invitation {
+ id: string;
+ email: string;
+ role: string;
+ status: string;
+ expiresAt: string | Date;
+}
+
+interface Organization {
+ id: string;
+ name: string;
+ slug: string;
+ members: Member[];
+ invitations?: Invitation[];
+}
+
+type OrgRoleApi = {
+ inviteMember?: (input: {
+ email: string;
+ role: string;
+ organizationId: string;
+ }) => Promise<{ error?: { message?: string } }>;
+ listRoles?: (input: {
+ query: { organizationId: string };
+ }) => Promise<{ data?: { role: string }[]; error?: { message?: string } }>;
+ updateMemberRole?: (input: {
+ memberId: string;
+ role: string;
+ organizationId: string;
+ }) => Promise<{ error?: { message?: string } }>;
+ cancelInvitation?: (input: {
+ invitationId: string;
+ }) => Promise<{ error?: { message?: string } }>;
+};
 
 export default function OrganizationPage() {
  const { data: session } = authClient.useSession();
@@ -191,6 +247,7 @@ export default function OrganizationPage() {
  <MembersSection
  orgId={activeOrgId}
  members={org?.members ?? []}
+ invitations={org?.invitations ?? []}
  loading={loading}
  refresh={refresh}
  />
@@ -201,27 +258,56 @@ export default function OrganizationPage() {
 function MembersSection({
  orgId,
  members,
+ invitations,
  loading,
  refresh,
 }: {
  orgId: string | null;
  members: Member[];
+ invitations: Invitation[];
  loading: boolean;
  refresh: () => Promise<void>;
 }) {
  const [inviteOpen, setInviteOpen] = useState(false);
  const [inviting, setInviting] = useState(false);
+ const [roles, setRoles] = useState(["member", "admin", "owner"]);
+ const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
+ const [removeTarget, setRemoveTarget] = useState<Member | null>(null);
+ const [cancelTarget, setCancelTarget] = useState<Invitation | null>(null);
 
  const inviteForm = useForm<z.infer<typeof inviteSchema>>({
  resolver: zodResolver(inviteSchema),
  defaultValues: { email: "", role: "member" },
  });
 
+ useEffect(() => {
+ async function loadRoles() {
+ if (!orgId) return;
+ const builtIn = ["member", "admin", "owner"];
+ try {
+ const orgApi = authClient.organization as unknown as OrgRoleApi;
+ if (!orgApi.listRoles) {
+ setRoles(builtIn);
+ return;
+ }
+ const { data } = await orgApi.listRoles({
+ query: { organizationId: orgId },
+ });
+ setRoles([...new Set([...builtIn, ...(data ?? []).map((role) => role.role)])]);
+ } catch {
+ setRoles(builtIn);
+ }
+ }
+ loadRoles();
+ }, [orgId]);
+
  async function onInvite(values: z.infer<typeof inviteSchema>) {
  if (!orgId) return;
  setInviting(true);
  try {
- const { error } = await authClient.organization.inviteMember({
+ const orgApi = authClient.organization as unknown as OrgRoleApi;
+ if (!orgApi.inviteMember) throw new Error("Invites are not available");
+ const { error } = await orgApi.inviteMember({
  email: values.email,
  role: values.role,
  organizationId: orgId,
@@ -238,6 +324,29 @@ function MembersSection({
  }
  }
 
+ async function onRoleChange(memberId: string, role: string) {
+ if (!orgId) return;
+ setUpdatingMemberId(memberId);
+ try {
+ const orgApi = authClient.organization as unknown as OrgRoleApi;
+ if (!orgApi.updateMemberRole) {
+ throw new Error("Member role updates are not available");
+ }
+ const { error } = await orgApi.updateMemberRole({
+ memberId,
+ role,
+ organizationId: orgId,
+ });
+ if (error) throw new Error(error.message);
+ toast.success("Member role updated");
+ await refresh();
+ } catch (err) {
+ toast.error(err instanceof Error ? err.message : "Could not update role");
+ } finally {
+ setUpdatingMemberId(null);
+ }
+ }
+
  async function onRemove(memberId: string) {
  if (!orgId) return;
  try {
@@ -247,9 +356,26 @@ function MembersSection({
  });
  if (error) throw new Error(error.message);
  toast.success("Member removed");
+ setRemoveTarget(null);
  await refresh();
  } catch (err) {
  toast.error(err instanceof Error ? err.message : "Could not remove member");
+ }
+ }
+
+ async function onCancelInvitation(invitationId: string) {
+ try {
+ const orgApi = authClient.organization as unknown as OrgRoleApi;
+ if (!orgApi.cancelInvitation) {
+ throw new Error("Invite cancellation is not available");
+ }
+ const { error } = await orgApi.cancelInvitation({ invitationId });
+ if (error) throw new Error(error.message);
+ toast.success("Invitation canceled");
+ setCancelTarget(null);
+ await refresh();
+ } catch (err) {
+ toast.error(err instanceof Error ? err.message : "Could not cancel invite");
  }
  }
 
@@ -309,9 +435,11 @@ function MembersSection({
  </SelectTrigger>
  </FormControl>
  <SelectContent>
- <SelectItem value="member">Member</SelectItem>
- <SelectItem value="admin">Admin</SelectItem>
- <SelectItem value="owner">Owner</SelectItem>
+ {roles.map((role) => (
+ <SelectItem key={role} value={role}>
+ {role}
+ </SelectItem>
+ ))}
  </SelectContent>
  </Select>
  </FormItem>
@@ -363,7 +491,7 @@ function MembersSection({
  >
  <Avatar className="size-9">
  {m.user.image ? (
- <AvatarImage src={m.user.image} alt={m.user.name} />
+ <AvatarImage src={m.user.image} alt={m.user.name ?? m.user.email} />
  ) : null}
  <AvatarFallback>
  {(m.user.name ?? m.user.email).charAt(0).toUpperCase()}
@@ -377,14 +505,27 @@ function MembersSection({
  {m.user.email}
  </p>
  </div>
- <Badge variant="secondary" className="uppercase tracking-wide">
- {m.role}
- </Badge>
+ <Select
+ value={m.role}
+ onValueChange={(role) => onRoleChange(m.id, role)}
+ disabled={updatingMemberId === m.id}
+ >
+ <SelectTrigger className="h-8 w-32">
+ <SelectValue />
+ </SelectTrigger>
+ <SelectContent>
+ {roles.map((role) => (
+ <SelectItem key={role} value={role}>
+ {role}
+ </SelectItem>
+ ))}
+ </SelectContent>
+ </Select>
  <Button
  variant="ghost"
  size="icon-sm"
- onClick={() => onRemove(m.id)}
- aria-label="Remove member"
+ onClick={() => setRemoveTarget(m)}
+ aria-label={`Remove ${m.user.name || m.user.email}`}
  >
  <Trash2 />
  </Button>
@@ -392,6 +533,90 @@ function MembersSection({
  ))}
  </div>
  )}
+ {invitations.length ? (
+ <div className="mt-6 border-t pt-5">
+ <div className="mb-3">
+ <h3 className="text-sm font-semibold">Pending invites</h3>
+ <p className="text-xs text-muted-foreground">
+ Review outstanding invitations and cancel stale ones.
+ </p>
+ </div>
+ <div className="divide-y">
+ {invitations.map((invitation) => (
+ <div
+ key={invitation.id}
+ className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+ >
+ <div className="min-w-0 flex-1">
+ <p className="truncate text-sm font-medium">{invitation.email}</p>
+ <p className="truncate text-xs text-muted-foreground">
+ {invitation.role} · {invitation.status}
+ </p>
+ </div>
+ <Badge variant="secondary" className="uppercase tracking-wide">
+ Pending
+ </Badge>
+ <Button
+ variant="ghost"
+ size="sm"
+ onClick={() => setCancelTarget(invitation)}
+ >
+ Cancel
+ </Button>
+ </div>
+ ))}
+ </div>
+ </div>
+ ) : null}
+ <AlertDialog
+ open={!!removeTarget}
+ onOpenChange={(open) => {
+ if (!open) setRemoveTarget(null);
+ }}
+ >
+ <AlertDialogContent>
+ <AlertDialogHeader>
+ <AlertDialogTitle>Remove member?</AlertDialogTitle>
+ <AlertDialogDescription>
+ This removes {removeTarget?.user.name || removeTarget?.user.email} from the
+ organization and revokes their access.
+ </AlertDialogDescription>
+ </AlertDialogHeader>
+ <AlertDialogFooter>
+ <AlertDialogCancel>Cancel</AlertDialogCancel>
+ <AlertDialogAction
+ onClick={() => removeTarget && onRemove(removeTarget.id)}
+ className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+ >
+ Remove
+ </AlertDialogAction>
+ </AlertDialogFooter>
+ </AlertDialogContent>
+ </AlertDialog>
+ <AlertDialog
+ open={!!cancelTarget}
+ onOpenChange={(open) => {
+ if (!open) setCancelTarget(null);
+ }}
+ >
+ <AlertDialogContent>
+ <AlertDialogHeader>
+ <AlertDialogTitle>Cancel invite?</AlertDialogTitle>
+ <AlertDialogDescription>
+ This cancels the invitation for {cancelTarget?.email}.
+ </AlertDialogDescription>
+ </AlertDialogHeader>
+ <AlertDialogFooter>
+ <AlertDialogCancel>Keep invite</AlertDialogCancel>
+ <AlertDialogAction
+ onClick={() => cancelTarget && onCancelInvitation(cancelTarget.id)}
+ className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+ >
+ Cancel invite
+ </AlertDialogAction>
+ </AlertDialogFooter>
+ </AlertDialogContent>
+ </AlertDialog>
  </section>
  );
 }

@@ -118,7 +118,7 @@ const faqSchema = {
     { "@type": "Question", "name": "Can I customize the voice and personality of my AI agent?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, you can fully customize your AI agent's voice, personality, and conversation style. Choose from various voice options and train the AI to match your brand's tone and communication style." } },
     { "@type": "Question", "name": "What happens if the AI can't handle a customer request?", "acceptedAnswer": { "@type": "Answer", "text": "Our AI agents are programmed to seamlessly transfer calls to human agents when they encounter complex requests or when human intervention is needed. This ensures customers always get the help they need." } },
     { "@type": "Question", "name": "How does QuickVoice handle call analytics and reporting?", "acceptedAnswer": { "@type": "Answer", "text": "QuickVoice provides comprehensive analytics including call duration, success rates, customer satisfaction scores, and conversation insights. All data is automatically synced to your CRM for better customer relationship management." } },
-    { "@type": "Question", "name": "Is there a free trial available?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, we offer a free trial that allows you to test QuickVoice with up to 100 minutes of calls. This gives you a full experience of our platform before making any commitment." } },
+    { "@type": "Question", "name": "Is there a free trial available?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, the Free plan includes 15 browser-only minutes each month so you can test the builder before a production launch. No credit card is required." } },
     { "@type": "Question", "name": "Can QuickVoice handle outbound calls and campaigns?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, QuickVoice supports both inbound and outbound calling. You can create automated outbound campaigns for appointment reminders, follow-ups, and proactive customer engagement." } },
     { "@type": "Question", "name": "What security measures does QuickVoice implement?", "acceptedAnswer": { "@type": "Answer", "text": "QuickVoice implements enterprise-grade security including SSL/TLS encryption, secure data centers, regular security audits, and compliance with industry standards like SOC 2, GDPR, and HIPAA." } },
     { "@type": "Question", "name": "How does QuickVoice handle different accents and dialects?", "acceptedAnswer": { "@type": "Answer", "text": "Our AI is trained on diverse speech patterns and can understand various accents, dialects, and speech variations. The system continuously learns and improves its recognition capabilities." } },
@@ -142,7 +142,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <main id="main-content" className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+      <main className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
         <HeroSection />
         <FeaturesSection />
         <AboutSection />

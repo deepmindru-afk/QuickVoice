@@ -8,7 +8,11 @@ import * as kbService from "./kb.service.js";
 import { listKbQuerySchema } from "./kb.schema.js";
 
 export const createKnowledgeSources = authorized(async (req, res) => {
-  const sources = await kbService.createKnowledgeSources(req.body);
+  const sources = await kbService.createKnowledgeSources({
+    ...req.body,
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+  });
   res.status(StatusCodes.CREATED).json({
     success: true,
     message: "Knowledge sources created",

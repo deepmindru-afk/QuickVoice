@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
+import { recordAuditEvent } from "../audit/audit-log.service.js";
 import * as mcpService from "./mcp.service.js";
 
 const getStringParam = (value: string | string[] | undefined, name: string) => {
@@ -79,4 +80,12 @@ export const executeTool = authorized(async (req, res) => {
   const toolName = getStringParam(req.params.toolName, "MCP tool name");
   const result = await mcpService.executeTool(req.auth.activeOrganizationId, mcpConnectionId, toolName, req.body);
   res.status(StatusCodes.OK).json({ success: true, message: "MCP tool executed successfully", data: result });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "mcp.tool.executed",
+    resourceType: "mcp_connection",
+    resourceId: mcpConnectionId,
+    metadata: { toolName, agentId: req.body?.agentId, callId: req.body?.callId },
+  });
 });

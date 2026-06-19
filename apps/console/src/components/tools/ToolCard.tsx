@@ -87,7 +87,10 @@ export function ToolCard({ tool }: { tool: Tool }) {
         {/* Actions menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors hover:text-foreground">
+            <button
+              className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Tool actions"
+            >
               <MoreVertical className="size-4" />
             </button>
           </DropdownMenuTrigger>

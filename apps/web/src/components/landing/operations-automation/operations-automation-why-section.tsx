@@ -99,7 +99,7 @@ export function OperationsAutomationWhySection() {
           >
             <div className="relative w-full h-[500px]">
               <Image
-                src="/images/ecommerce-ai-dashboard.svg"
+                src="/images/ecommerce-ai-dashboard.png"
                 alt="QuickVoice unified dashboard showing voice and chat analytics, customer insights, and performance metrics"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

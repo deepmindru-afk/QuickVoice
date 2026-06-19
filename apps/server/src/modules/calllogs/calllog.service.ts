@@ -1,5 +1,6 @@
 import { NotFoundError } from "../../common/errors/notFound.js";
 import { generateDownloadUrl } from "../../config/s3.js";
+import { reportCallMinutesUsage } from "../billing/metered-usage.service.js";
 import * as calllogRepository from "./calllog.repository.js";
 import type {
   IngestCallLogArgs,
@@ -33,8 +34,21 @@ export const signCallRecordingUrl = async <T extends CallWithRecording>(
   };
 };
 
-export const ingestCallLog = (args: IngestCallLogArgs) =>{
-  return calllogRepository.saveCallLog(args);
+export const ingestCallLog = async (args: IngestCallLogArgs) =>{
+  const callLog = await calllogRepository.saveCallLog(args);
+  await reportCallMinutesUsage({
+    organizationId: args.organizationId,
+    callId: args.callId,
+    durationSeconds: args.durationSeconds,
+    timestamp: new Date(args.endTime),
+  }).catch((error) => {
+    console.warn("[billing] failed to report Stripe call usage", {
+      organizationId: args.organizationId,
+      callId: args.callId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+  return callLog;
 };
 
 export const listCallLogs = async (args: ListCallLogsArgs) => {

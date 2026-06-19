@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: 'QuickVoice',
     images: [
       {
-        url: '/images/analytics-dashboard.jpg',
+        url: '/images/analytics-dashboard.png',
         width: 1200,
         height: 630,
         alt: 'QuickVoice AI-powered voice automation contact page',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Contact Us',
     description: 'Get in touch with QuickVoice to explore how voice agents can transform your business. Contact our team today for more information.',
-    images: ['/images/analytics-dashboard.jpg'],
+    images: ['/images/analytics-dashboard.png'],
   },
   alternates: {
     canonical: 'https://quickvoice.co/company/contact',

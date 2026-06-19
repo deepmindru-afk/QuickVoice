@@ -3,7 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "license": "AGPL-3.0-only",
-  "publishConfig": {
-    "access": "public"
+  "exports": {
+    "./base.json": "./base.json",
+    "./browser.json": "./browser.json",
+    "./nextjs.json": "./nextjs.json",
+    "./node.json": "./node.json",
+    "./react-library.json": "./react-library.json",
+    "./strict.json": "./strict.json"
+  },
+  "scripts": {
+    "lint": "node --test ./test.mjs",
+    "test": "node --test ./test.mjs"
   }
 }

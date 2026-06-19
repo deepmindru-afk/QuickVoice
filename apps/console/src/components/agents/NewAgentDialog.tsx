@@ -90,7 +90,7 @@ export function NewAgentDialog() {
         const agent = await createAgent.mutateAsync({
             name: values.name,
             isActive: values.isActive,
-            templateId: null,
+            templateId: selectedTemplate,
         });
         toast.success(`Agent "${agent.name}" created`);
         setOpen(false);

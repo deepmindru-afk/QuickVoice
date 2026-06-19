@@ -14,7 +14,6 @@ import {
  FormMessage,
 } from "@/src/components/ui/form";
 import { toast } from "sonner";
-import axios from "axios";
 import { authClient } from "@/src/lib/auth-client";
 import { ArrowLeft, Building2, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -45,14 +44,26 @@ export default function Orgs() {
  slug: generateSlug(values.name),
  });
  if (error) {
- toast.error(error.message);
- setError(error.message as string);
+ const message = error.message || "Could not create organization";
+ toast.error(message);
+ setError(message);
+ return;
+ }
+ if (!data?.id) {
+ const message = "Organization was not created. Please try again.";
+ toast.error(message);
+ setError(message);
+ return;
  }
  toast.success("Organization created successfully");
- router.push(`/orgs/${data?.id}`);
+ router.push(`/orgs/${data.id}`);
+ } catch (err) {
+ const message =
+ err instanceof Error ? err.message : "Could not create organization";
+ toast.error(message);
+ setError(message);
  } finally {
  setLoading(false);
- setError(null);
  }
  };
 
@@ -79,6 +90,9 @@ export default function Orgs() {
 
  <FormProvider {...form}>
  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+ {error ? (
+ <p className="text-sm font-medium text-destructive">{error}</p>
+ ) : null}
  <FormField
  control={form.control}
  name="name"
@@ -94,8 +108,8 @@ export default function Orgs() {
  />
 
  <div className="pt-2">
- <Button type="submit" disabled={form.formState.isSubmitting} className="w-full h-10">
- {form.formState.isSubmitting ? (
+ <Button type="submit" disabled={loading || form.formState.isSubmitting} className="w-full h-10">
+ {loading || form.formState.isSubmitting ? (
  <>
  <Loader2 className="h-4 w-4 animate-spin mr-2" />
  Creating...

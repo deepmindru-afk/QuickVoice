@@ -24,7 +24,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     name: "Solutions",
-    href: "#",
+    href: "/solutions",
     hasDropdown: true,
     dropdownItems: [
       {
@@ -106,7 +106,7 @@ const navItems: NavItem[] = [
   },
   {
     name: "Company",
-    href: "#",
+    href: "/company/about-us",
     hasDropdown: true,
     dropdownItems: [
       { name: "About Us", href: "/company/about-us" },
@@ -155,82 +155,116 @@ export default function Header1() {
             className="hidden lg:flex items-center space-x-8"
           >
             <ul className="flex items-center space-x-6">
-              {navItems.map((item) => (
-                <li
-                  key={item.name}
-                  className="relative"
-                  onMouseEnter={() =>
-                    item.hasDropdown && setActiveDropdown(item.name)
-                  }
-                  onMouseLeave={() => setActiveDropdown(null)}
-                >
-                  <Link
-                    href={item.href}
-                    className="flex items-center space-x-1 font-medium text-foreground hover:text-primary transition"
-                  >
-                    <span>{item.name}</span>
-                    {item.hasDropdown && (
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
-                          activeDropdown === item.name ? "rotate-180" : ""
-                        }`}
-                      />
-                    )}
-                  </Link>
+              {navItems.map((item) => {
+                const dropdownId = `desktop-nav-${item.name
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}`;
 
-                  {/* Dropdown */}
-                  {item.hasDropdown && (
-                    <AnimatePresence>
-                      {activeDropdown === item.name && (
-                        <motion.ul
-                          className={`absolute top-full left-0 mt-2 w-80 rounded-xl border border-border bg-background shadow-xl z-40 ${
-                            item.name === "Solutions"
-                              ? "w-[600px] grid grid-cols-2 gap-6 p-6"
-                              : "p-2"
+                return (
+                  <li
+                    key={item.name}
+                    className="relative"
+                    onMouseEnter={() =>
+                      item.hasDropdown && setActiveDropdown(item.name)
+                    }
+                    onMouseLeave={() => setActiveDropdown(null)}
+                    onFocus={() =>
+                      item.hasDropdown && setActiveDropdown(item.name)
+                    }
+                    onBlur={(event) => {
+                      const nextTarget = event.relatedTarget;
+                      if (
+                        !(nextTarget instanceof Node) ||
+                        !event.currentTarget.contains(nextTarget)
+                      ) {
+                        setActiveDropdown(null);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setActiveDropdown(null);
+                        (
+                          event.currentTarget.querySelector(
+                            "a",
+                          ) as HTMLAnchorElement | null
+                        )?.focus();
+                      }
+                    }}
+                  >
+                    <Link
+                      href={item.href}
+                      aria-haspopup={item.hasDropdown ? "true" : undefined}
+                      aria-expanded={
+                        item.hasDropdown ? activeDropdown === item.name : undefined
+                      }
+                      aria-controls={item.hasDropdown ? dropdownId : undefined}
+                      className="flex items-center space-x-1 font-medium text-foreground hover:text-primary transition"
+                    >
+                      <span>{item.name}</span>
+                      {item.hasDropdown && (
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${
+                            activeDropdown === item.name ? "rotate-180" : ""
                           }`}
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {item.dropdownItems?.map((dropdown) => (
-                            <li key={dropdown.name}>
-                              {dropdown.nestedDropdownItems ? (
-                                <div>
-                                  <h3 className="font-semibold text-sm text-foreground mb-2">
-                                    {dropdown.name}
-                                  </h3>
-                                  <ul className="space-y-1">
-                                    {dropdown.nestedDropdownItems.map(
-                                      (nested) => (
-                                        <li key={nested.name}>
-                                          <Link
-                                            href={nested.href}
-                                            className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
-                                          >
-                                            {nested.name}
-                                          </Link>
-                                        </li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              ) : (
-                                <Link
-                                  href={dropdown.href}
-                                  className="block px-4 py-2 text-sm hover:bg-muted rounded-lg"
-                                >
-                                  {dropdown.name}
-                                </Link>
-                              )}
-                            </li>
-                          ))}
-                        </motion.ul>
+                        />
                       )}
-                    </AnimatePresence>
-                  )}
-                </li>
-              ))}
+                    </Link>
+
+                    {/* Dropdown */}
+                    {item.hasDropdown && (
+                      <AnimatePresence>
+                        {activeDropdown === item.name && (
+                          <motion.ul
+                            id={dropdownId}
+                            className={`absolute top-full left-0 mt-2 w-80 rounded-xl border border-border bg-background shadow-xl z-40 ${
+                              item.name === "Solutions"
+                                ? "w-[600px] grid grid-cols-2 gap-6 p-6"
+                                : "p-2"
+                            }`}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {item.dropdownItems?.map((dropdown) => (
+                              <li key={dropdown.name}>
+                                {dropdown.nestedDropdownItems ? (
+                                  <div>
+                                    <h3 className="font-semibold text-sm text-foreground mb-2">
+                                      {dropdown.name}
+                                    </h3>
+                                    <ul className="space-y-1">
+                                      {dropdown.nestedDropdownItems.map(
+                                        (nested) => (
+                                          <li key={nested.name}>
+                                            <Link
+                                              href={nested.href}
+                                              className="block rounded-lg px-3 py-2 text-sm hover:bg-muted"
+                                            >
+                                              {nested.name}
+                                            </Link>
+                                          </li>
+                                        ),
+                                      )}
+                                    </ul>
+                                  </div>
+                                ) : (
+                                  <Link
+                                    href={dropdown.href}
+                                    className="block px-4 py-2 text-sm hover:bg-muted rounded-lg"
+                                  >
+                                    {dropdown.name}
+                                  </Link>
+                                )}
+                              </li>
+                            ))}
+                          </motion.ul>
+                        )}
+                      </AnimatePresence>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </nav>
 
@@ -290,6 +324,8 @@ export default function Header1() {
                     <>
                       <button
                         className="flex w-full items-center justify-between px-2 py-2 rounded-lg font-medium hover:bg-muted transition-colors"
+                        aria-expanded={openMobileDropdown === item.name}
+                        aria-controls={`mobile-nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                         onClick={() =>
                           setOpenMobileDropdown(
                             openMobileDropdown === item.name ? null : item.name,
@@ -306,6 +342,7 @@ export default function Header1() {
                       <AnimatePresence>
                         {openMobileDropdown === item.name && (
                           <motion.div
+                            id={`mobile-nav-${item.name.toLowerCase().replace(/\s+/g, "-")}`}
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}

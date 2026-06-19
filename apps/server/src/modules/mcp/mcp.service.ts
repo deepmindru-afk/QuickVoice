@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
+import { assertSafeRemoteUrl } from "../../lib/url-safety.js";
+import { redactJson } from "../../lib/redaction.js";
 import { findCuratedMcp, curatedMcpCatalog } from "./mcp.catalog.js";
 import * as repository from "./mcp.repository.js";
 import type { ConnectMcpInput, ExecuteMcpToolInput } from "./mcp.schema.js";
@@ -58,25 +60,6 @@ const normalizeStatus = (state: unknown): McpStatus => {
   if (value === "disconnected") return "DISCONNECTED";
   if (value === "error" || value === "failed") return "ERROR";
   return "PENDING";
-};
-
-const assertSafeRemoteUrl = (rawUrl: string) => {
-  let parsed: URL;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new BadRequestError("MCP URL must be valid");
-  }
-
-  if (!["https:"].includes(parsed.protocol)) {
-    throw new BadRequestError("MCP URL must use HTTPS");
-  }
-
-  const host = parsed.hostname.toLowerCase();
-  const blockedHosts = ["localhost", "127.0.0.1", "0.0.0.0", "::1"];
-  if (blockedHosts.includes(host) || host.endsWith(".local")) {
-    throw new BadRequestError("Private or local MCP URLs are not allowed");
-  }
 };
 
 const connectionUrl = (namespace: string, connectionId: string) =>
@@ -342,7 +325,7 @@ export const connect = async (
 
   const mcpUrl = catalogItem?.mcpUrl ?? input.customUrl;
   if (!mcpUrl) throw new BadRequestError("MCP URL is required");
-  assertSafeRemoteUrl(mcpUrl);
+  await assertSafeRemoteUrl(mcpUrl);
 
   const displayName = input.displayName || catalogItem?.name || new URL(mcpUrl).hostname;
   const rawConnectionKey = catalogItem?.smitheryServerKey ?? `custom-${slugify(displayName)}-${randomUUID().slice(0, 8)}`;
@@ -510,8 +493,9 @@ export const disconnect = async (organizationId: string, mcpConnectionId: string
 };
 
 const preview = (value: unknown) => {
-  const serialized = JSON.stringify(value ?? null);
-  if (serialized.length <= 2000) return value;
+  const redacted = redactJson(value ?? null);
+  const serialized = JSON.stringify(redacted);
+  if (serialized.length <= 2000) return redacted;
   return { truncated: true, text: serialized.slice(0, 2000) };
 };
 

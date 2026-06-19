@@ -183,7 +183,7 @@ export function OperationsAutomationIndustriesSection() {
           >
             <div className="relative w-full h-[400px]">
               <Image
-                src="/images/solutions"
+                src="/images/solutions.png"
                 alt="Industry-specific operations automation solutions showing various business sectors and their automated workflows"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

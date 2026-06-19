@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Home, ArrowRight, PhoneOff, LogIn } from "lucide-react";
+import { Home, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/logo";
 import { LOGIN_URL } from "@/lib/links";

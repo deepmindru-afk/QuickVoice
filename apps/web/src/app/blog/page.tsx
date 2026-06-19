@@ -1,7 +1,7 @@
-import { getAllPosts, getAllCategories } from "@/lib/blog";
+import { getAllPosts, type BlogPost } from "@/lib/blog";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Calendar, Clock, ChevronRight, BookOpen, TrendingUp, Layers, BarChart2, GitCompare, Building2 } from "lucide-react";
+import { Calendar, Clock, ChevronRight, BookOpen, TrendingUp, Layers, BarChart2, GitCompare, Building2, Search } from "lucide-react";
 import { REGISTER_URL } from "@/lib/links";
 
 export const metadata: Metadata = {
@@ -90,10 +90,43 @@ function formatDate(dateStr: string) {
   }
 }
 
-export default function BlogIndexPage() {
+function normalizeSearchQuery(value: string | string[] | undefined): string {
+  const query = Array.isArray(value) ? value[0] : value;
+  return query?.trim().slice(0, 120) ?? "";
+}
+
+function getCategories(posts: BlogPost[]): string[] {
+  return Array.from(new Set(posts.map((post) => post.category)));
+}
+
+function postMatchesQuery(post: BlogPost, query: string): boolean {
+  const normalizedQuery = query.toLowerCase();
+  const searchableText = [
+    post.title,
+    post.metaDescription,
+    post.category,
+    post.readTime,
+    ...post.tags,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return searchableText.includes(normalizedQuery);
+}
+
+interface BlogIndexPageProps {
+  searchParams?: Promise<{ q?: string | string[] }> | { q?: string | string[] };
+}
+
+export default async function BlogIndexPage({ searchParams }: BlogIndexPageProps) {
+  const params = searchParams ? await searchParams : {};
+  const query = normalizeSearchQuery(params.q);
   const allPosts = getAllPosts();
-  const categories = getAllCategories();
-  const featured = allPosts[allPosts.length - 1]; // most recent
+  const filteredPosts = query
+    ? allPosts.filter((post) => postMatchesQuery(post, query))
+    : allPosts;
+  const categories = getCategories(filteredPosts);
+  const featured = filteredPosts[filteredPosts.length - 1]; // most recent
 
   const blogSchema = {
     "@context": "https://schema.org",
@@ -134,7 +167,7 @@ export default function BlogIndexPage() {
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
               <BookOpen className="h-3.5 w-3.5" />
-              <span>52 expert articles and growing</span>
+              <span>{allPosts.length} expert articles and growing</span>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-5 leading-tight">
               AI Voice Agent Insights,
@@ -149,6 +182,50 @@ export default function BlogIndexPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 pb-24">
+        <section className="mb-12">
+          <form
+            action="/blog"
+            className="mx-auto flex max-w-2xl flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm sm:flex-row"
+          >
+            <label htmlFor="blog-search" className="sr-only">
+              Search blog articles
+            </label>
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="blog-search"
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="Search guides, playbooks, and comparisons"
+                className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+            >
+              Search
+            </button>
+            {query && (
+              <Link
+                href="/blog"
+                className="inline-flex h-11 items-center justify-center rounded-xl border border-border px-5 text-sm font-semibold text-foreground transition hover:bg-muted"
+              >
+                Clear
+              </Link>
+            )}
+          </form>
+          {query && (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Showing {filteredPosts.length}{" "}
+              {filteredPosts.length === 1 ? "article" : "articles"}{" "}
+              for &quot;
+              {query}&quot;.
+            </p>
+          )}
+        </section>
+
         {/* Featured post */}
         {featured && (
           <section className="mb-16">
@@ -192,8 +269,12 @@ export default function BlogIndexPage() {
                   </div>
                   <div className="hidden md:flex items-center justify-center bg-gradient-to-br from-primary/10 to-blue-600/10 p-10">
                     <div className="text-center space-y-3">
-                      <div className="text-6xl font-bold text-primary/20">{allPosts.length}</div>
-                      <div className="text-sm text-muted-foreground">articles published</div>
+                      <div className="text-6xl font-bold text-primary/20">
+                        {query ? filteredPosts.length : allPosts.length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {query ? "matching articles" : "articles published"}
+                      </div>
                       <div className="flex flex-wrap gap-2 justify-center mt-4">
                         {featured.tags.slice(0, 3).map((tag) => (
                           <span
@@ -212,10 +293,20 @@ export default function BlogIndexPage() {
           </section>
         )}
 
+        {filteredPosts.length === 0 && (
+          <section className="mb-16 rounded-2xl border border-border bg-card p-10 text-center">
+            <h2 className="text-xl font-bold text-foreground">No articles found</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+              Try a broader keyword or clear the search to browse every published
+              QuickVoice guide.
+            </p>
+          </section>
+        )}
+
         {/* Category sections */}
         {categories.map((category) => {
           const meta = CATEGORY_META[category] || defaultMeta(category);
-          const posts = allPosts.filter((p) => p.category === category);
+          const posts = filteredPosts.filter((p) => p.category === category);
           return (
             <section key={category} className="mb-16">
               {/* Section header */}

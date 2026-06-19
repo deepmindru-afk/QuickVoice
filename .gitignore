@@ -17,6 +17,8 @@ node_modules
 
 # Testing
 coverage
+.audit_runs/
+.fix_runs/
 
 # Turbo
 .turbo
@@ -39,3 +41,4 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+__pycache__/

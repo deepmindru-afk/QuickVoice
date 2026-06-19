@@ -17,6 +17,7 @@ import { Request, Response, NextFunction } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth.js";
 import { UnauthenticatedError } from "../common/errors/unauthenticated.js";
+import { recordAuditEvent } from "../modules/audit/audit-log.service.js";
 
 const API_KEY_HEADER = "x-api-key";
 const INTERNAL_ORG_HEADER = "x-organization-id";
@@ -75,7 +76,9 @@ const authMiddleware = async (
       }
 
       const keyRecord = verified.key as {
+        id?: string | null;
         metadata?: unknown;
+        permissions?: unknown;
         referenceId?: string | null;
         userId?: string | null;
       };
@@ -98,7 +101,21 @@ const authMiddleware = async (
         activeOrganizationId: organizationId,
         authMethod: "apiKey",
         session: null,
+        apiKeyPermissions:
+          normalizePermissions(keyRecord.permissions) ??
+          normalizePermissions(metadata?.permissions),
       };
+      void recordAuditEvent({
+        organizationId,
+        userId,
+        action: "api_key.authenticated",
+        resourceType: "api_key",
+        resourceId: keyRecord.id ?? keyRecord.referenceId ?? null,
+        metadata: {
+          method: req.method,
+          path: req.originalUrl || req.url,
+        },
+      });
       return next();
     }
 
@@ -168,6 +185,30 @@ function safeJsonParse(value: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function normalizePermissions(value: unknown): Record<string, string[]> | undefined {
+  const parsed =
+    typeof value === "string"
+      ? value.trim().length > 0
+        ? safeJsonParse(value)
+        : null
+      : value;
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return undefined;
+  }
+
+  const permissions: Record<string, string[]> = {};
+  for (const [resource, actions] of Object.entries(parsed)) {
+    if (!Array.isArray(actions)) continue;
+    const normalizedActions = actions.filter(
+      (action): action is string => typeof action === "string" && action.length > 0
+    );
+    if (normalizedActions.length > 0) {
+      permissions[resource] = normalizedActions;
+    }
+  }
+  return Object.keys(permissions).length > 0 ? permissions : undefined;
 }
 
 export const requireInternalApiKey=async (

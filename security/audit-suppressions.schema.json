@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "QuickVoice dependency audit suppressions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suppressions"],
+  "properties": {
+    "suppressions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "reason"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "GitHub advisory ID, CVE, npm advisory ID, or pnpm advisory ID."
+          },
+          "module": {
+            "type": "string",
+            "description": "Optional package name that must match the advisory."
+          },
+          "contexts": {
+            "type": "array",
+            "items": {
+              "enum": ["production dependencies", "all dependencies"]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expires": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    }
+  }
+}

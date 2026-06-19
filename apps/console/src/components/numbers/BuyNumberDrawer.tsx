@@ -38,11 +38,10 @@ import {
     useBuyNumber,
     useNumberSearch,
 } from "@/src/hooks/queries/numbers";
-import type { TelephonyProvider } from "@/src/lib/api/types";
 import type { NumberSearchParams } from "@/src/lib/api/resources/numbers";
 
 const schema = z.object({
-    provider: z.enum(["TWILIO", "TELNYX"]),
+    provider: z.enum(["twilio", "telnyx"]),
     country: z
         .string()
         .length(2, "ISO-3166 alpha-2 country code")
@@ -60,7 +59,7 @@ export function BuyNumberDrawer() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
-        defaultValues: { provider: "TWILIO", country: "US", areaCode: "" },
+        defaultValues: { provider: "twilio", country: "US", areaCode: "" },
     });
 
     const search = useNumberSearch(searchParams, !!searchParams);
@@ -68,7 +67,7 @@ export function BuyNumberDrawer() {
 
     function onSubmit(values: FormValues) {
         setSearchParams({
-            provider: values.provider as TelephonyProvider,
+            provider: values.provider,
             country: values.country,
             areaCode: values.areaCode || undefined,
             limit: 10,
@@ -129,8 +128,8 @@ export function BuyNumberDrawer() {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="TWILIO">Twilio</SelectItem>
-                                                <SelectItem value="TELNYX">Telnyx</SelectItem>
+                                                <SelectItem value="twilio">Twilio</SelectItem>
+                                                <SelectItem value="telnyx">Telnyx</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </FormItem>

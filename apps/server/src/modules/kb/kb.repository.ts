@@ -1,4 +1,5 @@
 import { kbStatus } from "../../../prisma/generated/prisma/client.js";
+import { BadRequestError } from "../../common/errors/badRequest.js";
 import prisma from "../../config/prisma.js";
 import type { CreateKbArgs, ListKbArgs } from "./kb.schema.js";
 
@@ -7,6 +8,14 @@ import type { CreateKbArgs, ListKbArgs } from "./kb.schema.js";
 // it should be incremented when the ingestion callback flips status to ACTIVE.
 export const createKnowledgeSources = async (input: CreateKbArgs) => {
   return prisma.$transaction(async (tx) => {
+    const agent = await tx.agent.findFirst({
+      where: { agentId: input.agentId, organizationId: input.organizationId },
+      select: { agentId: true },
+    });
+    if (!agent) {
+      throw new BadRequestError("Agent not found in active organization");
+    }
+
     const rows = await Promise.all(
       input.documents.map((doc) =>
         tx.knowledgeSource.create({
@@ -81,8 +90,7 @@ export const markError = async (kbIds: string[]) => {
 };
 
 // Hard delete. If the source was ACTIVE, also decrements Agent.knowledgeSourcesCount.
-// TODO: add S3 object cleanup.
-// TODO: add Pinecone vector cleanup.
+// External asset cleanup is handled by kb.service.ts before this DB delete.
 export const deleteKnowledgeSource = async (
   kbId: string,
   organizationId: string

@@ -1,6 +1,9 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { EmptyState } from "@/src/components/common/EmptyState";
 import { PageHeader } from "@/src/components/common/PageHeader";
 import { RangeSwitcher } from "@/src/components/dashboard/RangeSwitcher";
 import { KpiCards } from "@/src/components/dashboard/KpiCards";
@@ -19,7 +22,7 @@ function resolveRange(param: string | null): DashboardRange {
 export default function DashboardPage() {
   const params = useSearchParams();
   const range = resolveRange(params.get("range"));
-  const { data, isLoading } = useDashboardSummary(range);
+  const { data, isLoading, isError, isFetching, refetch } = useDashboardSummary(range);
   const successPct = Math.round((data?.totals.successRate ?? 0) * 100);
   const exceptionCalls =
     (data?.totals.failedCalls ?? 0) + (data?.totals.missedCalls ?? 0);
@@ -31,6 +34,20 @@ export default function DashboardPage() {
         description="A compact view of call volume, outcomes, routing, and agent performance."
         actions={<RangeSwitcher current={range} />}
       />
+      {isError ? (
+        <EmptyState
+          icon={AlertCircle}
+          title="Could not load dashboard"
+          description="Refresh the summary or try again after checking your connection."
+          action={
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={isFetching ? "animate-spin" : undefined} />
+              Retry
+            </Button>
+          }
+        />
+      ) : (
+      <>
       <div className="grid gap-4 border bg-card p-5 lg:grid-cols-[1fr_340px] lg:items-center">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -75,6 +92,8 @@ export default function DashboardPage() {
       </div>
       <BreakdownCharts summary={data} loading={isLoading} />
       <RecentCallsTable summary={data} loading={isLoading} />
+      </>
+      )}
     </div>
   );
 }

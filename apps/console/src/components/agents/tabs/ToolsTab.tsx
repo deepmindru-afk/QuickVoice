@@ -103,6 +103,7 @@ export function ToolsTab({ agentId }: { agentId: string }) {
                   className="size-8 text-muted-foreground hover:text-destructive"
                   onClick={() => detachTool.mutate(tool.toolId)}
                   disabled={detachTool.isPending && detachTool.variables === tool.toolId}
+                  aria-label={`Detach ${tool.name}`}
                 >
                   {detachTool.isPending && detachTool.variables === tool.toolId ? (
                     <Loader2 className="size-3.5 animate-spin" />
@@ -184,6 +185,7 @@ export function ToolsTab({ agentId }: { agentId: string }) {
                   className="size-8 text-muted-foreground hover:text-destructive"
                   onClick={() => detachMcp.mutate(item.mcpConnectionId)}
                   disabled={detachMcp.isPending && detachMcp.variables === item.mcpConnectionId}
+                  aria-label={`Detach ${item.mcpConnection.displayName}`}
                 >
                   {detachMcp.isPending && detachMcp.variables === item.mcpConnectionId ? (
                     <Loader2 className="size-3.5 animate-spin" />

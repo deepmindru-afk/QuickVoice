@@ -102,14 +102,12 @@ function AllowedValueInput({
 
 function ParamCard({
   param,
-  index,
   onChange,
   onRemove,
   readonlyName,
   disabled,
 }: {
   param: ToolParam;
-  index: number;
   onChange: (p: ToolParam) => void;
   onRemove: () => void;
   readonlyName?: boolean;
@@ -273,7 +271,6 @@ export function ParamEditor({
             <ParamCard
               key={i}
               param={param}
-              index={i}
               onChange={(p) => update(i, p)}
               onRemove={() => remove(i)}
               readonlyName={readonlyNames}

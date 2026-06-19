@@ -5,17 +5,32 @@ on:
     branches: [main]
     paths:
       - "apps/ai/**"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
       - ".github/workflows/ai-build.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ai-deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   ECR_REPOSITORY: ${{ vars.AI_ECR_REPOSITORY }}
   AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
 jobs:
+  quality-gate:
+    name: Required CI Signal
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
   build-and-deploy:
-    name: Build and Push AI Image
+    name: Build, Validate, Sign, and Push AI Image
+    needs: quality-gate
     runs-on: ubuntu-latest
+    environment:
+      name: production-ai
     permissions:
       id-token: write
       contents: read
@@ -38,13 +53,49 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: apps/ai
           file: apps/ai/Dockerfile
           push: true
           tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:sha-${{ github.sha }}
+          sbom: true
+          provenance: true
           cache-from: type=gha,scope=ai
           cache-to: type=gha,scope=ai,mode=max
+
+      - name: Smoke test pushed image manifest
+        env:
+          IMAGE_REF: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build.outputs.digest }}
+        run: docker buildx imagetools inspect "$IMAGE_REF"
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          IMAGE_REF: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}@${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "$IMAGE_REF"
+
+      - name: Rollback metadata
+        env:
+          IMAGE_TAG: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:sha-${{ github.sha }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "## Rollback metadata"
+            echo "- Image tag: ${IMAGE_TAG}"
+            echo "- Image digest: ${IMAGE_DIGEST}"
+            echo "- Source commit: ${GITHUB_SHA}"
+          } >> "$GITHUB_STEP_SUMMARY"

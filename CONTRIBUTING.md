@@ -25,8 +25,10 @@ Useful checks:
 ```sh
 pnpm lint
 pnpm check-types
-pnpm test:dev-orchestration
+pnpm test
 pnpm build
+pnpm ci:local
+pnpm audit:deps -- --audit-level high
 ```
 
 Run the narrowest check that proves your change, then run broader checks when touching shared code, API contracts, auth, billing, database models, or runtime agent behavior.

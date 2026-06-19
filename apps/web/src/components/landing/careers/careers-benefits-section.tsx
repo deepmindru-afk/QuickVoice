@@ -184,17 +184,17 @@ export function CareersBenefitsSection() {
               </div>
             </div>
 
-            <motion.button
+            <motion.a
+              href="#open-positions"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-primary text-primary-foreground font-bold rounded-xl shadow-lg hover:shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)] transition-all duration-300"
             >
-              View All Benefits
-            </motion.button>
+              View Open Positions
+            </motion.a>
           </div>
         </motion.div>
       </div>
     </section>
   );
 }
-

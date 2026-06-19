@@ -16,6 +16,7 @@ import { serve as serveInngest } from "inngest/express";
 import { inngest } from "./config/inngest.js";
 import { inngestFunctions } from "./inngest/index.js";
 import apiRouter from "./router.js";
+import { getReadiness } from "./modules/system/readiness.service.js";
 import "./workers/kb.worker.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
@@ -35,7 +36,7 @@ app.use(
   swaggerUi.setup(swaggerSpec, {
     explorer: true,
     swaggerOptions: {
-      persistAuthorization: true,
+      persistAuthorization: false,
       withCredentials: true,
     },
   })
@@ -78,11 +79,12 @@ app.use(
 
 app.all(`/api/${apiVersion}/auth/*splat`, toNodeHandler(auth));
 
+// Rate limit before JSON parsing so oversized or abusive request bodies are
+// throttled before the server spends work parsing them.
+app.use(rateLimitMiddleware);
+
 // Body parser (after Better Auth handler)
 app.use(express.json());
-
-// Rate limit
-app.use(rateLimitMiddleware);
 // Inngest serve handler — exposes functions for remote invocation.
 // Must be after express.json() so Inngest can read request bodies.
 app.use(
@@ -104,6 +106,19 @@ app.get(`/api/${apiVersion}/health`, (req, res) => {
     success: true,
     message: "Server running fine",
   });
+});
+
+app.get(`/api/${apiVersion}/ready`, async (_req, res, next) => {
+  try {
+    const readiness = await getReadiness();
+    res.status(readiness.ready ? 200 : 503).json({
+      success: readiness.ready,
+      message: readiness.ready ? "Server ready" : "Server not ready",
+      data: readiness,
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**

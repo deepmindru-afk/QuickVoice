@@ -6,7 +6,7 @@ import { Users2, Globe, Heart } from "lucide-react";
 
 export function CareersCultureSection() {
   return (
-    <section className="py-24 bg-background">
+    <section id="careers-culture" className="py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <motion.div
@@ -107,7 +107,7 @@ export function CareersCultureSection() {
           >
             <div className="relative w-full overflow-hidden rounded-xl">
               <Image
-                src="/images/saas/saas-ai-dashboard.jpg"
+                src="/images/saas/saas-ai-dashboard.png"
                 alt="QuickVoice team culture and workplace environment"
                 width={800}
                 height={400}
@@ -123,4 +123,3 @@ export function CareersCultureSection() {
     </section>
   );
 }
-

@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: 'QuickVoice',
     images: [
       {
-        url: '/images/analytics-dashboard.jpg',
+        url: '/images/analytics-dashboard.png',
         width: 1200,
         height: 630,
         alt: 'QuickVoice AI-powered voice agent careers and opportunities',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Careers at QuickVoice — Build the Future of Voice AI',
     description: 'Join QuickVoice and help build the future of AI voice agents. Explore open positions in engineering, sales, and more.',
-    images: ['/images/analytics-dashboard.jpg'],
+    images: ['/images/analytics-dashboard.png'],
   },
   alternates: {
     canonical: 'https://quickvoice.co/company/careers',

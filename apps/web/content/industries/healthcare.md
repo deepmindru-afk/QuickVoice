@@ -103,7 +103,7 @@ Every healthcare organization that deploys an AI voice agent for patient communi
 
 QuickVoice is a HIPAA-compliant platform. Here's what that means in practice:
 
-**Business Associate Agreement (BAA):** QuickVoice executes a BAA with every healthcare customer, establishing the legal framework for handling Protected Health Information (PHI).
+**Business Associate Agreement (BAA):** QuickVoice executes a BAA with Scale and Enterprise healthcare customers before PHI is processed, establishing the legal framework for handling Protected Health Information (PHI).
 
 **Data encryption:** All PHI in transit is encrypted with TLS 1.3. All PHI at rest is encrypted with AES-256.
 

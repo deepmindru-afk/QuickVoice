@@ -52,7 +52,7 @@ const faqItems = [
   {
     question: "Does QuickVoice sign Business Associate Agreements (BAAs)?",
     answer:
-      "Absolutely. We execute Business Associate Agreements with every healthcare customer and covered entity before any protected health information (PHI) is processed on our platform. Our BAA covers all HIPAA-required provisions including permitted uses and disclosures, safeguard obligations, breach notification procedures, and termination requirements.",
+      "Yes. We execute Business Associate Agreements with Scale and Enterprise healthcare customers and covered entities before any protected health information (PHI) is processed on our platform. Our BAA covers all HIPAA-required provisions including permitted uses and disclosures, safeguard obligations, breach notification procedures, and termination requirements.",
   },
   {
     question:
@@ -416,8 +416,9 @@ export default function HipaaCompliancePage() {
                 HIPAA requires that covered entities enter into a Business
                 Associate Agreement with any vendor that creates, receives,
                 maintains, or transmits protected health information on their
-                behalf. QuickVoice provides a comprehensive BAA to every
-                healthcare customer as part of our standard onboarding process.
+                behalf. QuickVoice provides a comprehensive BAA to Scale and
+                Enterprise healthcare customers as part of our standard
+                onboarding process.
               </p>
               <ul className="mt-8 space-y-4">
                 {[
@@ -454,7 +455,7 @@ export default function HipaaCompliancePage() {
                   BAA Included
                 </h3>
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Available on all healthcare and enterprise plans at no
+                  Available on Scale and Enterprise healthcare plans at no
                   additional cost. Contact our compliance team to get started.
                 </p>
                 <div className="mt-6 space-y-3 text-sm">
@@ -573,8 +574,8 @@ export default function HipaaCompliancePage() {
               </Link>
             </div>
             <p className="mt-6 text-sm text-muted-foreground">
-              No credit card required. BAA available on healthcare and
-              enterprise plans.
+              No credit card required. BAA available on Scale and Enterprise
+              healthcare plans.
             </p>
           </div>
         </div>

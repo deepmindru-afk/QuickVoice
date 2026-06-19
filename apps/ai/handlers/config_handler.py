@@ -6,7 +6,8 @@ from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-from loguru import logger
+from utils.auth import is_explicit_dev_mode
+from utils.logger import logger, redact_sensitive
 
 
 DEFAULT_CONFIG = {
@@ -33,6 +34,10 @@ DEFAULT_CONFIG = {
     "variables": None,
     "preemptive_generation": True,
     "timezone": "UTC",
+    "store_call_audio": True,
+    "zero_pii_retention": False,
+    "retention_days": None,
+    "mcp_connections": [],
 }
 
 
@@ -42,6 +47,7 @@ async def get_config(
     agent_number: str | None = None,
     server_api_url: str | None = None,
     internal_api_key: str | None = None,
+    allow_default_config: bool = False,
     get_json=None,
 ):
     base_url = (server_api_url or os.getenv("SERVER_API_URL") or "").rstrip("/")
@@ -56,7 +62,7 @@ async def get_config(
             url = f"{api_base_url}/agents/number-config/{encoded_agent_number}"
             try:
                 response = await (get_json or _get_json)(url, headers)
-                logger.info("Payload: {}", response.get("data"))
+                logger.info("Config loaded by agent number: {}", _config_log_summary(response.get("data", response)))
                 return normalize_config(response.get("data", response))
             except HTTPError as error:
                 if error.code != 404 or not agent_id:
@@ -66,8 +72,13 @@ async def get_config(
             encoded_agent_id = quote(agent_id, safe="")
             url = f"{api_base_url}/agents/internal-config/{encoded_agent_id}"
             response = await (get_json or _get_json)(url, headers)
-            logger.info("Payload: {}", response.get("data"))
+            logger.info("Config loaded by agent id: {}", _config_log_summary(response.get("data", response)))
             return normalize_config(response.get("data", response))
+
+    if not allow_default_config and not is_explicit_dev_mode():
+        raise RuntimeError(
+            "SERVER_API_URL and INTERNAL_API_KEY are required to load runtime agent config"
+        )
 
     config = dict(DEFAULT_CONFIG)
     config["agent_id"] = agent_id
@@ -107,6 +118,9 @@ def normalize_config(raw: dict[str, Any]) -> dict[str, Any]:
             "variables": _pick(raw, "variables"),
             "preemptive_generation": bool(_pick(raw, "preemptive_generation") or False),
             "timezone": _pick(raw, "timezone") or DEFAULT_CONFIG["timezone"],
+            "store_call_audio": _pick_bool(raw, "storeCallAudio", "store_call_audio", default=True),
+            "zero_pii_retention": _pick_bool(raw, "zeroPiiRetention", "zero_pii_retention", default=False),
+            "retention_days": _pick(raw, "retentionDays", "retention_days"),
         }
     )
     return config
@@ -117,6 +131,31 @@ def _pick(source: dict[str, Any], *keys: str):
         if key in source and source[key] is not None:
             return source[key]
     return None
+
+
+def _pick_bool(source: dict[str, Any], *keys: str, default: bool) -> bool:
+    value = _pick(source, *keys)
+    if value is None:
+        return default
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return bool(value)
+
+
+def _config_log_summary(raw: dict[str, Any]) -> dict[str, Any]:
+    return redact_sensitive(
+        {
+            "agentId": _pick(raw or {}, "agentId", "agent_id"),
+            "organizationId": _pick(raw or {}, "organizationId", "organization_id"),
+            "provider": _pick(raw or {}, "provider"),
+            "use_rag": _pick(raw or {}, "use_rag"),
+            "mcpConnections": len(_pick(raw or {}, "mcpConnections", "mcp_connections") or []),
+        }
+    )
 
 
 def _normalize_llm_model(model: str) -> dict[str, str]:

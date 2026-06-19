@@ -48,7 +48,6 @@ export const kbIngest = inngest.createFunction(
         });
 
         const body = await res.text();
-        console.log("res", body);
 
         if (!res.ok) {
           throw new Error(

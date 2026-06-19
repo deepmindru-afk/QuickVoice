@@ -4,12 +4,9 @@ const basePath = `/api/${apiVersion}`;
 const userAuthSecurity = [
   { sessionCookie: [] },
   { apiKey: [] },
-  { internalBearer: [], internalUserId: [], internalOrganizationId: [] },
 ];
 
-const internalAuthSecurity = [
-  { internalBearer: [], internalUserId: [], internalOrganizationId: [] },
-];
+const internalAuthSecurity: never[] = [];
 
 const errorResponse = {
   type: "object",
@@ -56,26 +53,6 @@ export const swaggerSpec = {
         name: "x-api-key",
         description:
           "Organization-scoped QuickVoice API key. Send the raw key in the x-api-key header; do not use Authorization: Bearer for external API keys.",
-      },
-      internalBearer: {
-        type: "http",
-        scheme: "bearer",
-        description:
-          "Internal server-to-server token matching INTERNAL_API_KEY. Enter only the raw token value, not 'Bearer ...'. Also authorize x-user-id and x-organization-id for Swagger requests.",
-      },
-      internalUserId: {
-        type: "apiKey",
-        in: "header",
-        name: "x-user-id",
-        description:
-          "User id for internal server-to-server requests. Required when using internalBearer from Swagger.",
-      },
-      internalOrganizationId: {
-        type: "apiKey",
-        in: "header",
-        name: "x-organization-id",
-        description:
-          "Organization id for internal server-to-server requests. Required when using internalBearer from Swagger.",
       },
     },
     schemas: {
@@ -269,11 +246,9 @@ export const swaggerSpec = {
       },
       CreateKbRequest: {
         type: "object",
-        required: ["agentId", "userId", "organizationId", "documents"],
+        required: ["agentId", "documents"],
         properties: {
           agentId: { type: "string", format: "uuid" },
-          userId: { type: "string" },
-          organizationId: { type: "string" },
           documents: {
             type: "array",
             minItems: 1,

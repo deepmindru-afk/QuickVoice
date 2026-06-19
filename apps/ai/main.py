@@ -13,11 +13,13 @@ from livekit.agents import (
 )
 from livekit.plugins import noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
-from handlers.calllog_handler import build_call_log_payload, post_call_log
+from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
+from handlers.finalization_handler import CallFinalizer
 from handlers.livekit_handler import get_transcripts, recording_path as build_recording_path, start_recording
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
-from handlers.rag_handler import get_rag_context
+from handlers.privacy_handler import should_store_call_audio
+from handlers.rag_handler import RagRetrievalError, get_rag_context
 from handlers.worker_handler import (
     apply_metadata_overrides,
     build_call_context,
@@ -25,6 +27,7 @@ from handlers.worker_handler import (
     speak_first_message,
 )
 from utils.logger import logger
+from utils.logger import redact_sensitive
 import asyncio
 import json
 from datetime import datetime, timezone
@@ -144,7 +147,19 @@ class Assistant(Agent):
         if not query:
             return
 
-        context = await get_rag_context(agent_id=agent_id, query=query)
+        try:
+            context = await get_rag_context(agent_id=agent_id, query=query)
+        except RagRetrievalError:
+            turn_ctx.add_message(
+                role="system",
+                content=(
+                    "Knowledge base retrieval failed for the user's latest question. "
+                    "Tell the user the knowledge base is temporarily unavailable and do not invent an answer."
+                ),
+            )
+            logger.warning("[rag] injected unavailable signal for agent={}", redact_sensitive(agent_id))
+            return
+
         if not context:
             logger.info(f"[rag] no context returned for agent={agent_id}")
             return
@@ -180,7 +195,10 @@ class Assistant(Agent):
         if not normalized_query:
             return "A search query is required."
 
-        context = await get_rag_context(str(agent_id), normalized_query, top_k=top_k)
+        try:
+            context = await get_rag_context(str(agent_id), normalized_query, top_k=top_k)
+        except RagRetrievalError:
+            return "Knowledge base search is temporarily unavailable. Please try again later."
         return context or "No matching knowledge base context found."
 
     @function_tool
@@ -205,7 +223,7 @@ class Assistant(Agent):
 
 
 async def entrypoint(ctx: JobContext):
-    logger.info(f"Entrypoint called with room: {ctx.room.name}")
+    logger.info("Entrypoint called with room: {}", redact_sensitive(ctx.room.name))
 
     await ctx.connect()
     metadata = parse_metadata(ctx.job.metadata or "")
@@ -219,14 +237,19 @@ async def entrypoint(ctx: JobContext):
         logger.warning(f"Could not read room participant before loading config: {error}")
 
     call_context = build_call_context(ctx.room.name, metadata)
-    logger.info(f"Call context: {call_context}")
+    logger.info("Call context: {}", redact_sensitive(call_context))
 
     config = await get_config(
         call_context.get("agent_id"),
         agent_number=call_context.get("agent_number"),
     )
     config = apply_metadata_overrides(config, metadata)
-    logger.info(f"Config loaded for agent: {config.get('agent_id')}")
+    logger.info("Config loaded for agent: {}", redact_sensitive(config.get("agent_id")))
+
+    try:
+        await flush_call_log_queue()
+    except Exception as error:
+        logger.warning("[CALL_LOG] queued delivery retry failed: {}", redact_sensitive(str(error)))
 
     if not call_context.get("agent_id") and config.get("agent_id"):
         call_context["agent_id"] = config["agent_id"]
@@ -274,40 +297,39 @@ async def entrypoint(ctx: JobContext):
     speak_first_message(session, config)
 
     call_start_time = datetime.now(timezone.utc)
-    recording_id = await start_recording(ctx)
+    recording_id = None
+    if should_store_call_audio(config):
+        recording_id = await start_recording(ctx)
+    else:
+        logger.info("[RECORDING] skipped by agent privacy controls")
     recording_path = build_recording_path(recording_id) if recording_id else None
     shutdown_started = False
+
+    call_finalizer = CallFinalizer(
+        config=config,
+        call_context=call_context,
+        started_at=call_start_time,
+        recording_path=recording_path,
+        transcript_reader=lambda: get_transcripts(agent),
+    )
+
+    async def unified_shutdown_hook():
+        try:
+            await call_finalizer.finalize()
+        except Exception as error:
+            logger.error("[CALL_LOG] Failed to finalize completed call: {}", redact_sensitive(str(error)))
+
+    if hasattr(ctx, "add_shutdown_callback"):
+        ctx.add_shutdown_callback(unified_shutdown_hook)
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):
         nonlocal shutdown_started
-        logger.info(f"[HANGUP] Participant disconnected: {participant.identity}")
+        logger.info("[HANGUP] Participant disconnected: {}", redact_sensitive(getattr(participant, "identity", "")))
         if shutdown_started:
             return
         shutdown_started = True
         asyncio.create_task(unified_shutdown_hook())
-
-    async def unified_shutdown_hook():
-        ended_at = datetime.now(timezone.utc)
-        duration = ended_at - call_start_time
-        logger.info(f"Call duration: {duration}")
-        transcript = get_transcripts(agent)
-        logger.info(f"Transcript messages: {len(transcript)}")
-        logger.info(f"Recording path: {recording_path}")
-
-        try:
-            payload = build_call_log_payload(
-                config=config,
-                call_context=call_context,
-                started_at=call_start_time,
-                ended_at=ended_at,
-                recording_path=recording_path,
-                transcripts=transcript,
-            )
-            await post_call_log(payload)
-            logger.info(f"Call log posted: {payload['callId']}")
-        except Exception as error:
-            logger.error(f"[CALL_LOG] Failed to post completed call: {error}")
 
 
 if __name__ == "__main__":

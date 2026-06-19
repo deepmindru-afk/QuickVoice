@@ -1,0 +1,101 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const read = (path) => readFileSync(join(root, path), "utf8");
+
+test("organization creation stops on create failures and requires a returned id", () => {
+  const source = read("src/components/forms/orgs/CreateOrg.tsx");
+
+  assert.doesNotMatch(source, /router\.push\(`\/orgs\/\$\{data\?\.id\}`\)/);
+  assert.match(source, /if \(!data\?\.id\)/);
+  assert.doesNotMatch(source, /finally\s*\{[^}]*setError\(null\)/s);
+});
+
+test("phone number buying uses lower-case API provider values", () => {
+  const source = read("src/components/numbers/BuyNumberDrawer.tsx");
+
+  assert.match(source, /provider:\s*z\.enum\(\["twilio",\s*"telnyx"\]\)/);
+  assert.doesNotMatch(source, /"TWILIO"|"TELNYX"/);
+  assert.doesNotMatch(source, /as TelephonyProvider/);
+});
+
+test("roles page is wired to dynamic access-control CRUD", () => {
+  const source = read("src/app/(app)/settings/roles/page.tsx");
+
+  assert.doesNotMatch(source, /UI shell|follow-up|const\s+\[roles\]\s*=\s*useState<Role\[\]>\(\[\]\)/);
+  assert.match(source, /listRoles/);
+  assert.match(source, /createRole/);
+  assert.match(source, /updateRole/);
+  assert.match(source, /deleteRole/);
+});
+
+test("data loading failures render retryable error states instead of empty data", () => {
+  assert.match(read("src/app/(app)/dashboard/page.tsx"), /isError/);
+  assert.match(read("src/app/(app)/dashboard/page.tsx"), /refetch/);
+  assert.match(read("src/app/(app)/agents/page.tsx"), /isError/);
+  assert.match(read("src/app/(app)/agents/page.tsx"), /refetch/);
+  assert.match(read("src/components/calls/CallsTable.tsx"), /query\.isError/);
+  assert.match(read("src/app/(app)/kb/page.tsx"), /isError/);
+  assert.match(read("src/app/(app)/kb/page.tsx"), /refetch/);
+});
+
+test("form validation and external setup flows block unsafe or blank input", () => {
+  assert.match(read("src/components/agents/tabs/WebhooksTab.tsx"), /superRefine/);
+  assert.match(read("src/components/tools/ToolSheet.tsx"), /key:\s*z\.string\(\)\.trim\(\)\.min\(1/);
+  assert.match(read("src/components/tools/ToolSheet.tsx"), /name:\s*z\.string\(\)\.trim\(\)\.min\(1/);
+
+  const mcpSource = read("src/hooks/queries/mcp.ts");
+  assert.match(mcpSource, /isSafeSetupUrl/);
+  assert.match(mcpSource, /noopener,noreferrer/);
+  assert.doesNotMatch(mcpSource, /targetWindow\.opener/);
+});
+
+test("auth registration and password reset flows have complete UX handling", () => {
+  const register = read("src/components/forms/auth/register-form.tsx");
+
+  assert.match(register, /finally/);
+  assert.doesNotMatch(register, /console\.log/);
+  assert.match(register, /disabled=\{loading\}/);
+  assert.ok(existsSync(join(root, "src/app/(auth)/forgot-password/page.tsx")));
+  assert.ok(existsSync(join(root, "src/app/(auth)/reset-password/page.tsx")));
+});
+
+test("agent creation, limits, and deletion are wired", () => {
+  assert.match(read("src/components/agents/NewAgentDialog.tsx"), /templateId:\s*selectedTemplate/);
+  assert.doesNotMatch(read("src/components/agents/NewAgentDialog.tsx"), /templateId:\s*null/);
+  assert.match(read("src/components/agents/AgentTabs.tsx"), /LimitsTab/);
+  assert.match(read("src/lib/api/resources/agents.ts"), /remove:/);
+  assert.match(read("src/hooks/queries/agents.ts"), /useDeleteAgent/);
+  assert.match(read("src/components/agents/AgentsTable.tsx"), /useDeleteAgent/);
+  assert.doesNotMatch(read("src/components/agents/AgentsTable.tsx"), /<DropdownMenuItem disabled[^>]*>\s*<Trash2/s);
+  assert.match(read("src/app/(app)/agents/[id]/page.tsx"), /useDeleteAgent/);
+});
+
+test("settings organization supports confirmations, role reassignment, and invite management", () => {
+  const source = read("src/app/(app)/settings/organization/page.tsx");
+
+  assert.match(source, /AlertDialog/);
+  assert.match(source, /updateMemberRole/);
+  assert.match(source, /cancelInvitation/);
+});
+
+test("mobile and accessibility fixes are present", () => {
+  assert.doesNotMatch(read("src/components/ui/sidebar.tsx"), /\[&>button\]:hidden/);
+  assert.match(read("src/components/shell/NavMain.tsx"), /setOpenMobile\(false\)/);
+  assert.match(read("src/components/agents/AgentsTable.tsx"), /overflow-x-auto/);
+  assert.match(read("src/components/calls/CallsTable.tsx"), /overflow-x-auto/);
+  assert.match(read("src/components/kb/KbTable.tsx"), /overflow-x-auto/);
+  assert.match(read("src/components/tools/ToolCard.tsx"), /aria-label="Tool actions"/);
+  assert.match(read("src/components/agents/tabs/ToolsTab.tsx"), /aria-label=\{`Detach/);
+});
+
+test("dense data pages include mobile card views", () => {
+  assert.match(read("src/components/agents/AgentsTable.tsx"), /md:hidden/);
+  assert.match(read("src/components/calls/CallsTable.tsx"), /md:hidden/);
+  assert.match(read("src/components/kb/KbTable.tsx"), /md:hidden/);
+  assert.match(read("src/app/(app)/numbers/page.tsx"), /md:hidden/);
+});

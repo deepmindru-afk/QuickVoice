@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { Check, Star } from "lucide-react";
 import Link from "next/link";
-import { REGISTER_URL } from "@/lib/links";
+import { CONTACT_URL, DEMO_BOOKING_URL, REGISTER_URL } from "@/lib/links";
 
 export function AutomotivePricingSection() {
   const plans = [
@@ -142,7 +142,7 @@ export function AutomotivePricingSection() {
                 </ul>
 
                 <Link
-                  href={plan.name === "Enterprise" ? "/contact" : REGISTER_URL}
+                  href={plan.name === "Enterprise" ? CONTACT_URL : REGISTER_URL}
                   className={`w-full inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold transition-all duration-200 ${
                     plan.popular
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105'
@@ -173,13 +173,13 @@ export function AutomotivePricingSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/contact"
+                href={CONTACT_URL}
                 className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
               >
                 Contact Sales Team
               </Link>
               <Link
-                href="/demo"
+                href={DEMO_BOOKING_URL}
                 className="inline-flex items-center rounded-full border-2 border-primary px-6 py-3 text-sm font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-primary-foreground"
               >
                 Schedule Demo

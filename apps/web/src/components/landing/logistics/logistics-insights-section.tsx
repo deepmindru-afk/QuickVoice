@@ -10,19 +10,19 @@ export function LogisticsInsightsSection() {
       icon: BarChart3,
       title: "Unified Insights Dashboard",
       description: "Consolidate voice and chat transcripts into one place. Gain real-time metrics on CSAT, deflection rates, peak volumes, & more to continuously optimize support.",
-      image: "/images/logistics/unified-dashboard.jpg"
+      image: "/images/logistics/unified-dashboard.png"
     },
     {
       icon: MessageSquare,
       title: "Seamless Context Continuity",
       description: "Our platform preserves conversation history as customers switch channels. No \"starting over\". Agents pick up where the last interaction left off.",
-      image: "/images/logistics/context-continuity.jpg"
+      image: "/images/logistics/context-continuity.png"
     },
     {
       icon: Zap,
       title: "Effortless Integration into Your Stack",
       description: "Get up and running in days, not months: choose from our pre-built connectors for Salesforce, Zendesk, Shopify, and more; embed our Web & Mobile SDKs with a few lines of code; or leverage flexible REST APIs and webhooks to wire QuickVoice into any custom workflow.",
-      image: "/images/logistics/integration-stack.jpg"
+      image: "/images/logistics/integration-stack.png"
     }
   ];
 

@@ -88,7 +88,7 @@ const faqItems: FaqItem[] = [
     id: "11",
     question: "Is there a free trial available?",
     answer:
-      "Yes, we offer a free trial that allows you to test QuickVoice with up to 100 minutes of calls. This gives you a full experience of our platform before making any commitment.",
+      "Yes, the Free plan includes 15 browser-only minutes each month so you can test the builder before a production launch. No credit card is required.",
     category: "pricing",
   },
   {
@@ -236,6 +236,8 @@ export default function Faq2() {
               >
                 <button
                   onClick={() => toggleExpand(faq.id)}
+                  aria-expanded={expandedId === faq.id}
+                  aria-controls={`faq-answer-${faq.id}`}
                   className="flex w-full items-center justify-between p-6 text-left"
                 >
                   <h3 className="text-foreground text-lg font-medium">
@@ -249,6 +251,7 @@ export default function Faq2() {
                 <AnimatePresence>
                   {expandedId === faq.id && (
                     <motion.div
+                      id={`faq-answer-${faq.id}`}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}

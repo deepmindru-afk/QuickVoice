@@ -18,6 +18,7 @@ import {
  SidebarMenuSub,
  SidebarMenuSubButton,
  SidebarMenuSubItem,
+ useSidebar,
 } from "@/src/components/ui/sidebar";
 
 export interface NavItem {
@@ -29,6 +30,11 @@ export interface NavItem {
 
 export function NavMain({ label, items }: { label: string; items: NavItem[] }) {
  const pathname = usePathname();
+ const { isMobile, setOpenMobile } = useSidebar();
+
+ const closeMobileSidebar = () => {
+ if (isMobile) setOpenMobile(false);
+ };
 
  return (
  <SidebarGroup className="px-3 py-4">
@@ -49,7 +55,7 @@ export function NavMain({ label, items }: { label: string; items: NavItem[] }) {
  isActive={isActive}
  className="relative h-11 !bg-transparent px-3 text-[15px] font-medium text-muted-foreground shadow-none transition-colors hover:!bg-sidebar-accent/60 hover:text-sidebar-foreground data-[active=true]:!bg-sidebar-accent/70 data-[active=true]:text-sidebar-foreground data-[active=true]:shadow-none before:absolute before:left-0 before:top-1/2 before:h-6 before:w-0.5 before:-translate-y-1/2 before:bg-transparent data-[active=true]:before:bg-primary [&_svg]:size-[18px] [&_svg]:text-muted-foreground data-[active=true]:[&_svg]:text-primary hover:[&_svg]:text-sidebar-foreground"
  >
- <Link href={item.href}>
+ <Link href={item.href} onClick={closeMobileSidebar}>
  <item.icon />
  <span>{item.title}</span>
  </Link>
@@ -88,7 +94,7 @@ export function NavMain({ label, items }: { label: string; items: NavItem[] }) {
  isActive={subActive}
  className="h-9 !bg-transparent px-3 text-sm text-muted-foreground transition-colors hover:!bg-sidebar-accent/60 hover:text-sidebar-foreground data-[active=true]:!bg-sidebar-accent/70 data-[active=true]:font-medium data-[active=true]:text-sidebar-foreground"
  >
- <Link href={sub.href}>
+ <Link href={sub.href} onClick={closeMobileSidebar}>
  <span>{sub.title}</span>
  </Link>
  </SidebarMenuSubButton>

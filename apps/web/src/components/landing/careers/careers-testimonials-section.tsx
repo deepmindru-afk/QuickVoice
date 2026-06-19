@@ -8,7 +8,7 @@ const testimonials = [
   {
     name: "Sarah Chen",
     role: "Senior AI Engineer",
-    image: "/images/company/team-1.jpg",
+    image: "/images/company/team-1.png",
     quote: "Working at QuickVoice has been incredible. I get to work on cutting-edge AI technology that's actually making a difference in how businesses operate. The team is brilliant and collaborative.",
     rating: 5,
     tenure: "2 years",
@@ -18,7 +18,7 @@ const testimonials = [
   {
     name: "Marcus Johnson",
     role: "Product Manager",
-    image: "/images/company/team-2.jpg",
+    image: "/images/company/team-2.png",
     quote: "The culture here is amazing. Everyone is passionate about what they do, and there's a real sense of mission. I've grown so much professionally in just two years.",
     rating: 5,
     tenure: "3 years",
@@ -28,7 +28,7 @@ const testimonials = [
   {
     name: "Priya Patel",
     role: "UX Designer",
-    image: "/images/company/team-3.jpg",
+    image: "/images/company/team-3.png",
     quote: "QuickVoice values creativity and innovation. I have the freedom to experiment with new design approaches and the support to make them happen.",
     rating: 5,
     tenure: "1.5 years",

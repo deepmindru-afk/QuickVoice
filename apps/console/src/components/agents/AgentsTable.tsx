@@ -12,6 +12,7 @@ import {
     ChevronsLeft,
     ChevronsRight,
     FlaskConical,
+    Loader2,
     MoreHorizontal,
     Pencil,
     Trash2,
@@ -19,6 +20,16 @@ import {
 
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -41,7 +52,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { useUpdateAgent } from "@/src/hooks/queries/agents";
+import { useDeleteAgent, useUpdateAgent } from "@/src/hooks/queries/agents";
 import type { Agent } from "@/src/lib/api/types";
 import { cn } from "@/src/lib/utils";
 
@@ -108,6 +119,8 @@ export function AgentsTable({ agents, isLoading }: Props) {
     const router = useRouter();
     const [page, setPage] = useState(1);
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
+    const deleteAgent = useDeleteAgent();
 
     const totalPages = Math.max(1, Math.ceil(agents.length / PAGE_SIZE));
     const slice = agents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -118,9 +131,24 @@ export function AgentsTable({ agents, isLoading }: Props) {
     const toggleOne = (id: string) =>
         setSelected((prev) => {
             const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
             return next;
         });
+
+    async function confirmDelete() {
+        if (!deleteTarget) return;
+        await deleteAgent.mutateAsync(deleteTarget.agentId);
+        setDeleteTarget(null);
+        setSelected((prev) => {
+            const next = new Set(prev);
+            next.delete(deleteTarget.agentId);
+            return next;
+        });
+    }
 
     if (isLoading) {
         return (
@@ -130,11 +158,74 @@ export function AgentsTable({ agents, isLoading }: Props) {
         );
     }
 
-    return (
-        <div className="space-y-3">
+        return (
+            <div className="space-y-3">
+            <div className="space-y-3 md:hidden">
+                {slice.map((agent) => (
+                    <div
+                        key={agent.agentId}
+                        className={cn(
+                            "border bg-card p-4",
+                            selected.has(agent.agentId) && "border-primary/40 bg-primary/5"
+                        )}
+                    >
+                        <div className="flex items-start gap-3">
+                            <Checkbox
+                                checked={selected.has(agent.agentId)}
+                                onCheckedChange={() => toggleOne(agent.agentId)}
+                                aria-label="Select row"
+                            />
+                            <div
+                                className="min-w-0 flex-1"
+                                onClick={() => router.push(`/agents/${agent.agentId}`)}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                                        <Bot className="size-4" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-foreground">{agent.name}</p>
+                                        <p className="truncate text-xs text-muted-foreground">{agent.agentSlug}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <StatusCell agent={agent} />
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                            <ConfiguredChip configured={agent.isConfigured} />
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label={`Delete ${agent.name}`}
+                                onClick={() => setDeleteTarget(agent)}
+                            >
+                                <Trash2 />
+                            </Button>
+                        </div>
+                        <div className="mt-4 grid grid-cols-4 border bg-background text-center text-xs">
+                            <div className="border-r px-2 py-2">
+                                <p className="font-semibold text-foreground">{agent.phoneNumbersCount}</p>
+                                <p className="text-muted-foreground">Numbers</p>
+                            </div>
+                            <div className="border-r px-2 py-2">
+                                <p className="font-semibold text-foreground">{agent.callLogsCount}</p>
+                                <p className="text-muted-foreground">Calls</p>
+                            </div>
+                            <div className="border-r px-2 py-2">
+                                <p className="font-semibold text-foreground">{agent.knowledgeSourcesCount}</p>
+                                <p className="text-muted-foreground">Docs</p>
+                            </div>
+                            <div className="px-2 py-2">
+                                <p className="font-semibold text-foreground">{agent.toolsCount}</p>
+                                <p className="text-muted-foreground">Tools</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
             {/* ── table ── */}
-            <div className="overflow-hidden border bg-card">
-                <Table>
+            <div className="hidden overflow-x-auto border bg-card md:block">
+                <Table className="min-w-[920px]">
                     <TableHeader>
                         <TableRow className="bg-muted/20 hover:bg-muted/20">
                             <TableHead className="w-12 pl-4">
@@ -220,7 +311,10 @@ export function AgentsTable({ agents, isLoading }: Props) {
                                                 <FlaskConical className="size-4" /> Test
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
-                                            <DropdownMenuItem disabled className="text-destructive focus:text-destructive">
+                                            <DropdownMenuItem
+                                                onClick={() => setDeleteTarget(agent)}
+                                                className="text-destructive focus:text-destructive"
+                                            >
                                                 <Trash2 className="size-4" /> Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
@@ -257,6 +351,36 @@ export function AgentsTable({ agents, isLoading }: Props) {
                     </div>
                 </div>
             </div>
+            <AlertDialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this agent?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This deletes {deleteTarget?.name ?? "this agent"} and detaches it
+                            from phone numbers, tools, and knowledge sources. This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            disabled={deleteAgent.isPending}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {deleteAgent.isPending ? (
+                                <>
+                                    <Loader2 className="animate-spin" /> Deleting...
+                                </>
+                            ) : (
+                                "Delete"
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

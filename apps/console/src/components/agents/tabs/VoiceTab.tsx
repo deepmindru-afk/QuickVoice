@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
@@ -78,8 +78,14 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         });
     }, [config, form]);
 
-    const selectedLanguage = form.watch("agent_language");
-    const selectedTtsModel = form.watch("ttsModel");
+    const selectedLanguage = useWatch({
+        control: form.control,
+        name: "agent_language",
+    });
+    const selectedTtsModel = useWatch({
+        control: form.control,
+        name: "ttsModel",
+    });
 
     const availableSttModels = useMemo(
         () => getSttModelsForLanguage(selectedLanguage),

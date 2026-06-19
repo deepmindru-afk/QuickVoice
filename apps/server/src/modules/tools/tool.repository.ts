@@ -62,21 +62,28 @@ export const attachTool = async (
   agentId: string,
   toolId: string
 ) => {
-  const [agent, tool] = await Promise.all([
-    prisma.agent.findFirst({ where: { agentId, organizationId }, select: { agentId: true } }),
-    prisma.tool.findFirst({ where: { toolId, organizationId }, select: { toolId: true } }),
-  ]);
-  if (!agent || !tool) return null;
+  return prisma.$transaction(async (tx) => {
+    const [agent, tool] = await Promise.all([
+      tx.agent.findFirst({
+        where: { agentId, organizationId },
+        select: {
+          agentId: true,
+          tools: { where: { toolId }, select: { toolId: true } },
+        },
+      }),
+      tx.tool.findFirst({ where: { toolId, organizationId }, select: { toolId: true } }),
+    ]);
+    if (!agent || !tool) return null;
 
-  return prisma.$transaction([
-    prisma.agent.update({
-      where: { agentId },
-      data: {
-        tools: { connect: { toolId } },
-        toolsCount: { increment: 1 },
-      },
-    }),
-  ]);
+    if (agent.tools.length === 0) {
+      await tx.agent.update({
+        where: { agentId },
+        data: { tools: { connect: { toolId } } },
+      });
+    }
+
+    return syncAgentToolsCount(tx, agentId);
+  });
 };
 
 export const detachTool = async (
@@ -84,19 +91,37 @@ export const detachTool = async (
   agentId: string,
   toolId: string
 ) => {
-  const agent = await prisma.agent.findFirst({
-    where: { agentId, organizationId },
-    select: { agentId: true, toolsCount: true },
-  });
-  if (!agent) return null;
-
-  return prisma.$transaction([
-    prisma.agent.update({
-      where: { agentId },
-      data: {
-        tools: { disconnect: { toolId } },
-        toolsCount: { decrement: 1 },
+  return prisma.$transaction(async (tx) => {
+    const agent = await tx.agent.findFirst({
+      where: { agentId, organizationId },
+      select: {
+        agentId: true,
+        tools: { where: { toolId }, select: { toolId: true } },
       },
-    }),
-  ]);
+    });
+    if (!agent) return null;
+
+    if (agent.tools.length > 0) {
+      await tx.agent.update({
+        where: { agentId },
+        data: { tools: { disconnect: { toolId } } },
+      });
+    }
+
+    return syncAgentToolsCount(tx, agentId);
+  });
+};
+
+const syncAgentToolsCount = async (
+  tx: Prisma.TransactionClient,
+  agentId: string
+) => {
+  const counted = await tx.agent.findUnique({
+    where: { agentId },
+    select: { _count: { select: { tools: true } } },
+  });
+  return tx.agent.update({
+    where: { agentId },
+    data: { toolsCount: counted?._count.tools ?? 0 },
+  });
 };

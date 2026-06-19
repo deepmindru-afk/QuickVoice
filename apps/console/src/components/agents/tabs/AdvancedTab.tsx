@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,7 +8,6 @@ import { Loader2, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/src/components/ui/button";
-import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import {
  Form,
@@ -45,7 +43,6 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function AdvancedTab({ agentId }: { agentId: string }) {
- const router = useRouter();
  const { data: config, isLoading } = useAgentConfig(agentId);
  const save = useSaveAgentConfig(agentId);
  const update = useUpdateAgent(agentId);

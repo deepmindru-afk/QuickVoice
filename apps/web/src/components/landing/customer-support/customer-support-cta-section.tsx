@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle, Headphones, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { CONTACT_URL, DEMO_BOOKING_URL } from "@/lib/links";
 
 const features = [
   "Instantly answer FAQs, handle returns & order status inquiries",
@@ -56,14 +57,14 @@ export function CustomerSupportCtaSection() {
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <Link
-              href="/contact"
+              href={CONTACT_URL}
               className="inline-flex items-center rounded-full bg-white px-8 py-4 text-lg font-semibold text-primary shadow-lg transition-all duration-200 hover:shadow-xl hover:scale-105"
             >
               Contact Sales
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
-              href="/demo"
+              href={DEMO_BOOKING_URL}
               className="inline-flex items-center rounded-full border-2 border-white px-8 py-4 text-lg font-semibold text-white hover:bg-white hover:text-primary transition-colors duration-200"
             >
               Try a Demo

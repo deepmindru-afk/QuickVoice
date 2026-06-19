@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Building2, ChevronsUpDown, Plus, Check, Loader2 } from "lucide-react";
@@ -54,9 +55,12 @@ export function OrgSwitcher({ activeOrgId }: { activeOrgId: string }) {
  >
  <div className="flex aspect-square size-9 items-center justify-center bg-primary/15 text-primary ring-1 ring-primary/20">
  {active?.logo ? (
- <img
+ <Image
  src={active.logo}
  alt={active.name}
+ width={24}
+ height={24}
+ unoptimized
  className="size-6 "
  />
  ) : (

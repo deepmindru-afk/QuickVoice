@@ -84,6 +84,9 @@ export const agentsApi = {
     );
     return res.data.data;
   },
+  remove: async (id: string): Promise<void> => {
+    await apiClient.delete(`/agents/${id}`);
+  },
   getConfig: async (id: string): Promise<AgentConfiguration | null> => {
     const res = await apiClient.get<ApiEnvelope<AgentConfiguration | null>>(
       `/agents/${id}/config`

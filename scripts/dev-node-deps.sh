@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PNPM_VERSION="${PNPM_VERSION:-9.0.0}"
+INSTALL_ARGS=("--frozen-lockfile")
 
 if ! command -v corepack >/dev/null 2>&1; then
   echo "corepack is required to activate pnpm@${PNPM_VERSION}." >&2
@@ -21,4 +22,4 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 corepack prepare "pnpm@${PNPM_VERSION}" --activate
-pnpm install
+pnpm install "${INSTALL_ARGS[@]}"

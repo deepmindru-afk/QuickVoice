@@ -1,13 +1,20 @@
 import asyncio
 import os
 import sys
+import tempfile
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-from handlers.calllog_handler import build_call_log_payload, post_call_log
+from handlers.calllog_handler import (
+    build_call_log_payload,
+    enqueue_call_log,
+    flush_call_log_queue,
+    post_call_log,
+)
 
 
 class CallLogHandlerTests(unittest.TestCase):
@@ -53,6 +60,26 @@ class CallLogHandlerTests(unittest.TestCase):
         self.assertEqual(payload["transcripts"][1]["role"], "agent")
         self.assertEqual(payload["transcripts"][1]["message"], "Hello")
 
+    def test_build_call_log_payload_preserves_numeric_epoch_transcript_timestamps(self):
+        payload = build_call_log_payload(
+            config={
+                "agent_id": "agent_123",
+                "organization_id": "org_123",
+                "provider": "TWILIO",
+            },
+            call_context={
+                "call_id": "room-123",
+                "from_number": "+15550001111",
+                "to_number": "+15551230000",
+            },
+            started_at=datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            ended_at=datetime(2024, 1, 1, 0, 1, 0, tzinfo=timezone.utc),
+            recording_path=None,
+            transcripts=[{"role": "user", "content": "Hi", "time": 1704067200.0}],
+        )
+
+        self.assertEqual(payload["transcripts"][0]["timestamp"], "2024-01-01T00:00:00Z")
+
     def test_post_call_log_uses_internal_auth_and_posts_to_server_calls_endpoint(self):
         calls = []
 
@@ -95,6 +122,36 @@ class CallLogHandlerTests(unittest.TestCase):
         )
 
         self.assertEqual(calls[0][0], "https://api.quickvoice.co/api/v1/calls")
+
+    def test_enqueue_and_flush_call_log_queue_retries_durable_payloads(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            queue_dir = Path(tmp)
+            queued_path = enqueue_call_log(
+                {"callId": "room-123", "organizationId": "org_123"},
+                queue_dir=queue_dir,
+            )
+
+            self.assertTrue(queued_path.exists())
+
+            posted = []
+
+            async def fake_post_json(url, headers, body):
+                posted.append((url, headers, body))
+                return {"success": True}
+
+            result = asyncio.run(
+                flush_call_log_queue(
+                    queue_dir=queue_dir,
+                    server_api_url="http://server.test",
+                    internal_api_key="internal-secret",
+                    post_json=fake_post_json,
+                )
+            )
+
+            self.assertEqual(result["posted"], 1)
+            self.assertEqual(result["failed"], 0)
+            self.assertFalse(queued_path.exists())
+            self.assertEqual(posted[0][2]["callId"], "room-123")
 
 
 if __name__ == "__main__":

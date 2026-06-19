@@ -60,9 +60,6 @@ export const  searchAvailableNumbers = async (
         limit: limit ?? 10,
       },
     });
-    console.log(response.data);
-
-
     if (!response.data) {
       throw new NotFoundError("No numbers found");
     }
@@ -207,7 +204,6 @@ export const linkAgentToNumber = async (args: UpdateNumberArgs) => {
   }
 
   const trunkOp = decideTrunkOp(existing.agentId, agentId);
-  console.log("trunkOp", trunkOp);
 
   // Order: provider → LiveKit → DB. Each successful side-effect pushes its
   // revert onto the stack; the catch block unwinds the stack in reverse so we
@@ -268,27 +264,25 @@ export const linkAgentToNumber = async (args: UpdateNumberArgs) => {
   }
 };
 
-// export const deleteNumber = async (organizationId: string, phId: string) => {
-//   const existing = await phoneRepository.getByIdForOrg(phId, organizationId);
-//   if (!existing) {
-//     throw new NotFoundError("Phone number not found");
-//   }
+export const deleteNumber = async (organizationId: string, phId: string) => {
+  const existing = await phoneRepository.getByIdForOrg(phId, organizationId);
+  if (!existing) {
+    throw new NotFoundError("Phone number not found");
+  }
 
-//   requireEnv(LIVEKIT_SIP_INBOUND_TRUNK_ID, "LIVEKIT_SIP_INBOUND_TRUNK_ID");
+  if (existing.agentId !== null) {
+    await setProviderBinding(false, existing);
+    await setLiveKitBinding(false, existing);
+  }
 
-//   // Steps are idempotent: on partial failure, a retry of DELETE converges
-//   // because LiveKit remove / provider release / DB delete all tolerate
-//   // re-application.
-//   await livekitSipClient.updateSipInboundTrunkFields(
-//     LIVEKIT_SIP_INBOUND_TRUNK_ID,
-//     { numbers: new ListUpdate({ remove: [existing.number] }) }
-//   );
+  if (existing.provider === TelephonyProvider.TWILIO) {
+    await twilioClient.incomingPhoneNumbers(existing.sid).remove();
+  } else {
+    await telnyxClient.phoneNumbers.delete(existing.sid);
+  }
 
-//   if (existing.provider === TelephonyProvider.TWILIO) {
-//     await twilioClient.incomingPhoneNumbers(existing.sid).remove();
-//   } else {
-//     await telnyxClient.phoneNumbers.delete(existing.sid);
-//   }
-
-//   await phoneRepository.deletePhoneNumber(phId, organizationId);
-// };
+  const deleted = await phoneRepository.deletePhoneNumber(phId, organizationId);
+  if (!deleted) {
+    throw new NotFoundError("Phone number not found");
+  }
+};

@@ -134,7 +134,11 @@ export function KbTable({ sources, agents, isLoading }: Props) {
   const toggleOne = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
@@ -148,8 +152,61 @@ export function KbTable({ sources, agents, isLoading }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden border bg-card">
-        <Table>
+      <div className="space-y-3 md:hidden">
+        {slice.map((s) => {
+          const { Icon, iconCls } = SOURCE_META[s.sourceType] ?? FALLBACK_META;
+          const agent = agentName(s.agentId);
+          return (
+            <div
+              key={s.kbId}
+              className={cn(
+                "border bg-card p-4",
+                selected.has(s.kbId) && "border-primary/40 bg-primary/5"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selected.has(s.kbId)}
+                  onCheckedChange={() => toggleOne(s.kbId)}
+                  aria-label="Select row"
+                />
+                <div className={`flex size-8 shrink-0 items-center justify-center rounded border ${iconCls}`}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{s.name}</p>
+                  {s.originalFileName ? (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {s.originalFileName}
+                    </p>
+                  ) : null}
+                </div>
+                <DeleteRow kbId={s.kbId} name={s.name} />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <StatusChip status={s.status} />
+                {agent ? (
+                  <span className="text-xs text-muted-foreground">{agent}</span>
+                ) : null}
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                <div>
+                  <p>Uploaded</p>
+                  <p className="mt-1 text-foreground">{fmtDate(s.uploadedAt)}</p>
+                </div>
+                <div>
+                  <p>Indexed</p>
+                  <p className="mt-1 text-foreground">
+                    {s.status === "ACTIVE" ? fmtDate(s.lastIndexedAt) : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto border bg-card md:block">
+        <Table className="min-w-[920px]">
           <TableHeader>
             <TableRow className="border-b bg-muted/20 hover:bg-muted/20">
               <TableHead className="w-12 pl-4">

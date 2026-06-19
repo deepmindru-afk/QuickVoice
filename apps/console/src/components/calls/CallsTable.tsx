@@ -221,14 +221,22 @@ export function CallsTable({
   const toggleOne = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
   const toggleCol = (key: ColKey) =>
     setVisibleCols((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       return next;
     });
 
@@ -257,6 +265,26 @@ export function CallsTable({
           <Skeleton key={i} className="h-14 w-full" />
         ))}
       </div>
+    );
+  }
+
+  if (query.isError) {
+    return (
+      <EmptyState
+        icon={PhoneCall}
+        title="Could not load calls"
+        description="Refresh the call list or try again after checking your connection."
+        action={
+          <Button
+            variant="outline"
+            onClick={() => query.refetch()}
+            disabled={query.isFetching}
+          >
+            <Loader2 className={query.isFetching ? "animate-spin" : undefined} />
+            Retry
+          </Button>
+        }
+      />
     );
   }
 
@@ -300,9 +328,64 @@ export function CallsTable({
           </DropdownMenu>
         </div>
 
+        <div className="space-y-3 md:hidden">
+          {calls.map((c) => (
+            <div
+              key={c.callId}
+              className={cn(
+                "border bg-card p-4",
+                selected.has(c.callId) && "border-primary/40 bg-primary/5"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selected.has(c.callId)}
+                  onCheckedChange={() => toggleOne(c.callId)}
+                  aria-label="Select row"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{c.callerId ?? "Unknown number"}</p>
+                  <p className="text-xs text-muted-foreground">{fmtStartTime(c.startTime)}</p>
+                </div>
+                <StatusBadge status={c.status} />
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Agent</p>
+                  <p className="truncate">{agentName(c.agentId)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Duration</p>
+                  <p>{fmtDuration(c.durationSeconds)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground">Direction</p>
+                  <div className="mt-1"><DirectionCell direction={c.direction} /></div>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setTranscriptCall(c)}>
+                  <FileText className="size-4" /> Transcript
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setMetadataCall(c)}>
+                  <Info className="size-4" /> Metadata
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setDeleteTarget(c)}
+                >
+                  <Trash2 className="size-4" /> Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* ── table ── */}
-        <div className="overflow-hidden border bg-card">
-          <Table>
+        <div className="hidden overflow-x-auto border bg-card md:block">
+          <Table className="min-w-[980px]">
             <TableHeader>
               <TableRow className="border-b bg-muted/20 hover:bg-muted/20">
                 <TableHead className="w-12 pl-4">

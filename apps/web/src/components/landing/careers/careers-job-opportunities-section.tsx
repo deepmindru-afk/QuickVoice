@@ -56,7 +56,7 @@ export function CareersJobOpportunitiesSection() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
-    <section className="relative py-24 bg-background overflow-hidden">
+    <section id="open-positions" className="relative py-24 bg-background overflow-hidden">
       {/* Background gradient glow */}
       <div
         aria-hidden="true"
@@ -190,14 +190,15 @@ export function CareersJobOpportunitiesSection() {
                                 </div>
                               </div>
                             </div>
-                            <motion.button
+                            <motion.a
+                              href={`/company/contact?role=${encodeURIComponent(job.title)}`}
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               className="relative overflow-hidden rounded-xl border border-primary/20 bg-primary text-primary-foreground font-semibold px-5 py-2.5 sm:px-6 sm:py-3 shadow-lg hover:shadow-[0_0_25px_rgba(var(--primary-rgb),0.6)] transition-all duration-300 flex items-center justify-center whitespace-nowrap text-sm sm:text-base w-full sm:w-auto"
                             >
                               Apply Now
                               <ExternalLink className="ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            </motion.button>
+                            </motion.a>
                           </div>
                         </motion.div>
                       ))}
@@ -212,4 +213,3 @@ export function CareersJobOpportunitiesSection() {
     </section>
   );
 }
-

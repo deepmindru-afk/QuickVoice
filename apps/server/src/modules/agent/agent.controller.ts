@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import * as agentService from "./agent.service.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
+import { recordAuditEvent } from "../audit/audit-log.service.js";
 
 export const createAgent = authorized(async (req, res) => {
   const agent = await agentService.createAgent({
@@ -16,6 +17,13 @@ export const createAgent = authorized(async (req, res) => {
     success: true,
     message: "Agent created successfully",
     data: agent,
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "agent.created",
+    resourceType: "agent",
+    resourceId: agent.agentId,
   });
 });
 
@@ -43,6 +51,13 @@ export const updateAgent = authorized(async (req, res) => {
     message: "Agent updated successfully",
     data: agent,
   });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "agent.updated",
+    resourceType: "agent",
+    resourceId: agent.agentId,
+  });
 });
 
 
@@ -63,6 +78,13 @@ export const configureAgent = authorized(async (req, res) => {
     success: true,
     message: "Agent configured successfully",
     data: configuration,
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "agent_configuration.updated",
+    resourceType: "agent",
+    resourceId: agentId,
   });
 });
 

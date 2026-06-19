@@ -107,6 +107,7 @@ model User {
   tools            Tool[]
   mcpConnections   McpConnection[]
   secrets          Secret[]
+  auditLogs        AuditLog[]
 
   @@unique([email])
 }
@@ -217,6 +218,7 @@ model Organization {
   outboundCalls     OutboundCall[]
   campaigns         Campaign[]
   organizationroles OrganizationRole[]
+  auditLogs         AuditLog[]
 
   @@unique([slug])
   @@index([stripeCustomerId])
@@ -660,4 +662,21 @@ model Secret {
   @@unique([organizationId, name])
   @@index([organizationId])
   @@index([userId])
+}
+
+model AuditLog {
+  auditLogId     String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+  @@index([action])
 }

@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { ForbiddenError } from "../../common/errors/forbidden.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
+import { recordAuditEvent } from "../audit/audit-log.service.js";
 import * as calllogService from "./calllog.service.js";
 import {
   listCallLogsQuerySchema,
@@ -16,6 +17,14 @@ export const ingestCallLog = authorized(async (req, res) => {
     success: true,
     message: "Call log persisted",
     data: callLog,
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "call_log.ingested",
+    resourceType: "call_log",
+    resourceId: callLog.callId,
+    metadata: { authMethod: req.auth.authMethod, direction: callLog.direction },
   });
 });
 

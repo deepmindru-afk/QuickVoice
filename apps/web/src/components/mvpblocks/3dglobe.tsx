@@ -78,7 +78,7 @@ export default function Globe3D() {
               height={630}
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1200px"
               className="rounded-2xl border border-white/10"
-              loading="lazy"
+              priority
             />
           </div>
         </motion.div>

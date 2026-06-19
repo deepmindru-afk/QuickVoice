@@ -40,11 +40,11 @@ router.patch(
   phoneController.updateNumber
 );
 
-// router.delete(
-//   "/:phId",
-//   authMiddleware,
-//   requirePermission({ phoneNumber: ["delete"] }),
-//   phoneController.deleteNumber
-// );
+router.delete(
+  "/:phId",
+  authMiddleware,
+  requirePermission({ phoneNumber: ["delete"] }),
+  phoneController.deleteNumber
+);
 
 export default router;

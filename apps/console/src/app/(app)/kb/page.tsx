@@ -1,16 +1,17 @@
 "use client";
 
-import { BookOpen } from "lucide-react";
+import { BookOpen, RefreshCw } from "lucide-react";
 
 import { PageHeader } from "@/src/components/common/PageHeader";
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { Button } from "@/src/components/ui/button";
 import { UploadDialog } from "@/src/components/kb/UploadDialog";
 import { KbTable } from "@/src/components/kb/KbTable";
 import { useKbSources } from "@/src/hooks/queries/kb";
 import { useAgents } from "@/src/hooks/queries/agents";
 
 export default function KbPage() {
-  const { data: sources = [], isLoading } = useKbSources();
+  const { data: sources = [], isLoading, isError, isFetching, refetch } = useKbSources();
   const { data: agents } = useAgents();
 
   return (
@@ -21,7 +22,19 @@ export default function KbPage() {
         actions={<UploadDialog />}
       />
 
-      {!isLoading && sources.length === 0 ? (
+      {isError ? (
+        <EmptyState
+          icon={BookOpen}
+          title="Could not load documents"
+          description="Refresh the knowledge base or try again after checking your connection."
+          action={
+            <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={isFetching ? "animate-spin" : undefined} />
+              Retry
+            </Button>
+          }
+        />
+      ) : !isLoading && sources.length === 0 ? (
         <EmptyState
           icon={BookOpen}
           title="No documents yet"

@@ -154,6 +154,64 @@ test("createQuickOutboundCall marks the outbound row failed when LiveKit dispatc
   assert.match((calls[0] as any[])[1], /LiveKit unavailable/);
 });
 
+test("createQuickOutboundCall deletes the LiveKit dispatch when SIP participant creation fails", async () => {
+  const calls: unknown[] = [];
+  const repo = {
+    getDialableNumber: async () => ({
+      number: "+15551230000",
+      sid: "carrier-sid-123",
+      provider: "TWILIO",
+    }),
+    createQuickCall: async (input: any) => ({ outboundId: "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113", ...input }),
+    markInProgress: async () => { throw new Error("should not mark progress"); },
+    markFailed: async (outboundId: string, reason: string) => {
+      calls.push(["failed", outboundId, reason]);
+      return { outboundId, status: "FAILED" };
+    },
+  };
+  const sipClient = {
+    createSipParticipant: async () => {
+      throw new Error("SIP participant failed");
+    },
+  };
+  const dispatchClient = {
+    createDispatch: async (...args: unknown[]) => {
+      calls.push(["dispatch", ...args]);
+      return { id: "dispatch-123" };
+    },
+    deleteDispatch: async (...args: unknown[]) => {
+      calls.push(["deleteDispatch", ...args]);
+    },
+  };
+
+  await assert.rejects(
+    createQuickOutboundCall(
+      {
+        organizationId: "org_123",
+        userId: "user_123",
+        agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+        phoneNumber: "+15550001111",
+        fromNumber: "+15551230000",
+      },
+      {
+        repository: repo,
+        sipClient,
+        dispatchClient,
+        outboundTrunks: { TWILIO: "twilio-trunk", TELNYX: "telnyx-trunk" },
+        agentName: "QuickVoice",
+      }
+    ),
+    /SIP participant failed/
+  );
+
+  assert.deepEqual(calls[1], [
+    "deleteDispatch",
+    "dispatch-123",
+    "outbound_2b1f6d53-42f5-4cc7-9689-7b6f51a0c113",
+  ]);
+  assert.equal((calls[2] as any[])[0], "failed");
+});
+
 test("createQuickOutboundCall rejects calls from numbers not linked to the agent", async () => {
   const calls: unknown[] = [];
   const repo = {
@@ -191,4 +249,54 @@ test("createQuickOutboundCall rejects calls from numbers not linked to the agent
   );
 
   assert.equal(calls.length, 0);
+});
+
+test("createQuickOutboundCall rejects when the organization has exhausted plan minutes", async () => {
+  const calls: unknown[] = [];
+  const repo = {
+    getMonthlyUsage: async () => ({
+      plan: "free",
+      includedMinutes: 15,
+      usedSeconds: 15 * 60,
+    }),
+    getDialableNumber: async () => {
+      calls.push("dialable");
+      return {
+        number: "+15551230000",
+        sid: "carrier-sid-123",
+        provider: "TWILIO",
+      };
+    },
+    createQuickCall: async () => {
+      throw new Error("should not create outbound call");
+    },
+    markInProgress: async () => {
+      throw new Error("should not mark progress");
+    },
+    markFailed: async () => {
+      throw new Error("should not mark failed");
+    },
+  };
+
+  await assert.rejects(
+    createQuickOutboundCall(
+      {
+        organizationId: "org_123",
+        userId: "user_123",
+        agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+        phoneNumber: "+15550001111",
+        fromNumber: "+15551230000",
+      },
+      {
+        repository: repo,
+        sipClient: { createSipParticipant: async () => ({}) },
+        dispatchClient: { createDispatch: async () => ({}) },
+        outboundTrunks: { TWILIO: "twilio-trunk", TELNYX: "telnyx-trunk" },
+        agentName: "QuickVoice",
+      }
+    ),
+    /Plan minutes exhausted/
+  );
+
+  assert.deepEqual(calls, []);
 });

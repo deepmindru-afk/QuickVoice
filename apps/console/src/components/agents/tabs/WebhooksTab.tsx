@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
@@ -39,6 +39,21 @@ const schema = z.object({
     post_url: z.string().url().or(z.literal("")),
     post_transcript: z.boolean(),
     post_audio: z.boolean(),
+}).superRefine((values, ctx) => {
+    if (values.initiation_enabled && !values.initiation_url.trim()) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Initiation webhook URL is required when enabled",
+            path: ["initiation_url"],
+        });
+    }
+    if (values.post_enabled && !values.post_url.trim()) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Post-call webhook URL is required when enabled",
+            path: ["post_url"],
+        });
+    }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -92,8 +107,14 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
         );
     }
 
-    const initiationOn = form.watch("initiation_enabled");
-    const postOn = form.watch("post_enabled");
+    const initiationOn = useWatch({
+        control: form.control,
+        name: "initiation_enabled",
+    });
+    const postOn = useWatch({
+        control: form.control,
+        name: "post_enabled",
+    });
 
     return (
         <Form {...form}>

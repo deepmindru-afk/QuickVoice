@@ -39,13 +39,14 @@ export const kbItemApiSchema =  z
   export const createKbApiSchema = z
   .object({
     agentId: z.string().min(1, "No agent selected").uuid("Invalid agentId"),
-    userId: z.string().min(1, "Not valid userId"),
-    organizationId: z.string().min(1, "Not valid organizationId"),
     documents: z.array(kbItemApiSchema).min(1, "At least one document is required"),
-  })
+  }).strip()
 
 export type CreateKbInput = z.infer<typeof createKbApiSchema>;
-export type CreateKbArgs = CreateKbInput;
+export type CreateKbArgs = CreateKbInput & {
+  organizationId: string;
+  userId: string;
+};
 
 export const listKbQuerySchema = z.object({
   agentId: z.string().uuid().optional(),

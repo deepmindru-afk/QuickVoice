@@ -37,20 +37,24 @@ export function RegisterForm() {
   });
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     setLoading(true);
-    const { error } = await authClient.signUp.email({
-      email: data.email,
-      password: data.password,
-      name: data.name,
-      callbackURL: "/login",
-    });
-    if (error) {
-      console.log(error);
-      toast.error(error.statusText || "Something went wrong");
-    } else {
+    try {
+      const { error } = await authClient.signUp.email({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        callbackURL: "/login",
+      });
+      if (error) {
+        toast.error(error.message || error.statusText || "Something went wrong");
+        return;
+      }
       toast.success("Account created successfully");
       router.push("/verify");
+    } catch {
+      toast.error("Unable to reach the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -154,8 +158,15 @@ export function RegisterForm() {
           }}
         />
         
-        <Button type="submit" className="w-full" >
-          <span>Create Account</span>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <span>Create Account</span>
+          )}
         </Button>
 
         <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

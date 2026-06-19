@@ -66,7 +66,12 @@ USER appuser
 # Pre-download any ML models or files the agent needs
 # This ensures the container is ready to run immediately without downloading
 # dependencies at runtime, which improves startup time and reliability
-RUN python "main.py" download-files
+ARG SKIP_MODEL_DOWNLOAD=false
+RUN if [ "$SKIP_MODEL_DOWNLOAD" = "true" ]; then \
+      echo "Skipping model download for CI Docker build validation"; \
+    else \
+      python "main.py" download-files; \
+    fi
 
 # FastAPI listens on this port when the combined server or API-only command runs.
 EXPOSE 5555

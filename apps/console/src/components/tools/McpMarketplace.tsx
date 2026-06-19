@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, Loader2, PlugZap, Search, ShieldCheck, Wrench } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
@@ -73,9 +74,12 @@ function AppLogo({ item }: { item: McpCatalogItem }) {
 
   if (iconUrl && !failed) {
     return (
-      <img
+      <Image
         src={iconUrl}
         alt=""
+        width={40}
+        height={40}
+        unoptimized
         className="size-10 shrink-0 border bg-background object-contain p-1"
         onError={() => setFailed(true)}
       />

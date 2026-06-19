@@ -2,6 +2,14 @@ import { Prisma } from "../../../prisma/generated/prisma/client.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
 import { generateSlug } from "../../common/utils/generateSlug.js";
+import { assertSafeRemoteUrl } from "../../lib/url-safety.js";
+import {
+  redactSecretFields,
+} from "../../lib/secrets.js";
+import {
+  resolveSecretReferences,
+  storeSecretReferences,
+} from "../secrets/secret-store.service.js";
 import * as agentRepository from "./agent.repository.js";
 import type { ConfigureAgentArgs, CreateAgentArgs, UpdateAgentInput } from "./agent.schema.js";
 
@@ -67,18 +75,19 @@ export const updateAgent = async (
 
 export const configureAgent = async (args: ConfigureAgentArgs) => {
   const { organizationId, userId, agentId, ...data } = args;
+  await assertSafeWebhookUrls(data);
 
   const configuration = await agentRepository.configureAgent(
     organizationId,
     agentId,
-    data
+    await protectAgentConfigSecrets(organizationId, userId, agentId, data)
   );
 
   if (!configuration) {
     throw new NotFoundError("Agent not found");
   }
 
-  return configuration;
+  return redactAgentConfigSecrets(configuration);
 };
 
 export const getAgentConfig = async (
@@ -94,7 +103,7 @@ export const getAgentConfig = async (
     throw new NotFoundError("Agent configuration not found");
   }
 
-  return configuration;
+  return redactAgentConfigSecrets(configuration);
 };
 
 export const getAgentConfigByNumber = async (phoneNumber: string) => {
@@ -112,7 +121,7 @@ export const getAgentConfigByNumber = async (phoneNumber: string) => {
     throw new NotFoundError("Agent configuration not found");
   }
 
-  return configuration;
+  return resolveRuntimeConfigSecrets(configuration);
 };
 
 export const getAgentConfigByIdForRuntime = async (agentId: string) => {
@@ -130,5 +139,63 @@ export const getAgentConfigByIdForRuntime = async (agentId: string) => {
     throw new NotFoundError("Agent configuration not found");
   }
 
-  return configuration;
+  return resolveRuntimeConfigSecrets(configuration);
 };
+
+async function assertSafeWebhookUrls(data: Partial<ConfigureAgentArgs>) {
+  const urls = [
+    data.initiation_webhook?.webhook_url,
+    data.post_call_webhook?.webhook_url,
+  ].filter((url): url is string => typeof url === "string" && url.length > 0);
+
+  await Promise.all(urls.map((url) => assertSafeRemoteUrl(url)));
+}
+
+async function protectAgentConfigSecrets<T extends Record<string, any>>(
+  organizationId: string,
+  userId: string,
+  agentId: string,
+  data: T
+): Promise<T> {
+  return {
+    ...data,
+    initiation_webhook: await storeSecretReferences(data.initiation_webhook, {
+      organizationId,
+      userId,
+      namePrefix: `agent:${agentId}:initiation_webhook`,
+    }),
+    post_call_webhook: await storeSecretReferences(data.post_call_webhook, {
+      organizationId,
+      userId,
+      namePrefix: `agent:${agentId}:post_call_webhook`,
+    }),
+  };
+}
+
+function redactAgentConfigSecrets<T extends Record<string, any>>(configuration: T): T {
+  return {
+    ...configuration,
+    initiation_webhook: redactSecretFields(configuration.initiation_webhook),
+    post_call_webhook: redactSecretFields(configuration.post_call_webhook),
+  };
+}
+
+async function resolveRuntimeConfigSecrets<T extends Record<string, any>>(configuration: T): Promise<T> {
+  const organizationId = configuration.organizationId;
+  return {
+    ...configuration,
+    initiation_webhook: organizationId
+      ? await resolveSecretReferences(configuration.initiation_webhook, organizationId)
+      : configuration.initiation_webhook,
+    post_call_webhook: organizationId
+      ? await resolveSecretReferences(configuration.post_call_webhook, organizationId)
+      : configuration.post_call_webhook,
+    tools: Array.isArray(configuration.tools)
+      ? await Promise.all(
+          configuration.tools.map((tool) =>
+            organizationId ? resolveSecretReferences(tool, organizationId) : tool
+          )
+        )
+      : configuration.tools,
+  };
+}

@@ -1,5 +1,7 @@
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
+import { assertSafeRemoteUrl } from "../../lib/url-safety.js";
+import { deleteObject } from "../../config/s3.js";
 import * as kbRepository from "./kb.repository.js";
 import { kbQueue } from "../../queues/kb.queue.js";
 import type { CreateKbArgs, ListKbArgs } from "./kb.schema.js";
@@ -8,6 +10,12 @@ export const createKnowledgeSources = async (args: CreateKbArgs) => {
   if (!args.agentId) {
     throw new BadRequestError("An agent must be selected — KB sources require an agent for vector storage");
   }
+  await Promise.all(
+    args.documents
+      .filter((doc) => doc.sourceType === "URL" && typeof doc.url === "string")
+      .map((doc) => assertSafeRemoteUrl(doc.url as string))
+  );
+
   const { rows, docs } = await kbRepository.createKnowledgeSources(args);
 
   await kbQueue.add("process", {
@@ -35,10 +43,54 @@ export const deleteKnowledgeSource = async (
   organizationId: string,
   kbId: string
 ) => {
-  // TODO: add S3 object + Pinecone vector cleanup.
-  const deleted = await kbRepository.deleteKnowledgeSource(kbId, organizationId);
-  if (!deleted) {
+  const source = await kbRepository.getByIdForOrg(kbId, organizationId);
+  if (!source) {
     throw new NotFoundError("Knowledge source not found");
   }
+  await cleanupKnowledgeSourceAssets(source).catch((error) => {
+    console.warn("[kb] failed to clean up knowledge source assets", {
+      kbId,
+      organizationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+
+  const deleted = await kbRepository.deleteKnowledgeSource(kbId, organizationId);
   return deleted;
 };
+
+async function cleanupKnowledgeSourceAssets(source: {
+  kbId: string;
+  organizationId: string;
+  agentId: string | null;
+  storagePath: string;
+  sourceType: string;
+}) {
+  const cleanupTasks: Promise<unknown>[] = [];
+
+  if (source.sourceType !== "URL" && source.storagePath) {
+    cleanupTasks.push(deleteObject(source.storagePath));
+  }
+
+  const kbOpsUrl = process.env.KB_OPS_URL;
+  if (kbOpsUrl) {
+    cleanupTasks.push(
+      fetch(`${kbOpsUrl.replace(/\/$/, "")}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kbId: source.kbId,
+          organizationId: source.organizationId,
+          agentId: source.agentId,
+          storagePath: source.storagePath,
+        }),
+      }).then(async (response) => {
+        if (!response.ok && response.status !== 404) {
+          throw new Error(`KB cleanup returned ${response.status}`);
+        }
+      })
+    );
+  }
+
+  await Promise.all(cleanupTasks);
+}

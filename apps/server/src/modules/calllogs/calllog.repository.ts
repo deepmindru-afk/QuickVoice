@@ -1,5 +1,6 @@
 import { Prisma } from "../../../prisma/generated/prisma/client.js";
 import prisma from "../../config/prisma.js";
+import { redactJson, redactText } from "../../lib/redaction.js";
 import type {
   IngestCallLogArgs,
   ListCallLogsArgs,
@@ -11,11 +12,14 @@ import type {
 // deliberately non-fatal: a stale or cross-org outboundId logs a warning and
 // the CallLog is still persisted (per product decision #4).
 export const saveCallLog = async (input: IngestCallLogArgs) => {
+  const redactPii = process.env.CALL_LOG_PII_REDACTION !== "false";
   // The external party's number goes into callerId. On inbound it's the
-  // caller; on outbound it's the callee. Both raw numbers stay in metadata
-  // so the audit trail is lossless.
-  const callerId =
+  // caller; on outbound it's the callee. By default, PII is redacted before
+  // persistence. Set CALL_LOG_PII_REDACTION=false only in controlled installs
+  // that have a separate retention/legal basis for raw call data.
+  const rawCallerId =
     input.direction === "inbound" ? input.fromNumber : input.toNumber;
+  const callerId = redactPii ? redactText(rawCallerId) : rawCallerId;
 
   return prisma.$transaction(async (tx) => {
     const callLog = await tx.callLog.create({
@@ -31,15 +35,21 @@ export const saveCallLog = async (input: IngestCallLogArgs) => {
         direction: input.direction,
         audioRecordingPath: input.recordingSid,
         callerId,
-        metadata: {
+        metadata: redactPii ? redactJson({
+          summary: input.metadata?.summary,
+          intent: input.metadata?.intent,
+          fromNumber: input.fromNumber,
+          toNumber: input.toNumber,
+          provider: input.provider,
+        } satisfies Prisma.InputJsonObject) : {
           summary: input.metadata?.summary,
           intent: input.metadata?.intent,
           fromNumber: input.fromNumber,
           toNumber: input.toNumber,
           provider: input.provider,
         } satisfies Prisma.InputJsonObject,
-        dataExtracted: input.extractedData,
-        dataEvaluation: input.evaluatedData,
+        dataExtracted: redactPii ? redactJson(input.extractedData) : input.extractedData,
+        dataEvaluation: redactPii ? redactJson(input.evaluatedData) : input.evaluatedData,
         
       },
     });
@@ -47,8 +57,9 @@ export const saveCallLog = async (input: IngestCallLogArgs) => {
       data: input.transcripts.map((transcript) => ({
         callLogId: callLog.callId,
         speaker: transcript.role,
-        messageText: transcript.message,
+        messageText: redactPii ? redactText(transcript.message) : transcript.message,
         timestamp: new Date(transcript.timestamp),
+        isPiiRedacted: redactPii,
       })),
     });
 

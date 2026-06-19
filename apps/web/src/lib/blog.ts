@@ -3,11 +3,16 @@ import path from "path";
 import matter from "gray-matter";
 
 const BLOG_DIR = path.join(process.cwd(), "content/blog");
+const PUBLIC_DIR = path.join(process.cwd(), "public");
+const DEFAULT_OG_IMAGE = "/og-image.png";
 
 export interface BlogPost {
   slug: string;
   title: string;
   date: string;
+  draft: boolean;
+  published: boolean;
+  status?: string;
   author: string;
   category: string;
   tags: string[];
@@ -20,6 +25,17 @@ export interface BlogPost {
   content: string;
 }
 
+function resolveOgImage(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return DEFAULT_OG_IMAGE;
+
+  const imagePath = value.trim();
+  if (/^https?:\/\//.test(imagePath)) return imagePath;
+  if (!imagePath.startsWith("/")) return DEFAULT_OG_IMAGE;
+
+  const publicPath = path.join(PUBLIC_DIR, imagePath.slice(1));
+  return fs.existsSync(publicPath) ? imagePath : DEFAULT_OG_IMAGE;
+}
+
 function parseFile(filename: string): BlogPost | null {
   try {
     const raw = fs.readFileSync(path.join(BLOG_DIR, filename), "utf-8");
@@ -29,13 +45,16 @@ function parseFile(filename: string): BlogPost | null {
       slug: data.slug as string,
       title: data.title as string,
       date: data.date as string,
+      draft: data.draft === true,
+      published: data.published !== false,
+      status: data.status as string | undefined,
       author: data.author as string,
       category: data.category as string,
       tags: (data.tags as string[]) || [],
       metaTitle: (data.metaTitle as string) || (data.title as string),
       metaDescription: data.metaDescription as string,
       canonical: data.canonical as string,
-      ogImage: (data.ogImage as string) || "",
+      ogImage: resolveOgImage(data.ogImage),
       readTime: (data.readTime as string) || "5 min",
       authorBio: (data.authorBio as string) || "",
       content,
@@ -45,21 +64,42 @@ function parseFile(filename: string): BlogPost | null {
   }
 }
 
-export function getAllPosts(): BlogPost[] {
+interface BlogQueryOptions {
+  includeFuture?: boolean;
+  now?: Date;
+}
+
+export function isPublishedPost(
+  post: BlogPost,
+  { includeFuture = false, now = new Date() }: BlogQueryOptions = {},
+): boolean {
+  if (post.draft || !post.published || post.status === "draft") return false;
+  if (includeFuture) return true;
+
+  const publishedAt = new Date(post.date).getTime();
+  if (Number.isNaN(publishedAt)) return false;
+  return publishedAt <= now.getTime();
+}
+
+export function getAllPosts(options: BlogQueryOptions = {}): BlogPost[] {
   if (!fs.existsSync(BLOG_DIR)) return [];
   const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
   return files
     .map((f) => parseFile(f))
     .filter((p): p is BlogPost => p !== null)
+    .filter((p) => isPublishedPost(p, options))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
-export function getPostBySlug(slug: string): BlogPost | null {
+export function getPostBySlug(
+  slug: string,
+  options: BlogQueryOptions = { includeFuture: false },
+): BlogPost | null {
   if (!fs.existsSync(BLOG_DIR)) return null;
   const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
   for (const filename of files) {
     const post = parseFile(filename);
-    if (post?.slug === slug) return post;
+    if (post?.slug === slug && isPublishedPost(post, options)) return post;
   }
   return null;
 }

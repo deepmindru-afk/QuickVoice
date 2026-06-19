@@ -101,6 +101,7 @@ const PLANS = [
     overageRate: "$0.20/min",
     keyFeatures: [
       "HIPAA-ready logging",
+      "BAA available for healthcare",
       "Priority support",
       "Reserved concurrency",
     ],
@@ -161,7 +162,7 @@ const FEATURE_ROWS: { label: string; plans: boolean[] }[] = [
   },
   { label: "SSO / SCIM", plans: [false, false, false, false, false, true] },
   { label: "Custom SLA", plans: [false, false, false, false, false, true] },
-  { label: "BAA available", plans: [false, false, false, false, false, true] },
+  { label: "BAA available", plans: [false, false, false, false, true, true] },
   {
     label: "Private networking",
     plans: [false, false, false, false, false, true],
@@ -199,7 +200,7 @@ const FAQS = [
   },
   {
     q: "Is QuickVoice HIPAA-compliant?",
-    a: "Our Scale and Enterprise plans include HIPAA-ready logging and we can sign a Business Associate Agreement (BAA) on the Enterprise tier. Contact us to discuss compliance requirements.",
+    a: "Our Scale and Enterprise healthcare plans include HIPAA-ready logging, and we can sign a Business Associate Agreement (BAA) before any PHI is processed. Contact us to discuss compliance requirements.",
   },
   {
     q: "What payment methods do you accept?",

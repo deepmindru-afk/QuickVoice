@@ -20,6 +20,7 @@ type OutboundCallRepository = {
   createQuickCall: typeof outboundCallRepository.createQuickCall;
   markInProgress: typeof outboundCallRepository.markInProgress;
   markFailed: typeof outboundCallRepository.markFailed;
+  getMonthlyUsage?: typeof outboundCallRepository.getMonthlyUsage;
 };
 
 type SipClientLike = {
@@ -37,6 +38,7 @@ type AgentDispatchClientLike = {
     agentName: string,
     options?: { metadata?: string }
   ) => Promise<unknown>;
+  deleteDispatch?: (dispatchId: string, roomName: string) => Promise<void>;
 };
 
 type OutboundTrunks = Record<TelephonyProvider, string>;
@@ -63,6 +65,9 @@ export async function createQuickOutboundCall(
   const dispatchClient = deps.dispatchClient ?? livekitAgentDispatchClient;
   const outboundTrunks = deps.outboundTrunks ?? defaultOutboundTrunks;
   const agentName = deps.agentName ?? LIVEKIT_AGENT_NAME;
+
+  await enforcePlanQuota(repository, args.organizationId);
+
   const dialableNumber = await repository.getDialableNumber({
     organizationId: args.organizationId,
     agentId: args.agentId,
@@ -103,34 +108,40 @@ export async function createQuickOutboundCall(
       outbound.outboundId
     );
     const metadataJson = JSON.stringify(metadata);
-    const agentDispatch = await dispatchClient.createDispatch(roomName, agentName, {
-      metadata: metadataJson,
-    });
-    const livekitParticipant = await sipClient.createSipParticipant(
-      trunkId,
-      args.phoneNumber,
-      roomName,
-      {
-        fromNumber: args.fromNumber,
-        participantIdentity: `outbound-${outbound.outboundId}`,
-        participantName: args.username,
-        participantMetadata: metadataJson,
-        waitUntilAnswered: false,
-      }
-    );
+    let agentDispatch: unknown;
+    try {
+      agentDispatch = await dispatchClient.createDispatch(roomName, agentName, {
+        metadata: metadataJson,
+      });
+      const livekitParticipant = await sipClient.createSipParticipant(
+        trunkId,
+        args.phoneNumber,
+        roomName,
+        {
+          fromNumber: args.fromNumber,
+          participantIdentity: `outbound-${outbound.outboundId}`,
+          participantName: args.username,
+          participantMetadata: metadataJson,
+          waitUntilAnswered: false,
+        }
+      );
 
-    const updated = await repository.markInProgress(
-      outbound.outboundId,
-      {
-        username: args.username ?? null,
-        provider,
-        sid,
-        livekitParticipant: toJsonValue(livekitParticipant),
-        agentDispatch: toJsonValue(agentDispatch),
-      }
-    );
+      const updated = await repository.markInProgress(
+        outbound.outboundId,
+        {
+          username: args.username ?? null,
+          provider,
+          sid,
+          livekitParticipant: toJsonValue(livekitParticipant),
+          agentDispatch: toJsonValue(agentDispatch),
+        }
+      );
 
-    return { outbound: updated, livekitParticipant, agentDispatch };
+      return { outbound: updated, livekitParticipant, agentDispatch };
+    } catch (error) {
+      await cleanupAgentDispatch(dispatchClient, agentDispatch, roomName);
+      throw error;
+    }
   } catch (error) {
     await repository.markFailed(
       outbound.outboundId,
@@ -138,6 +149,51 @@ export async function createQuickOutboundCall(
     );
     throw error;
   }
+}
+
+async function enforcePlanQuota(
+  repository: OutboundCallRepository,
+  organizationId: string
+) {
+  const usage = await repository.getMonthlyUsage?.(organizationId);
+  if (!usage?.includedMinutes) return;
+
+  if (usage.usedSeconds >= usage.includedMinutes * 60) {
+    throw new BadRequestError(
+      "Plan minutes exhausted for the current billing period"
+    );
+  }
+}
+
+async function cleanupAgentDispatch(
+  dispatchClient: AgentDispatchClientLike,
+  agentDispatch: unknown,
+  roomName: string
+) {
+  const dispatchId = getDispatchId(agentDispatch);
+  if (!dispatchId || !dispatchClient.deleteDispatch) return;
+
+  try {
+    await dispatchClient.deleteDispatch(dispatchId, roomName);
+  } catch (cleanupError) {
+    console.warn("[outbound] failed to clean up LiveKit agent dispatch", {
+      roomName,
+      dispatchId,
+      error:
+        cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+    });
+  }
+}
+
+function getDispatchId(agentDispatch: unknown) {
+  if (!agentDispatch || typeof agentDispatch !== "object") return null;
+  const dispatch = agentDispatch as {
+    id?: unknown;
+    dispatchId?: unknown;
+    agentDispatchId?: unknown;
+  };
+  const id = dispatch.id ?? dispatch.dispatchId ?? dispatch.agentDispatchId;
+  return typeof id === "string" && id.length > 0 ? id : null;
 }
 
 function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) {

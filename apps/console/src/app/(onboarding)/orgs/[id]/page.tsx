@@ -2,9 +2,9 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Users, ArrowLeft, Mail, Settings, Phone, Calendar, Shield } from "lucide-react";
+import { Building2, Users, ArrowLeft, Mail, Settings, Calendar, Shield } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 
@@ -20,7 +20,7 @@ export default function OrgId() {
  const [error, setError] = useState<string | null>(null);
  const [loading, setLoading] = useState(true);
 
- const getDetails = async () => {
+ const getDetails = useCallback(async () => {
  try {
  setLoading(true);
  const { data, error } = await authClient.organization.getFullOrganization({
@@ -36,18 +36,18 @@ export default function OrgId() {
  } else {
  setData(data as Organization);
  }
- } catch (err) {
+ } catch {
  setError("An unexpected error occurred");
  } finally {
  setLoading(false);
  }
- };
+ }, [orgId, orgSlug]);
 
  useEffect(() => {
  if (orgId) {
- getDetails();
- }
- }, [orgId, orgSlug]);
+	 getDetails();
+	 }
+	 }, [getDetails, orgId]);
 
  if (loading) {
  return (

@@ -85,7 +85,7 @@ export function OperationsAutomationExperienceSection() {
           >
             <div className="relative w-full h-[500px]">
               <Image
-                src="/images/omnichannel-experience.jpg"
+                src="/images/omnichannel-experience.png"
                 alt="QuickVoice AI agent demonstration showing seamless customer interactions across multiple channels"
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

@@ -5,6 +5,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Navbar from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
+import { CtaAnalytics } from "@/components/cta-analytics";
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -58,8 +59,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
-        <link rel="preload" as="image" href="/dashboard.png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         {process.env.NEXT_PUBLIC_GSC_VERIFICATION && (
           <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_GSC_VERIFICATION} />
         )}
@@ -88,9 +88,8 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Navbar />
-        <main id="main-content">
-            {children}
-        </main>
+        <CtaAnalytics />
+        <div id="main-content">{children}</div>
         <Footer />
       </body>
     </html>

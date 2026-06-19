@@ -11,9 +11,8 @@
 //
 // Evaluates permissions against the user's role in req.auth.activeOrganizationId
 // via better-auth's hasPermission API. Internal callers bypass the check per
-// the trust-boundary policy in auth.middleware.ts. API keys are already scoped
-// to one organization by auth.middleware.ts, so they are authorized at the org
-// boundary instead of via Better Auth's session-only RBAC helper.
+// the trust-boundary policy in auth.middleware.ts. API keys are scoped to one
+// organization by auth.middleware.ts and must also carry explicit route scopes.
 
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { fromNodeHeaders } from "better-auth/node";
@@ -67,6 +66,9 @@ export const requirePermission =
       }
 
       if (req.auth.authMethod === "apiKey") {
+        if (!hasApiKeyPermission(req.auth.apiKeyPermissions, permissions)) {
+          throw new ForbiddenError("Insufficient permissions");
+        }
         return next();
       }
 
@@ -87,5 +89,22 @@ export const requirePermission =
       next(error);
     }
   };
+
+export function hasApiKeyPermission(
+  granted: Record<string, string[]> | undefined,
+  requested: Permissions
+) {
+  if (!granted) return false;
+
+  return Object.entries(requested).every(([resource, actions]) => {
+    const resourceActions = granted[resource] ?? [];
+    return actions.every(
+      (action) =>
+        resourceActions.includes(action) ||
+        resourceActions.includes("*") ||
+        granted["*"]?.includes("*") === true
+    );
+  });
+}
 
 export default requirePermission;

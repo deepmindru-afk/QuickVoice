@@ -5,12 +5,13 @@ services:
     image: postgres:16
     container_name: quickvoice-dev-postgres
     restart: unless-stopped
+    # Dev-only credentials; keep the port bound to localhost.
     environment:
       POSTGRES_USER: quickvoice
       POSTGRES_PASSWORD: quickvoice
       POSTGRES_DB: quickvoice
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - quickvoice_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,5 +21,31 @@ services:
       retries: 20
       start_period: 5s
 
+  redis:
+    image: redis:7
+    container_name: quickvoice-dev-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - quickvoice_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  mailpit:
+    image: axllent/mailpit:v1.23
+    container_name: quickvoice-dev-mailpit
+    restart: unless-stopped
+    profiles: ["mail"]
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
 volumes:
   quickvoice_postgres_data:
+  quickvoice_redis_data:

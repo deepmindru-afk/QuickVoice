@@ -28,6 +28,14 @@ tasks:
     cmds:
       - ./scripts/dev-node-deps.sh
 
+  deps:update:
+    desc: Explicitly update the pnpm lockfile when dependency changes are intended
+    env:
+      PNPM_VERSION: "{{.PNPM_VERSION}}"
+    cmds:
+      - corepack prepare pnpm@{{.PNPM_VERSION}} --activate
+      - pnpm install --lockfile-only
+
   deps:python:
     desc: Create the AI Python virtualenv and install requirements
     dir: apps/ai
@@ -46,7 +54,7 @@ tasks:
     deps:
       - env:dev
     cmds:
-      - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev up -d postgres
+      - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev up -d postgres redis
 
   docker:down:
     desc: Stop local Docker dependencies
@@ -55,7 +63,7 @@ tasks:
 
   docker:reset:
     desc: Remove local Docker dependencies and volumes
-    prompt: This deletes the local QuickVoice Postgres volume. Continue?
+    prompt: This deletes the local QuickVoice Postgres, Redis, and optional service volumes. Continue?
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev down -v
 
@@ -87,11 +95,16 @@ tasks:
     cmds:
       - pnpm run seed -- {{.CLI_ARGS}}
 
+  ci:
+    desc: Run the local CI suite used by pull requests
+    cmds:
+      - pnpm ci:local
+
   up:dev:
     desc: Prepare env, install deps, start Docker deps, migrate DB, and run local services
     cmds:
-      - task: doctor
       - task: dev:clear
+      - task: doctor
       - task: env:dev
       - task: deps:node
       - task: deps:python

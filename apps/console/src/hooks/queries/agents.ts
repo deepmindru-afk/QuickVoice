@@ -65,6 +65,20 @@ export function useUpdateAgent(id: string) {
   });
 }
 
+export function useDeleteAgent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => agentsApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.agents.all });
+      toast.success("Agent deleted");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not delete agent");
+    },
+  });
+}
+
 export function useSaveAgentConfig(id: string) {
   const qc = useQueryClient();
   return useMutation({

@@ -1,21 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
   Bot,
+  Loader2,
   Phone,
   Settings,
+  Trash2,
   Wrench,
 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { AgentTabs } from "@/src/components/agents/AgentTabs";
-import { useAgent } from "@/src/hooks/queries/agents";
+import { useAgent, useDeleteAgent } from "@/src/hooks/queries/agents";
 
 function HeaderSkeleton() {
   return (
@@ -38,8 +51,17 @@ function HeaderSkeleton() {
 
 export default function AgentConfigPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const agentId = params.id;
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { data: agent, isLoading } = useAgent(agentId);
+  const deleteAgent = useDeleteAgent();
+
+  async function confirmDelete() {
+    await deleteAgent.mutateAsync(agentId);
+    setDeleteOpen(false);
+    router.push("/agents");
+  }
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -103,6 +125,14 @@ export default function AgentConfigPage() {
                 </div>
               </div>
 
+              <div className="flex flex-col gap-3 lg:items-end">
+              <Button
+                variant="outline"
+                className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive lg:w-auto"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 /> Delete agent
+              </Button>
               <div className="grid grid-cols-2 border bg-background text-xs sm:grid-cols-4 lg:min-w-[420px]">
                 <div className="border-r px-4 py-3">
                   <p className="font-semibold text-foreground">
@@ -135,10 +165,38 @@ export default function AgentConfigPage() {
                   </p>
                 </div>
               </div>
+              </div>
             </div>
           </div>
 
           <AgentTabs agentId={agentId} />
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this agent?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This deletes {agent.name} and detaches it from phone numbers,
+                  tools, and knowledge sources. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  disabled={deleteAgent.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleteAgent.isPending ? (
+                    <>
+                      <Loader2 className="animate-spin" /> Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </div>

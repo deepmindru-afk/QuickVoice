@@ -6,6 +6,7 @@ import { ForbiddenError } from "../../common/errors/forbidden.js";
 import * as phoneService from "./phone.service.js";
 import { searchNumbersSchema } from "./phone.schema.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
+import { recordAuditEvent } from "../audit/audit-log.service.js";
 
 
 export const searchNumbers = authorized(async (req, res) => {
@@ -41,6 +42,14 @@ export const buyNumber = authorized(async (req, res) => {
     message: "Phone number purchased successfully",
     data: number,
   });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "phone_number.purchased",
+    resourceType: "phone_number",
+    resourceId: number.phId,
+    metadata: { provider: number.provider },
+  });
 });
 
 export const updateNumber = authorized(async (req, res) => {
@@ -58,14 +67,31 @@ export const updateNumber = authorized(async (req, res) => {
     message: "Phone number updated successfully",
     data: updated,
   });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "phone_number.updated",
+    resourceType: "phone_number",
+    resourceId: updated.phId,
+    metadata: { agentId: updated.agentId },
+  });
 });
 
-// export const deleteNumber = async (req: Request, res: Response) => {
-//   const organizationId = requireOrg(req);
-//   const phId = requirePhId(req);
-//   await phoneService.deleteNumber(organizationId, phId);
-//   res.status(StatusCodes.OK).json({
-//     success: true,
-//     message: "Phone number released successfully",
-//   });
-// };
+export const deleteNumber = authorized(async (req, res) => {
+  const phId = req.params.phId;
+  if (typeof phId !== "string" || phId.length === 0) {
+    throw new BadRequestError("Phone number id is required");
+  }
+  await phoneService.deleteNumber(req.auth.activeOrganizationId, phId);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Phone number released successfully",
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "phone_number.released",
+    resourceType: "phone_number",
+    resourceId: phId,
+  });
+});
