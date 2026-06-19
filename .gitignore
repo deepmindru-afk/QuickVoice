@@ -19,6 +19,7 @@ node_modules
 coverage
 .audit_runs/
 .fix_runs/
+.testing_guide_runs/
 
 # Turbo
 .turbo
