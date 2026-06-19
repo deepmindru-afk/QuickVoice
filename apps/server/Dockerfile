@@ -13,7 +13,7 @@ RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
 COPY apps/server/package.json apps/server/package.json
-COPY packages/typescript-config/package.json packages/typescript-config/package.json
+COPY packages/typescript-config packages/typescript-config
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter server...
 
@@ -22,26 +22,29 @@ COPY apps/server/tsconfig.json apps/server/prisma.config.ts apps/server/
 COPY apps/server/src apps/server/src
 COPY apps/server/data apps/server/data
 COPY apps/server/prisma apps/server/prisma
-COPY packages/typescript-config packages/typescript-config
 WORKDIR /app/apps/server
 ENV DATABASE_URL="postgresql://quickvoice:quickvoice@localhost:5432/quickvoice"
 RUN pnpm exec prisma generate
 RUN pnpm run build
 
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+FROM base AS runtime
 ENV NODE_ENV=production
-WORKDIR /app/apps/server
 
 RUN apt-get update -y \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid nodejs --home-dir /app server
 
-COPY --from=build --chown=server:nodejs /app/package.json /app/package.json
-COPY --from=build --chown=server:nodejs /app/node_modules /app/node_modules
-COPY --from=build --chown=server:nodejs /app/apps/server/package.json ./package.json
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/server/package.json apps/server/package.json
+COPY packages/typescript-config packages/typescript-config
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --prod --filter server...
+
+WORKDIR /app/apps/server
 COPY --from=build --chown=server:nodejs /app/apps/server/dist ./dist
 COPY --from=build --chown=server:nodejs /app/apps/server/prisma ./prisma
 COPY --from=build --chown=server:nodejs /app/apps/server/prisma.config.ts ./prisma.config.ts

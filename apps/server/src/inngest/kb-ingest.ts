@@ -1,3 +1,5 @@
+import type { InngestFunction } from "inngest";
+
 import { inngest } from "../config/inngest.js";
 import { generateDownloadUrl } from "../config/s3.js";
 import * as kbRepository from "../modules/kb/kb.repository.js";
@@ -5,7 +7,7 @@ import * as kbRepository from "../modules/kb/kb.repository.js";
 // Triggered when new knowledge sources are created. Sends the documents to
 // the ingestion lambda for Pinecone processing, then updates KB status
 // to ACTIVE (+ increments agent count) on success or ERROR on failure.
-export const kbIngest = inngest.createFunction(
+export const kbIngest: InngestFunction.Any = inngest.createFunction(
   {
     id: "kb-ingest-documents",
     retries: 3,

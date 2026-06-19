@@ -71,6 +71,23 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
   }
 });
 
+test("server runtime image installs only production server dependencies", async () => {
+  const dockerfile = await text("apps/server/Dockerfile");
+
+  assert.match(
+    dockerfile,
+    /pnpm install --frozen-lockfile --prod --filter server\.\.\./
+  );
+  assert.doesNotMatch(dockerfile, /pnpm .*deploy/);
+  assert.match(dockerfile, /apt-get upgrade -y/);
+  assert.match(dockerfile, /COPY packages\/typescript-config packages\/typescript-config/);
+  assert.doesNotMatch(dockerfile, /COPY packages\/typescript-config\/package\.json/);
+  assert.doesNotMatch(
+    dockerfile,
+    /COPY --from=build .*\/app\/node_modules \/app\/node_modules/
+  );
+});
+
 test("Dependabot covers npm, GitHub Actions, Dockerfiles, and AI Python requirements", async () => {
   const dependabot = await text(".github/dependabot.yml");
 
