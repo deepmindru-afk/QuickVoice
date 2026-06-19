@@ -43,6 +43,18 @@ COPY apps/server/package.json apps/server/package.json
 COPY packages/typescript-config packages/typescript-config
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --prod --filter server...
+RUN rm -rf \
+    /pnpm \
+    /root/.cache/node \
+    /usr/local/bin/corepack \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/bin/pnpm \
+    /usr/local/bin/pnpx \
+    /usr/local/bin/yarn \
+    /usr/local/bin/yarnpkg \
+    /usr/local/lib/node_modules/corepack \
+    /usr/local/lib/node_modules/npm
 
 WORKDIR /app/apps/server
 COPY --from=build --chown=server:nodejs /app/apps/server/dist ./dist

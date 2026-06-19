@@ -81,6 +81,9 @@ test("server runtime image installs only production server dependencies", async 
   assert.doesNotMatch(dockerfile, /pnpm .*deploy/);
   assert.match(dockerfile, /apt-get upgrade -y/);
   assert.match(dockerfile, /COPY packages\/typescript-config packages\/typescript-config/);
+  assert.match(dockerfile, /rm -rf[\s\S]*\/root\/\.cache\/node/);
+  assert.match(dockerfile, /rm -rf[\s\S]*\/usr\/local\/lib\/node_modules\/npm/);
+  assert.match(dockerfile, /rm -rf[\s\S]*\/usr\/local\/lib\/node_modules\/corepack/);
   assert.doesNotMatch(dockerfile, /COPY packages\/typescript-config\/package\.json/);
   assert.doesNotMatch(
     dockerfile,
