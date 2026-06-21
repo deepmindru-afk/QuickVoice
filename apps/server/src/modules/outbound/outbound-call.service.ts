@@ -12,15 +12,22 @@ import {
   livekitSipClient,
 } from "../../config/livekit.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
-import type { QuickOutboundCallArgs } from "./outbound-call.schema.js";
+import { NotFoundError } from "../../common/errors/notFound.js";
+import type { ListOutboundCallsArgs, QuickOutboundCallArgs } from "./outbound-call.schema.js";
 import * as outboundCallRepository from "./outbound-call.repository.js";
 
-type OutboundCallRepository = {
+type QuickOutboundCallRepository = {
   getDialableNumber: typeof outboundCallRepository.getDialableNumber;
   createQuickCall: typeof outboundCallRepository.createQuickCall;
   markInProgress: typeof outboundCallRepository.markInProgress;
   markFailed: typeof outboundCallRepository.markFailed;
   getMonthlyUsage?: typeof outboundCallRepository.getMonthlyUsage;
+};
+
+type OutboundCallWorkflowRepository = {
+  listForOrg: typeof outboundCallRepository.listForOrg;
+  getForOrg: typeof outboundCallRepository.getForOrg;
+  markCancelled: typeof outboundCallRepository.markCancelled;
 };
 
 type SipClientLike = {
@@ -44,11 +51,23 @@ type AgentDispatchClientLike = {
 type OutboundTrunks = Record<TelephonyProvider, string>;
 
 type CreateQuickOutboundCallDeps = {
-  repository?: OutboundCallRepository;
+  repository?: QuickOutboundCallRepository;
   sipClient?: SipClientLike;
   dispatchClient?: AgentDispatchClientLike;
   outboundTrunks?: OutboundTrunks;
   agentName?: string;
+};
+
+type OutboundCallRecord = NonNullable<
+  Awaited<ReturnType<typeof outboundCallRepository.getForOrg>>
+>;
+
+type OutboundWorkflowDeps = {
+  repository?: OutboundCallWorkflowRepository;
+};
+
+type RetryOutboundWorkflowDeps = OutboundWorkflowDeps & {
+  dispatchQuickCall?: typeof createQuickOutboundCall;
 };
 
 const defaultOutboundTrunks: OutboundTrunks = {
@@ -152,7 +171,7 @@ export async function createQuickOutboundCall(
 }
 
 async function enforcePlanQuota(
-  repository: OutboundCallRepository,
+  repository: QuickOutboundCallRepository,
   organizationId: string
 ) {
   const usage = await repository.getMonthlyUsage?.(organizationId);
@@ -217,4 +236,174 @@ function toJsonValue(value: unknown): Prisma.InputJsonValue | null {
   } catch {
     return String(value);
   }
+}
+
+export async function listOutboundCalls(
+  args: ListOutboundCallsArgs,
+  deps: OutboundWorkflowDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const result = await repository.listForOrg(args);
+
+  return {
+    items: result.items.map(formatOutboundCall),
+    count: result.count,
+    filters: compact({
+      agentId: args.agentId,
+      status: args.status,
+      mode: args.mode,
+    }),
+    nextCursor:
+      result.items.length === args.limit
+        ? result.items[result.items.length - 1]?.outboundId ?? null
+        : null,
+  };
+}
+
+export async function getOutboundCall(
+  args: { organizationId: string; outboundId: string },
+  deps: OutboundWorkflowDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const outbound = await repository.getForOrg(args.outboundId, args.organizationId);
+  if (!outbound) {
+    throw new NotFoundError("Outbound call not found");
+  }
+
+  return formatOutboundCall(outbound);
+}
+
+export async function cancelOutboundCall(
+  args: {
+    organizationId: string;
+    userId: string;
+    outboundId: string;
+    reason?: string;
+  },
+  deps: OutboundWorkflowDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const outbound = await repository.getForOrg(args.outboundId, args.organizationId);
+  if (!outbound) {
+    throw new NotFoundError("Outbound call not found");
+  }
+
+  if (outbound.status !== CallStatus.SCHEDULED) {
+    throw new BadRequestError("Only scheduled outbound calls can be cancelled");
+  }
+
+  const updated = await repository.markCancelled({
+    organizationId: args.organizationId,
+    userId: args.userId,
+    outboundId: args.outboundId,
+    reason: args.reason ?? "Cancelled by user",
+  });
+
+  return formatOutboundCall(updated);
+}
+
+export async function retryOutboundCall(
+  args: {
+    organizationId: string;
+    userId: string;
+    outboundId: string;
+  },
+  deps: RetryOutboundWorkflowDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const dispatchQuickCall = deps.dispatchQuickCall ?? createQuickOutboundCall;
+  const outbound = await repository.getForOrg(args.outboundId, args.organizationId);
+  if (!outbound) {
+    throw new NotFoundError("Outbound call not found");
+  }
+
+  if (
+    outbound.status !== CallStatus.FAILED &&
+    outbound.status !== CallStatus.NOT_ANSWERED
+  ) {
+    throw new BadRequestError("Only failed or unanswered outbound calls can be retried");
+  }
+
+  if (!outbound.agentId) {
+    throw new BadRequestError("Outbound call must have an agent to retry");
+  }
+
+  const optionalData = jsonObject(outbound.optionalData);
+  const provider = getProvider(optionalData.provider);
+  const retry = await dispatchQuickCall({
+    organizationId: args.organizationId,
+    userId: args.userId,
+    agentId: outbound.agentId,
+    phoneNumber: outbound.phoneNumber,
+    fromNumber: outbound.fromNumber,
+    firstMessage: outbound.firstMessage ?? undefined,
+    systemPrompt: outbound.systemPrompt ?? undefined,
+    username: getOptionalString(optionalData.username) ?? undefined,
+    provider,
+    sid: getOptionalString(optionalData.sid) ?? undefined,
+  });
+
+  return {
+    sourceOutboundId: outbound.outboundId,
+    retry,
+  };
+}
+
+function formatOutboundCall(outbound: OutboundCallRecord) {
+  const optionalData = jsonObject(outbound.optionalData);
+
+  return {
+    outboundId: outbound.outboundId,
+    organizationId: outbound.organizationId,
+    agentId: outbound.agentId,
+    userId: outbound.userId,
+    campaignId: outbound.campaignId,
+    callLogId: outbound.callLogId,
+    phoneNumber: outbound.phoneNumber,
+    fromNumber: outbound.fromNumber,
+    firstMessage: outbound.firstMessage,
+    systemPrompt: outbound.systemPrompt,
+    mode: outbound.mode,
+    status: outbound.status,
+    failureReason: getOptionalString(optionalData.failureReason),
+    cancellationReason: getOptionalString(optionalData.cancellationReason),
+    scheduledAt: toIsoString(outbound.scheduledAt),
+    createdAt: toIsoString(outbound.createdAt),
+    updatedAt: toIsoString(outbound.updatedAt),
+    callLog: outbound.callLog
+      ? {
+          ...outbound.callLog,
+          startTime: toIsoString(outbound.callLog.startTime),
+          endTime: toIsoString(outbound.callLog.endTime),
+        }
+      : null,
+  };
+}
+
+function jsonObject(value: Prisma.JsonValue | null | undefined): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
+
+function getOptionalString(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function getProvider(value: unknown) {
+  if (value === TelephonyProvider.TWILIO || value === TelephonyProvider.TELNYX) {
+    return value;
+  }
+  return undefined;
+}
+
+function toIsoString(value: Date | null) {
+  return value ? value.toISOString() : null;
+}
+
+function compact<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
+  );
 }

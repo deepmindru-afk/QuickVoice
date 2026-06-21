@@ -123,4 +123,4 @@ This shift typically results in:
 
 ---
 
-*QuickVoice powers customer support automation for 500+ businesses. 24/7, in 100+ languages, SOC 2 certified. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers customer support automation for 500+ businesses. 24/7, in 100+ languages, SOC 2 certified. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

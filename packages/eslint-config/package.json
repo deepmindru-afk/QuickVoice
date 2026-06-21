@@ -7,16 +7,19 @@
   "exports": {
     "./base": "./base.js",
     "./next-js": "./next.js",
-    "./react-internal": "./react-internal.js"
+    "./nextjs": "./next.js",
+    "./react-internal": "./react-internal.js",
+    "./react-library": "./react-internal.js",
+    "./type-checked": "./type-checked.js"
   },
   "scripts": {
-    "lint": "node --check ./base.js && node --check ./next.js && node --check ./react-internal.js && node --test ./test.mjs",
+    "lint": "node --check ./base.js && node --check ./next.js && node --check ./react-internal.js && node --check ./type-checked.js && node --test ./test.mjs",
     "test": "node --test ./test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "eslint": "^9.39.1",
-    "eslint-config-next": "16.2.1",
+    "eslint-config-next": "16.2.9",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",

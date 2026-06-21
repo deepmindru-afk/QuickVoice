@@ -10,9 +10,34 @@ const internalAuthSecurity: never[] = [];
 
 const errorResponse = {
   type: "object",
+  required: ["success", "code", "message", "details", "fieldErrors", "requestId"],
   properties: {
     success: { type: "boolean", example: false },
-    message: { type: "string" },
+    code: { type: "string", example: "VALIDATION_ERROR" },
+    message: { type: "string", example: "Validation failed" },
+    details: {
+      type: "object",
+      nullable: true,
+      additionalProperties: true,
+      example: {
+        issues: [
+          {
+            path: "documents.0.name",
+            message: "Document name is required",
+            code: "too_small",
+          },
+        ],
+      },
+    },
+    fieldErrors: {
+      type: "object",
+      additionalProperties: {
+        type: "array",
+        items: { type: "string" },
+      },
+      example: { "documents.0.name": ["Document name is required"] },
+    },
+    requestId: { type: "string", nullable: true, example: "req_abc123" },
   },
 };
 
@@ -37,6 +62,10 @@ export const swaggerSpec = {
     { name: "Numbers" },
     { name: "Calls" },
     { name: "Knowledge Base" },
+    { name: "Outbound Calls" },
+    { name: "Tools" },
+    { name: "MCP Integrations" },
+    { name: "Readiness" },
   ],
   components: {
     securitySchemes: {
@@ -352,6 +381,149 @@ export const swaggerSpec = {
           value: { nullable: true },
         },
       },
+      UploadUrlResponse: {
+        type: "object",
+        properties: {
+          uploadUrl: { type: "string", format: "uri" },
+          s3Key: { type: "string", example: "kb/org_123/file.pdf" },
+        },
+      },
+      QuickOutboundCallRequest: {
+        type: "object",
+        required: ["agentId", "phoneNumber", "fromNumber"],
+        properties: {
+          agentId: { type: "string", format: "uuid" },
+          phoneNumber: { type: "string", example: "+15550001111" },
+          fromNumber: { type: "string", example: "+15551230000" },
+          firstMessage: { type: "string", example: "Hi, this is QuickVoice calling back." },
+          systemPrompt: { type: "string", example: "Keep the call concise and helpful." },
+          username: { type: "string", example: "Ada" },
+          provider: { type: "string", enum: ["TWILIO", "TELNYX"] },
+          sid: { type: "string", description: "Optional provider number SID override." },
+        },
+      },
+      CancelOutboundCallRequest: {
+        type: "object",
+        properties: {
+          reason: { type: "string", maxLength: 500, example: "Customer requested cancellation" },
+        },
+      },
+      OutboundCall: {
+        type: "object",
+        properties: {
+          outboundId: { type: "string", format: "uuid" },
+          organizationId: { type: "string" },
+          agentId: { type: "string", format: "uuid", nullable: true },
+          userId: { type: "string", nullable: true },
+          campaignId: { type: "string", nullable: true },
+          callLogId: { type: "string", nullable: true },
+          phoneNumber: { type: "string", example: "+15550001111" },
+          fromNumber: { type: "string", example: "+15551230000" },
+          mode: { type: "string", enum: ["quick", "campaign"] },
+          status: {
+            type: "string",
+            enum: ["NOT_ANSWERED", "SCHEDULED", "PROCESSED", "IN_PROGRESS", "COMPLETED", "FAILED"],
+          },
+          failureReason: { type: "string", nullable: true, example: "LiveKit unavailable" },
+          cancellationReason: { type: "string", nullable: true },
+          scheduledAt: { type: "string", format: "date-time", nullable: true },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+          callLog: { type: "object", nullable: true },
+        },
+      },
+      OutboundCallListResponse: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: { $ref: "#/components/schemas/OutboundCall" },
+          },
+          count: { type: "integer", example: 1 },
+          filters: { type: "object", additionalProperties: true },
+          nextCursor: { type: "string", nullable: true },
+        },
+      },
+      OutboundCallStatus: {
+        type: "object",
+        properties: {
+          outboundId: { type: "string", format: "uuid" },
+          status: { type: "string" },
+          failureReason: { type: "string", nullable: true },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      ToolRequest: {
+        type: "object",
+        required: ["name", "description", "api_url"],
+        properties: {
+          name: { type: "string", example: "Lookup order" },
+          description: { type: "string", example: "Fetch order status for a caller." },
+          api_url: { type: "string", format: "uri", example: "https://api.example.com/orders" },
+          api_method: { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"], default: "POST" },
+          api_headers: { type: "array", items: { type: "object" }, nullable: true },
+          api_body: { type: "array", items: { type: "object" }, nullable: true },
+          api_query_params: { type: "array", items: { type: "object" }, nullable: true },
+          api_path_params: { type: "array", items: { type: "object" }, nullable: true },
+          response_timeout_secs: { type: "integer", minimum: 1, maximum: 300, nullable: true },
+          dynamic_variables: { type: "array", items: { type: "object" }, nullable: true },
+          disable_interruptions: { type: "boolean", default: false },
+          force_pre_tool_speech: { type: "boolean", default: true },
+        },
+      },
+      Tool: {
+        type: "object",
+        additionalProperties: true,
+        properties: {
+          toolId: { type: "string", format: "uuid" },
+          name: { type: "string" },
+          description: { type: "string" },
+          api_url: { type: "string", format: "uri" },
+        },
+      },
+      McpConnectionRequest: {
+        type: "object",
+        properties: {
+          catalogSlug: {
+            type: "string",
+            example: "smithery/slack",
+            description: "Connect a catalog server. Provide either catalogSlug or customUrl.",
+          },
+          customUrl: {
+            type: "string",
+            format: "uri",
+            example: "https://mcp.example.com/sse",
+            description: "Connect a custom MCP server. Provide either catalogSlug or customUrl.",
+          },
+          displayName: { type: "string", example: "Slack workspace" },
+        },
+      },
+      McpConnection: {
+        type: "object",
+        additionalProperties: true,
+        properties: {
+          mcpConnectionId: { type: "string", format: "uuid" },
+          status: {
+            type: "string",
+            enum: ["PENDING", "CONNECTED", "AUTH_REQUIRED", "INPUT_REQUIRED", "ERROR", "DISCONNECTED"],
+          },
+          setupUrl: { type: "string", format: "uri", nullable: true },
+        },
+      },
+      AttachMcpRequest: {
+        type: "object",
+        properties: {
+          enabled: { type: "boolean", default: true },
+        },
+      },
+      ExecuteMcpToolRequest: {
+        type: "object",
+        properties: {
+          agentId: { type: "string", format: "uuid" },
+          callId: { type: "string" },
+          arguments: { type: "object", additionalProperties: true },
+        },
+      },
       DashboardSummary: {
         type: "object",
         properties: {
@@ -389,6 +561,12 @@ export const swaggerSpec = {
       },
     },
     responses: {
+      BadRequest: {
+        description: "Bad request",
+        content: {
+          "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } },
+        },
+      },
       Unauthorized: {
         description: "Unauthorized",
         content: {
@@ -416,6 +594,32 @@ export const swaggerSpec = {
         summary: "Health check",
         responses: {
           200: { description: "Server is running" },
+        },
+      },
+    },
+    "/ready": {
+      get: {
+        tags: ["Readiness"],
+        summary: "Readiness and integration diagnostics",
+        description:
+          "Returns core dependency and optional integration checks so operators can tell whether the API is usable and which integrations need attention.",
+        responses: {
+          200: { description: "Core server dependencies are ready" },
+          503: {
+            description: "One or more readiness checks failed or are not configured",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    message: { type: "string" },
+                    data: { type: "object", additionalProperties: true },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -630,6 +834,18 @@ export const swaggerSpec = {
           403: { $ref: "#/components/responses/Forbidden" },
         },
       },
+      delete: {
+        tags: ["Numbers"],
+        summary: "Release a phone number",
+        security: userAuthSecurity,
+        parameters: [{ name: "phId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Phone number released" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
     },
     "/calls": {
       get: {
@@ -748,6 +964,31 @@ export const swaggerSpec = {
         },
       },
     },
+    "/kb/upload-url": {
+      get: {
+        tags: ["Knowledge Base"],
+        summary: "Generate a direct Knowledge Base upload URL",
+        description:
+          "Use this before creating non-URL knowledge sources: request upload URL, upload file to S3, then create the source with the returned s3Key and poll /kb.",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "fileName", in: "query", required: true, schema: { type: "string", example: "pricing.pdf" } },
+          { name: "contentType", in: "query", required: true, schema: { type: "string", example: "application/pdf" } },
+        ],
+        responses: {
+          200: {
+            description: "Presigned upload URL",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/UploadUrlResponse" },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
     "/kb/{kbId}": {
       delete: {
         tags: ["Knowledge Base"],
@@ -756,6 +997,400 @@ export const swaggerSpec = {
         parameters: [{ name: "kbId", in: "path", required: true, schema: { type: "string" } }],
         responses: {
           200: { description: "Knowledge source deleted" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/outbound-calls": {
+      get: {
+        tags: ["Outbound Calls"],
+        summary: "List outbound calls",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "agentId", in: "query", schema: { type: "string", format: "uuid" } },
+          {
+            name: "status",
+            in: "query",
+            schema: {
+              type: "string",
+              enum: ["NOT_ANSWERED", "SCHEDULED", "PROCESSED", "IN_PROGRESS", "COMPLETED", "FAILED"],
+            },
+          },
+          { name: "mode", in: "query", schema: { type: "string", enum: ["quick", "campaign"] } },
+          { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
+          { name: "cursor", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          200: {
+            description: "Outbound call list with count, filters, and next cursor",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OutboundCallListResponse" },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/quick": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Dispatch a quick outbound call",
+        security: userAuthSecurity,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/QuickOutboundCallRequest" },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Outbound call dispatched" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/{outboundId}": {
+      get: {
+        tags: ["Outbound Calls"],
+        summary: "Get outbound call detail",
+        security: userAuthSecurity,
+        parameters: [{ name: "outboundId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: {
+            description: "Outbound call detail",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OutboundCall" },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/outbound-calls/{outboundId}/status": {
+      get: {
+        tags: ["Outbound Calls"],
+        summary: "Get compact outbound call status for polling",
+        security: userAuthSecurity,
+        parameters: [{ name: "outboundId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: {
+            description: "Outbound call status and failure reason",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/OutboundCallStatus" },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/outbound-calls/{outboundId}/cancel": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Cancel a scheduled outbound call",
+        description:
+          "Cancels only calls that are still SCHEDULED. In-progress carrier calls cannot be stopped by this endpoint.",
+        security: userAuthSecurity,
+        parameters: [{ name: "outboundId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CancelOutboundCallRequest" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Outbound call cancelled" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/outbound-calls/{outboundId}/retry": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Retry a failed or unanswered outbound call",
+        security: userAuthSecurity,
+        parameters: [{ name: "outboundId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          201: { description: "Replacement outbound call dispatched" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/tools": {
+      get: {
+        tags: ["Tools"],
+        summary: "List tools",
+        security: userAuthSecurity,
+        responses: {
+          200: { description: "Tool list" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+      post: {
+        tags: ["Tools"],
+        summary: "Create a tool",
+        security: userAuthSecurity,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/ToolRequest" } },
+          },
+        },
+        responses: {
+          201: { description: "Tool created" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/tools/{toolId}": {
+      patch: {
+        tags: ["Tools"],
+        summary: "Update a tool",
+        security: userAuthSecurity,
+        parameters: [{ name: "toolId", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/ToolRequest" } },
+          },
+        },
+        responses: {
+          200: { description: "Tool updated" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+      delete: {
+        tags: ["Tools"],
+        summary: "Delete a tool",
+        security: userAuthSecurity,
+        parameters: [{ name: "toolId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Tool deleted" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/tools/agent/{agentId}": {
+      get: {
+        tags: ["Tools"],
+        summary: "List tools attached to an agent",
+        security: userAuthSecurity,
+        parameters: [{ name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          200: { description: "Agent tools" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/tools/{toolId}/attach/{agentId}": {
+      post: {
+        tags: ["Tools"],
+        summary: "Attach a tool to an agent",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "toolId", in: "path", required: true, schema: { type: "string" } },
+          { name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: { description: "Tool attached" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/tools/{toolId}/detach/{agentId}": {
+      delete: {
+        tags: ["Tools"],
+        summary: "Detach a tool from an agent",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "toolId", in: "path", required: true, schema: { type: "string" } },
+          { name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: { description: "Tool detached" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/catalog": {
+      get: {
+        tags: ["MCP Integrations"],
+        summary: "List MCP catalog entries",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1, default: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 24 } },
+          { name: "search", in: "query", schema: { type: "string" } },
+          { name: "verified", in: "query", schema: { type: "boolean" } },
+          { name: "sort", in: "query", schema: { type: "string", enum: ["popular", "name"] } },
+        ],
+        responses: {
+          200: { description: "MCP catalog" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/mcp/connections": {
+      get: {
+        tags: ["MCP Integrations"],
+        summary: "List MCP connections",
+        security: userAuthSecurity,
+        responses: {
+          200: { description: "MCP connections" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+      post: {
+        tags: ["MCP Integrations"],
+        summary: "Create an MCP connection",
+        security: userAuthSecurity,
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/McpConnectionRequest" } },
+          },
+        },
+        responses: {
+          201: { description: "MCP connection created" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/mcp/connections/{mcpConnectionId}/refresh": {
+      post: {
+        tags: ["MCP Integrations"],
+        summary: "Refresh an MCP connection",
+        security: userAuthSecurity,
+        parameters: [{ name: "mcpConnectionId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "MCP connection refreshed" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/connections/{mcpConnectionId}": {
+      delete: {
+        tags: ["MCP Integrations"],
+        summary: "Disconnect an MCP connection",
+        security: userAuthSecurity,
+        parameters: [{ name: "mcpConnectionId", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "MCP connection disconnected" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/agent/{agentId}": {
+      get: {
+        tags: ["MCP Integrations"],
+        summary: "List MCP connections attached to an agent",
+        security: userAuthSecurity,
+        parameters: [{ name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          200: { description: "Agent MCP connections" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/connections/{mcpConnectionId}/attach/{agentId}": {
+      post: {
+        tags: ["MCP Integrations"],
+        summary: "Attach an MCP connection to an agent",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "mcpConnectionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        requestBody: {
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/AttachMcpRequest" } },
+          },
+        },
+        responses: {
+          200: { description: "MCP connection attached" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/connections/{mcpConnectionId}/detach/{agentId}": {
+      delete: {
+        tags: ["MCP Integrations"],
+        summary: "Detach an MCP connection from an agent",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "mcpConnectionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "agentId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          200: { description: "MCP connection detached" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/mcp/connections/{mcpConnectionId}/tools/{toolName}/execute": {
+      post: {
+        tags: ["MCP Integrations"],
+        summary: "Execute an MCP tool",
+        security: userAuthSecurity,
+        parameters: [
+          { name: "mcpConnectionId", in: "path", required: true, schema: { type: "string" } },
+          { name: "toolName", in: "path", required: true, schema: { type: "string" } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/ExecuteMcpToolRequest" } },
+          },
+        },
+        responses: {
+          200: { description: "MCP tool execution result" },
           401: { $ref: "#/components/responses/Unauthorized" },
           403: { $ref: "#/components/responses/Forbidden" },
           404: { $ref: "#/components/responses/NotFound" },

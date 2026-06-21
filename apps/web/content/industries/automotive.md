@@ -137,4 +137,4 @@ Yes. QuickVoice has pre-built integrations for CDK, Reynolds & Reynolds, Tekion,
 
 ---
 
-*QuickVoice serves 400+ automotive dealerships. First AI agent live in under 30 minutes. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves 400+ automotive dealerships. First AI agent live in under 30 minutes. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

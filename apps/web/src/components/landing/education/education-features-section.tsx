@@ -10,6 +10,9 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react";
+import Link from "next/link";
+
+import { REGISTER_URL } from "@/lib/links";
 
 const mainFeatures = [
   {
@@ -123,10 +126,13 @@ export function EducationFeaturesSection() {
                     <p className="text-muted-foreground text-sm leading-relaxed transition-colors duration-200 ease-out group-hover:text-foreground/80 mb-4">
                       {feature.description}
                     </p>
-                    <button className="mt-4 inline-flex items-center text-primary font-semibold hover:underline text-sm transition-transform duration-200 ease-out group-hover:translate-x-1">
-                      LEARN MORE
+                    <Link
+                      href={REGISTER_URL}
+                      className="mt-4 inline-flex items-center text-primary font-semibold hover:underline text-sm transition-transform duration-200 ease-out group-hover:translate-x-1"
+                    >
+                      TRY THE BUILDER
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 ease-out group-hover:translate-x-1" />
-                    </button>
+                    </Link>
                   </div>
                 </motion.li>
               );

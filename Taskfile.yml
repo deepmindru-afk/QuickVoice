@@ -58,14 +58,34 @@ tasks:
 
   docker:down:
     desc: Stop local Docker dependencies
+    deps:
+      - env:dev
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev down
 
   docker:reset:
     desc: Remove local Docker dependencies and volumes
+    deps:
+      - env:dev
     prompt: This deletes the local QuickVoice Postgres, Redis, and optional service volumes. Continue?
     cmds:
       - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev down -v
+
+  mail:up:
+    desc: Start optional Mailpit email testing service
+    deps:
+      - env:dev
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev --profile mail up -d mailpit
+      - echo "Mailpit is available at http://localhost:8025"
+
+  mail:down:
+    desc: Stop optional Mailpit email testing service
+    deps:
+      - env:dev
+    cmds:
+      - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev --profile mail stop mailpit
+      - docker compose -f {{.COMPOSE_FILE}} --env-file .env.dev --profile mail rm -f mailpit
 
   dev:clear:
     desc: Stop stale QuickVoice local dev processes

@@ -182,6 +182,8 @@ export function ContactUsFormSection() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
+                    aria-invalid={Boolean(errors.name)}
+                    aria-describedby={errors.name ? "name-error" : undefined}
                     className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/80 focus:ring-2 focus:ring-primary/20 ${
                       errors.name
                         ? "border-red-500 focus:border-red-500"
@@ -190,7 +192,9 @@ export function ContactUsFormSection() {
                     placeholder="Enter your full name"
                   />
                   {errors.name && (
-                    <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+                    <p id="name-error" className="mt-1 text-xs text-red-500">
+                      {errors.name}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -207,6 +211,8 @@ export function ContactUsFormSection() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
                     className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/80 focus:ring-2 focus:ring-primary/20 ${
                       errors.email
                         ? "border-red-500 focus:border-red-500"
@@ -215,7 +221,9 @@ export function ContactUsFormSection() {
                     placeholder="Enter your email address"
                   />
                   {errors.email && (
-                    <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                    <p id="email-error" className="mt-1 text-xs text-red-500">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
               </div>
@@ -251,6 +259,8 @@ export function ContactUsFormSection() {
                     type="tel"
                     value={formData.phone}
                     onChange={handleInputChange}
+                    aria-invalid={Boolean(errors.phone)}
+                    aria-describedby={errors.phone ? "phone-error" : undefined}
                     className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/80 focus:ring-2 focus:ring-primary/20 ${
                       errors.phone
                         ? "border-red-500 focus:border-red-500"
@@ -259,7 +269,9 @@ export function ContactUsFormSection() {
                     placeholder="Enter your phone number"
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-xs text-red-500">{errors.phone}</p>
+                    <p id="phone-error" className="mt-1 text-xs text-red-500">
+                      {errors.phone}
+                    </p>
                   )}
                 </div>
               </div>
@@ -277,6 +289,8 @@ export function ContactUsFormSection() {
                   value={formData.lookingFor}
                   onChange={handleInputChange}
                   required
+                  aria-invalid={Boolean(errors.lookingFor)}
+                  aria-describedby={errors.lookingFor ? "lookingFor-error" : undefined}
                   className={`w-full rounded-xl border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 focus:ring-2 focus:ring-primary/20 ${
                     errors.lookingFor
                       ? "border-red-500 focus:border-red-500"
@@ -291,7 +305,9 @@ export function ContactUsFormSection() {
                   <option value="General Inquiry">General Inquiry</option>
                 </select>
                 {errors.lookingFor && (
-                  <p className="mt-1 text-xs text-red-500">{errors.lookingFor}</p>
+                  <p id="lookingFor-error" className="mt-1 text-xs text-red-500">
+                    {errors.lookingFor}
+                  </p>
                 )}
               </div>
 
@@ -309,6 +325,8 @@ export function ContactUsFormSection() {
                   value={formData.message}
                   onChange={handleInputChange}
                   required
+                  aria-invalid={Boolean(errors.message)}
+                  aria-describedby={errors.message ? "message-error" : undefined}
                   className={`w-full resize-none rounded-xl border bg-card px-4 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/80 focus:ring-2 focus:ring-primary/20 ${
                     errors.message
                       ? "border-red-500 focus:border-red-500"
@@ -317,7 +335,9 @@ export function ContactUsFormSection() {
                   placeholder="Please describe your needs, challenges, or questions..."
                 />
                 {errors.message && (
-                  <p className="mt-1 text-xs text-red-500">{errors.message}</p>
+                  <p id="message-error" className="mt-1 text-xs text-red-500">
+                    {errors.message}
+                  </p>
                 )}
               </div>
 

@@ -147,4 +147,4 @@ The financial impact of AI voice agents scales with company size, but the ROI is
 
 ---
 
-*QuickVoice helps SaaS companies scale customer success without scaling headcount. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice helps SaaS companies scale customer success without scaling headcount. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

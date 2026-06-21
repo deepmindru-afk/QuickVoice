@@ -24,6 +24,8 @@ test("Taskfile exposes one-command dev orchestration", async () => {
     "deps:node:",
     "deps:python:",
     "docker:up:",
+    "mail:up:",
+    "mail:down:",
     "db:migrate:",
     "ci:",
     "deps:update:",
@@ -41,17 +43,28 @@ test("Taskfile exposes one-command dev orchestration", async () => {
   assert.match(taskfile, /pnpm install --lockfile-only/);
 });
 
+test("Taskfile exposes safe Docker teardown and optional Mailpit controls", async () => {
+  const taskfile = await text("Taskfile.yml");
+
+  assert.match(taskfile, /docker:down:[\s\S]*deps:[\s\S]*- env:dev[\s\S]*docker compose -f \{\{\.COMPOSE_FILE\}\} --env-file \.env\.dev down/);
+  assert.match(taskfile, /docker:reset:[\s\S]*deps:[\s\S]*- env:dev[\s\S]*docker compose -f \{\{\.COMPOSE_FILE\}\} --env-file \.env\.dev down -v/);
+  assert.match(taskfile, /mail:up:[\s\S]*--profile mail up -d mailpit/);
+  assert.match(taskfile, /mail:up:[\s\S]*http:\/\/localhost:8025/);
+  assert.match(taskfile, /mail:down:[\s\S]*--profile mail stop mailpit/);
+  assert.match(taskfile, /mail:down:[\s\S]*--profile mail rm -f mailpit/);
+});
+
 test("Docker Compose provides local development dependencies", async () => {
   const compose = await text("docker-compose.dev.yml");
 
   assert.match(compose, /^\s{2}postgres:/m);
   assert.match(compose, /postgres:16/);
-  assert.match(compose, /127\.0\.0\.1:5432:5432/);
+  assert.match(compose, /127\.0\.0\.1:\$\{POSTGRES_PORT:-5432\}:5432/);
   assert.match(compose, /healthcheck:/);
   assert.match(compose, /quickvoice-dev/);
   assert.match(compose, /^\s{2}redis:/m);
   assert.match(compose, /redis:7/);
-  assert.match(compose, /127\.0\.0\.1:6379:6379/);
+  assert.match(compose, /127\.0\.0\.1:\$\{REDIS_PORT:-6379\}:6379/);
   assert.match(compose, /quickvoice_redis_data/);
   assert.match(compose, /^\s{2}mailpit:/m);
   assert.match(compose, /profiles:/);
@@ -112,6 +125,9 @@ test("dev env bootstrap preflights every source before copying", async () => {
   assert.match(script, /copy_if_missing "\$ROOT\/apps\/server\/\.env\.dev\.example"/);
   assert.match(script, /copy_if_missing "\$ROOT\/apps\/console\/\.env\.dev\.example"/);
   assert.match(script, /copy_if_missing "\$ROOT\/apps\/web\/\.env\.dev\.example"/);
+  assert.match(script, /Generated files/);
+  assert.match(script, /Local-only defaults/);
+  assert.match(script, /External features blocked until configured/);
 });
 
 test("local dependency install is frozen by default", async () => {
@@ -126,6 +142,8 @@ test("doctor checks env templates, ports, Redis, and Compose health", async () =
 
   assert.match(script, /check_env_templates/);
   assert.match(script, /check_port/);
+  assert.match(script, /check_port "\$\{POSTGRES_PORT:-5432\}" "Postgres"/);
+  assert.match(script, /check_port "\$\{REDIS_PORT:-6379\}" "Redis"/);
   assert.match(script, /check_redis/);
   assert.match(script, /check_compose_health/);
   assert.match(script, /docker compose -f "\$COMPOSE_FILE" --env-file "\$ENV_EXAMPLE" config/);
@@ -134,6 +152,8 @@ test("doctor checks env templates, ports, Redis, and Compose health", async () =
 test("root package exposes aggregate CI and test scripts", async () => {
   const pkg = JSON.parse(await text("package.json"));
 
+  assert.equal(pkg.scripts.dev, "task up:dev");
+  assert.equal(pkg.scripts["dev:turbo"], "turbo run dev");
   assert.equal(pkg.scripts.test, "node --test tests/*.test.mjs && pnpm --filter server test");
   assert.equal(pkg.scripts["ci:local"], "pnpm check:tasks && pnpm check:configs && pnpm lint && pnpm check-types && pnpm build && pnpm test && pnpm ci:python && pnpm ci:docker");
   assert.equal(pkg.scripts["check:tasks"], "node scripts/verify-turbo-tasks.mjs");
@@ -201,4 +221,11 @@ test("helper scripts are executable and wired for local dev", async () => {
   assert.match(up, /WEB_PORT/);
   assert.doesNotMatch(up, /pnpm dev -- -p/);
   assert.match(up, /AI_API_ENABLED/);
+  assert.match(up, /print_service_summary/);
+  assert.match(up, /Enabled services/);
+  assert.match(up, /Optional services disabled/);
+  assert.match(up, /wait_for_http/);
+  assert.match(up, /pid_names/);
+  assert.match(up, /exited with status/);
+  assert.match(up, /\[\$name\]/);
 });

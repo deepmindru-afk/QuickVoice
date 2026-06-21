@@ -20,6 +20,9 @@ coverage
 .audit_runs/
 .fix_runs/
 .testing_guide_runs/
+.ui_ux_audit_runs/
+.ui_ux_fix_runs/
+.viral_launch_runs/
 
 # Turbo
 .turbo

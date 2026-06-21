@@ -137,4 +137,4 @@ AI scheduling agents integrate with virtually any calendar platform:
 
 ---
 
-*QuickVoice handles millions of appointment bookings per month. No code, no credit card. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice handles millions of appointment bookings per month. No code, no credit card. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

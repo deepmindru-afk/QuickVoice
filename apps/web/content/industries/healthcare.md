@@ -231,4 +231,4 @@ The technology is ready. The compliance framework is clear. The ROI is demonstra
 
 ---
 
-*QuickVoice serves 200+ healthcare organizations, from solo practices to health systems with 500+ beds. All deployments are HIPAA-compliant and include a BAA. First agent live in under 30 minutes with our no-code builder. Start your free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves 200+ healthcare organizations, from solo practices to health systems with 500+ beds. All deployments are HIPAA-compliant and include a BAA. First agent live in under 30 minutes with our no-code builder. Start your free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

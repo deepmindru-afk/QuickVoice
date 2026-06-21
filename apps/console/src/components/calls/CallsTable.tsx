@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Loader2,
   MoreHorizontal,
-  ArrowUpDown,
   PhoneIncoming,
   PhoneOutgoing,
   FileText,
@@ -20,7 +19,6 @@ import { PhoneCall } from "lucide-react";
 
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -59,7 +57,6 @@ import { useAgents } from "@/src/hooks/queries/agents";
 import { useCalls, useDeleteCall } from "@/src/hooks/queries/calls";
 import type { CallListParams } from "@/src/lib/api/resources/calls";
 import type { CallLog, CallStatus } from "@/src/lib/api/types";
-import { cn } from "@/src/lib/utils";
 
 // ── formatters ────────────────────────────────────────────────────────────────
 
@@ -130,17 +127,6 @@ function DirectionCell({ direction }: { direction: string | null }) {
   return <span className="text-muted-foreground">—</span>;
 }
 
-function SortableHead({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <TableHead className={cn("whitespace-nowrap", className)}>
-      <span className="inline-flex items-center gap-1.5">
-        {children}
-        <ArrowUpDown className="size-3 text-muted-foreground/50" />
-      </span>
-    </TableHead>
-  );
-}
-
 // ── column definitions ────────────────────────────────────────────────────────
 
 const COLUMNS = [
@@ -175,7 +161,6 @@ export function CallsTable({
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
     new Set(COLUMNS.map((c) => c.key))
   );
-  const [selected, setSelected]       = useState<Set<string>>(new Set());
   const [transcriptCall, setTranscriptCall] = useState<CallLog | null>(null);
   const [metadataCall, setMetadataCall]     = useState<CallLog | null>(null);
   const [deleteTarget, setDeleteTarget]     = useState<CallLog | null>(null);
@@ -214,20 +199,6 @@ export function CallsTable({
 
   const agentName = (id: string | null) =>
     agents?.find((a) => a.agentId === id)?.name ?? "—";
-
-  const allSelected = calls.length > 0 && calls.every((c) => selected.has(c.callId));
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(calls.map((c) => c.callId)));
-  const toggleOne = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
 
   const toggleCol = (key: ColKey) =>
     setVisibleCols((prev) => {
@@ -332,17 +303,9 @@ export function CallsTable({
           {calls.map((c) => (
             <div
               key={c.callId}
-              className={cn(
-                "border bg-card p-4",
-                selected.has(c.callId) && "border-primary/40 bg-primary/5"
-              )}
+              className="border bg-card p-4"
             >
               <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={selected.has(c.callId)}
-                  onCheckedChange={() => toggleOne(c.callId)}
-                  aria-label="Select row"
-                />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{c.callerId ?? "Unknown number"}</p>
                   <p className="text-xs text-muted-foreground">{fmtStartTime(c.startTime)}</p>
@@ -385,18 +348,15 @@ export function CallsTable({
 
         {/* ── table ── */}
         <div className="hidden overflow-x-auto border bg-card md:block">
-          <Table className="min-w-[980px]">
+          <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow className="border-b bg-muted/20 hover:bg-muted/20">
-                <TableHead className="w-12 pl-4">
-                  <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
-                </TableHead>
-                {visibleCols.has("startTime") && <SortableHead>Start Time</SortableHead>}
-                {visibleCols.has("number")    && <SortableHead>Number</SortableHead>}
-                {visibleCols.has("agent")     && <SortableHead>Agent</SortableHead>}
-                {visibleCols.has("duration")  && <SortableHead>Duration</SortableHead>}
+                {visibleCols.has("startTime") && <TableHead className="pl-4 whitespace-nowrap">Start Time</TableHead>}
+                {visibleCols.has("number")    && <TableHead className="whitespace-nowrap">Number</TableHead>}
+                {visibleCols.has("agent")     && <TableHead className="whitespace-nowrap">Agent</TableHead>}
+                {visibleCols.has("duration")  && <TableHead className="whitespace-nowrap">Duration</TableHead>}
                 {visibleCols.has("direction") && <TableHead className="whitespace-nowrap">Direction</TableHead>}
-                {visibleCols.has("status")    && <SortableHead>Status</SortableHead>}
+                {visibleCols.has("status")    && <TableHead className="whitespace-nowrap">Status</TableHead>}
                 <TableHead className="w-16 pr-4 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -404,16 +364,10 @@ export function CallsTable({
               {calls.map((c) => (
                 <TableRow
                   key={c.callId}
-                  className={cn(
-                    "border-b transition-colors hover:bg-muted/10",
-                    selected.has(c.callId) && "bg-primary/5"
-                  )}
+                  className="border-b transition-colors hover:bg-muted/10"
                 >
-                  <TableCell className="pl-4">
-                    <Checkbox checked={selected.has(c.callId)} onCheckedChange={() => toggleOne(c.callId)} aria-label="Select row" />
-                  </TableCell>
                   {visibleCols.has("startTime") && (
-                    <TableCell className="text-sm text-muted-foreground">{fmtStartTime(c.startTime)}</TableCell>
+                    <TableCell className="pl-4 text-sm text-muted-foreground">{fmtStartTime(c.startTime)}</TableCell>
                   )}
                   {visibleCols.has("number") && (
                     <TableCell className="font-medium">{c.callerId ?? "—"}</TableCell>
@@ -464,18 +418,10 @@ export function CallsTable({
         {(() => {
           const allFetched     = !query.hasNextPage;
           const totalKnownPages = totalFetchedPages;
-          const totalSelectedAcrossPages = selected.size;
-          const totalKnownRows = pages.reduce((sum, p) => sum + p.data.length, 0);
 
           return (
-            <div className="flex items-center justify-between gap-2 px-1 text-sm text-muted-foreground">
-              {/* left: selection count */}
-              <span className="shrink-0">
-                {totalSelectedAcrossPages} of {totalKnownRows} row(s) selected.
-              </span>
-
-              {/* right: rows-per-page + page indicator + nav */}
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 px-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end">
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
                 {/* rows per page */}
                 <div className="flex items-center gap-2">
                   <span className="whitespace-nowrap font-medium text-foreground">Rows per page</span>

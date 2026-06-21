@@ -1,8 +1,8 @@
 import os
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -72,16 +72,74 @@ class KbProcessRequest(BaseModel):
     agentId: str
     organizationId: str
     documents: List[KbDocument]
+    budgets: Optional[dict[str, Any]] = None
 
 
-@app.post("/kb/process")
-async def process_kb(payload: KbProcessRequest, request: Request, response: Response):
+def _kb_http_exception(exc: kb_handler.KbJobValidationError) -> HTTPException:
+    return HTTPException(status_code=exc.status_code, detail=exc.to_detail())
+
+
+def _kb_not_found(job_id: str) -> HTTPException:
+    return HTTPException(
+        status_code=404,
+        detail={
+            "code": "KB_JOB_NOT_FOUND",
+            "userMessage": "This knowledge processing job could not be found.",
+            "retryable": False,
+            "details": {"jobId": job_id},
+        },
+    )
+
+
+@app.post("/kb/process", status_code=202, tags=["Knowledge Base"], summary="Start a knowledge ingestion job")
+async def process_kb(
+    payload: KbProcessRequest,
+    request: Request,
+    response: Response,
+    background_tasks: BackgroundTasks,
+):
     _verify_internal(request)
-    results = await kb_handler.process_documents(payload.model_dump())
-    success = all(result.get("status") == "ok" for result in results)
-    if not success:
-        response.status_code = 207
-    return {"success": success, "processed": results}
+    try:
+        job = kb_handler.create_kb_job(payload.model_dump(exclude_none=True))
+    except kb_handler.KbJobValidationError as exc:
+        raise _kb_http_exception(exc) from exc
+
+    response.headers["Location"] = job["statusUrl"]
+    background_tasks.add_task(kb_handler.run_kb_job, job["jobId"])
+    return {"success": True, **job}
+
+
+@app.get("/kb/jobs/{job_id}", tags=["Knowledge Base"], summary="Read knowledge ingestion job status")
+async def read_kb_job(job_id: str, request: Request):
+    _verify_internal(request)
+    try:
+        return kb_handler.get_kb_job(job_id)
+    except KeyError as exc:
+        raise _kb_not_found(job_id) from exc
+
+
+@app.delete("/kb/jobs/{job_id}", tags=["Knowledge Base"], summary="Cancel a queued or running knowledge ingestion job")
+async def cancel_kb_job(job_id: str, request: Request):
+    _verify_internal(request)
+    try:
+        return kb_handler.cancel_kb_job(job_id)
+    except KeyError as exc:
+        raise _kb_not_found(job_id) from exc
+
+
+@app.post("/kb/jobs/{job_id}/retry", status_code=202, tags=["Knowledge Base"], summary="Retry failed documents from a knowledge ingestion job")
+async def retry_kb_job(job_id: str, request: Request, response: Response, background_tasks: BackgroundTasks):
+    _verify_internal(request)
+    try:
+        job = kb_handler.retry_kb_job(job_id)
+    except KeyError as exc:
+        raise _kb_not_found(job_id) from exc
+    except kb_handler.KbJobValidationError as exc:
+        raise _kb_http_exception(exc) from exc
+
+    response.headers["Location"] = job["statusUrl"]
+    background_tasks.add_task(kb_handler.run_kb_job, job["jobId"])
+    return {"success": True, **job}
 
 
 @app.delete("/kb/{agent_id}/{kb_id}")

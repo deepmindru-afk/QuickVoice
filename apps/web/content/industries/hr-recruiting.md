@@ -209,4 +209,4 @@ Exit interviews provide critical data about retention, management effectiveness,
 
 ---
 
-*QuickVoice helps HR teams and recruiting agencies screen, schedule, and communicate at scale. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice helps HR teams and recruiting agencies screen, schedule, and communicate at scale. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

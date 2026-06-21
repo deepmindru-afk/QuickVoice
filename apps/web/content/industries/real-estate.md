@@ -180,4 +180,4 @@ Real estate is fundamentally a trust and relationship business. AI handles the o
 
 ---
 
-*QuickVoice serves 300+ real estate teams, brokerages, and property management companies. First agent live in under 30 minutes. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves 300+ real estate teams, brokerages, and property management companies. First agent live in under 30 minutes. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

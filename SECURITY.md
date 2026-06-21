@@ -1,6 +1,6 @@
 # Security Policy
 
-QuickVoice handles telephony workflows, customer data, credentials, and runtime agent configuration. Please report security issues privately.
+QuickVoice handles telephony workflows, customer data, credentials, recordings, transcripts, and runtime agent configuration. The project is open source so teams can inspect these paths before they trust them. Please report security issues privately.
 
 ## Reporting A Vulnerability
 
@@ -30,6 +30,7 @@ Security reports are most useful when they involve:
 - Exposure of API keys, tokens, call data, recordings, transcripts, or customer data.
 - Server-side request forgery, injection, or remote code execution.
 - Unsafe handling of uploads, webhooks, telephony callbacks, or runtime agent configuration.
+- Privacy leaks across organizations, knowledge bases, call logs, campaigns, or provider integrations.
 - Vulnerabilities in deployment defaults or local development scripts that could leak secrets.
 
 ## Response

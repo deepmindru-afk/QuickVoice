@@ -1,7 +1,7 @@
 import { CallStatus, OutboundCallMode, Prisma } from "../../../prisma/generated/prisma/client.js";
 import { plans } from "../../../data/plans.js";
 import prisma from "../../config/prisma.js";
-import type { QuickOutboundCallArgs } from "./outbound-call.schema.js";
+import type { ListOutboundCallsArgs, QuickOutboundCallArgs } from "./outbound-call.schema.js";
 
 type CreateQuickCallInput = QuickOutboundCallArgs & {
   status: typeof CallStatus.SCHEDULED;
@@ -49,6 +49,49 @@ export async function getDialableNumber(args: {
   });
 }
 
+export async function listForOrg(args: ListOutboundCallsArgs) {
+  const where = outboundWhere(args);
+  const [items, count] = await prisma.$transaction([
+    prisma.outboundCall.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: args.limit,
+      ...(args.cursor ? { cursor: { outboundId: args.cursor }, skip: 1 } : {}),
+      include: {
+        callLog: {
+          select: {
+            callId: true,
+            status: true,
+            startTime: true,
+            endTime: true,
+            durationSeconds: true,
+          },
+        },
+      },
+    }),
+    prisma.outboundCall.count({ where }),
+  ]);
+
+  return { items, count };
+}
+
+export async function getForOrg(outboundId: string, organizationId: string) {
+  return prisma.outboundCall.findFirst({
+    where: { outboundId, organizationId },
+    include: {
+      callLog: {
+        select: {
+          callId: true,
+          status: true,
+          startTime: true,
+          endTime: true,
+          durationSeconds: true,
+        },
+      },
+    },
+  });
+}
+
 export async function markInProgress(
   outboundId: string,
   optionalData: Prisma.InputJsonObject
@@ -70,6 +113,41 @@ export async function markFailed(outboundId: string, reason: string) {
       optionalData: {
         failureReason: reason,
       } as Prisma.InputJsonObject,
+    },
+  });
+}
+
+export async function markCancelled(args: {
+  outboundId: string;
+  organizationId: string;
+  userId: string;
+  reason: string;
+}) {
+  const existing = await getForOrg(args.outboundId, args.organizationId);
+  const optionalData = {
+    ...jsonObject(existing?.optionalData),
+    cancelledAt: new Date().toISOString(),
+    cancelledBy: args.userId,
+    cancellationReason: args.reason,
+    failureReason: args.reason,
+  } satisfies Prisma.InputJsonObject;
+
+  return prisma.outboundCall.update({
+    where: { outboundId: args.outboundId },
+    data: {
+      status: CallStatus.FAILED,
+      optionalData,
+    },
+    include: {
+      callLog: {
+        select: {
+          callId: true,
+          status: true,
+          startTime: true,
+          endTime: true,
+          durationSeconds: true,
+        },
+      },
     },
   });
 }
@@ -103,4 +181,20 @@ export async function getMonthlyUsage(organizationId: string, now = new Date()) 
 
 function startOfUtcMonth(date: Date) {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
+function outboundWhere(args: ListOutboundCallsArgs): Prisma.OutboundCallWhereInput {
+  return {
+    organizationId: args.organizationId,
+    ...(args.agentId ? { agentId: args.agentId } : {}),
+    ...(args.status ? { status: args.status } : {}),
+    ...(args.mode ? { mode: args.mode } : {}),
+  };
+}
+
+function jsonObject(value: Prisma.JsonValue | null | undefined) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return value as Prisma.InputJsonObject;
 }

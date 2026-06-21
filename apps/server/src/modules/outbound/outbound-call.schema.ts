@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { TelephonyProvider } from "../../../prisma/generated/prisma/client.js";
+import {
+  CallStatus,
+  OutboundCallMode,
+  TelephonyProvider,
+} from "../../../prisma/generated/prisma/client.js";
 
 const providerSchema = z.preprocess((value) => {
   if (typeof value === "string") return value.toUpperCase();
@@ -22,3 +26,31 @@ export type QuickOutboundCallArgs = QuickOutboundCallInput & {
   organizationId: string;
   userId: string;
 };
+
+const statusSchema = z.preprocess((value) => {
+  if (typeof value === "string") return value.toUpperCase();
+  return value;
+}, z.nativeEnum(CallStatus));
+
+export const listOutboundCallsQuerySchema = z
+  .object({
+    agentId: z.string().uuid().optional(),
+    status: statusSchema.optional(),
+    mode: z.nativeEnum(OutboundCallMode).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    cursor: z.string().min(1).optional(),
+  })
+  .strip();
+
+export const cancelOutboundCallSchema = z
+  .object({
+    reason: z.string().trim().min(1).max(500).optional(),
+  })
+  .strip();
+
+export type ListOutboundCallsQuery = z.infer<typeof listOutboundCallsQuerySchema>;
+export type ListOutboundCallsArgs = ListOutboundCallsQuery & {
+  organizationId: string;
+};
+
+export type CancelOutboundCallInput = z.infer<typeof cancelOutboundCallSchema>;

@@ -90,4 +90,4 @@ Plus upsell revenue from AI pre-arrival calls:
 
 ---
 
-*QuickVoice powers guest service automation for 100+ hotels and travel businesses. 100+ languages. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers guest service automation for 100+ hotels and travel businesses. 100+ languages. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

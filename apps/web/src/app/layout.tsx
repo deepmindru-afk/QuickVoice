@@ -13,16 +13,16 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 export const metadata: Metadata = {
   metadataBase: new URL("https://quickvoice.co"),
   title: {
-    default: "QuickVoice — No-Code AI Voice Agents | Deploy in 2 Minutes",
+    default: "QuickVoice - Open-Source AI Phone Agent Stack",
     template: "%s | QuickVoice",
   },
   description:
-    "Deploy human-like AI voice agents without coding. Automate support, scheduling, and sales calls. HIPAA compliant. 100+ languages. Free trial.",
+    "Run, inspect, and extend the QuickVoice stack for AI phone agents, including the console, API, LiveKit worker, telephony integrations, knowledge bases, campaigns, and call logs.",
   keywords: [
     "AI voice agents",
-    "no-code voice AI",
+    "open-source voice AI",
     "AI voice automation",
-    "HIPAA compliant voice AI",
+    "self-hosted voice agents",
     "voice agent platform",
     "conversational AI",
   ],
@@ -30,9 +30,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "QuickVoice",
-    title: "QuickVoice — No-Code AI Voice Agents | Deploy in 2 Minutes",
+    title: "QuickVoice - Open-Source AI Phone Agent Stack",
     description:
-      "Deploy human-like AI voice agents without coding. Automate support, scheduling, and sales calls. HIPAA compliant. 100+ languages. Free trial.",
+      "Run, inspect, and extend the QuickVoice stack for AI phone agents, including the console, API, LiveKit worker, telephony integrations, knowledge bases, campaigns, and call logs.",
     images: [
       {
         url: "/logo.svg",
@@ -44,9 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "QuickVoice — No-Code AI Voice Agents",
+    title: "QuickVoice - Open-Source AI Phone Agent Stack",
     description:
-      "Deploy human-like AI voice agents without coding. Automate support, scheduling, and sales calls.",
+      "Run, inspect, and extend the QuickVoice stack for AI phone agents.",
   },
 };
 
@@ -58,10 +58,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="/llms.txt"
+          title="LLM Information"
+        />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
         {process.env.NEXT_PUBLIC_GSC_VERIFICATION && (
-          <meta name="google-site-verification" content={process.env.NEXT_PUBLIC_GSC_VERIFICATION} />
+          <meta
+            name="google-site-verification"
+            content={process.env.NEXT_PUBLIC_GSC_VERIFICATION}
+          />
         )}
       </head>
       {GA_MEASUREMENT_ID && (

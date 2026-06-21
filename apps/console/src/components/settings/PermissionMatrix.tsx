@@ -62,6 +62,7 @@ export function PermissionMatrix({
  checked={checked}
  onCheckedChange={(v) => toggle(r.id, a, v === true)}
  disabled={disabled}
+ aria-label={`Allow ${r.label} ${a}`}
  />
  ) : (
  <span className="text-muted-foreground/50">—</span>

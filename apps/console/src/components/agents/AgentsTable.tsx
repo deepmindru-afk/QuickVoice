@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-    ArrowUpDown,
     BadgeCheck,
     Bot,
     ChevronLeft,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -95,19 +93,6 @@ function StatusCell({ agent }: { agent: Agent }) {
     );
 }
 
-// ── sortable head ─────────────────────────────────────────────────────────────
-
-function SortHead({ children, className }: { children: React.ReactNode; className?: string }) {
-    return (
-        <TableHead className={cn("whitespace-nowrap", className)}>
-            <span className="inline-flex items-center gap-1.5">
-                {children}
-                <ArrowUpDown className="size-3 text-muted-foreground/50" />
-            </span>
-        </TableHead>
-    );
-}
-
 // ── main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -118,36 +103,16 @@ interface Props {
 export function AgentsTable({ agents, isLoading }: Props) {
     const router = useRouter();
     const [page, setPage] = useState(1);
-    const [selected, setSelected] = useState<Set<string>>(new Set());
     const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
     const deleteAgent = useDeleteAgent();
 
     const totalPages = Math.max(1, Math.ceil(agents.length / PAGE_SIZE));
     const slice = agents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-    const allSelected = slice.length > 0 && slice.every((a) => selected.has(a.agentId));
-    const toggleAll = () =>
-        setSelected(allSelected ? new Set() : new Set(slice.map((a) => a.agentId)));
-    const toggleOne = (id: string) =>
-        setSelected((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
-            } else {
-                next.add(id);
-            }
-            return next;
-        });
-
     async function confirmDelete() {
         if (!deleteTarget) return;
         await deleteAgent.mutateAsync(deleteTarget.agentId);
         setDeleteTarget(null);
-        setSelected((prev) => {
-            const next = new Set(prev);
-            next.delete(deleteTarget.agentId);
-            return next;
-        });
     }
 
     if (isLoading) {
@@ -164,17 +129,9 @@ export function AgentsTable({ agents, isLoading }: Props) {
                 {slice.map((agent) => (
                     <div
                         key={agent.agentId}
-                        className={cn(
-                            "border bg-card p-4",
-                            selected.has(agent.agentId) && "border-primary/40 bg-primary/5"
-                        )}
+                        className="border bg-card p-4"
                     >
                         <div className="flex items-start gap-3">
-                            <Checkbox
-                                checked={selected.has(agent.agentId)}
-                                onCheckedChange={() => toggleOne(agent.agentId)}
-                                aria-label="Select row"
-                            />
                             <div
                                 className="min-w-0 flex-1"
                                 onClick={() => router.push(`/agents/${agent.agentId}`)}
@@ -225,19 +182,16 @@ export function AgentsTable({ agents, isLoading }: Props) {
             </div>
             {/* ── table ── */}
             <div className="hidden overflow-x-auto border bg-card md:block">
-                <Table className="min-w-[920px]">
+                <Table className="min-w-[860px]">
                     <TableHeader>
                         <TableRow className="bg-muted/20 hover:bg-muted/20">
-                            <TableHead className="w-12 pl-4">
-                                <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
-                            </TableHead>
-                            <SortHead>Agent</SortHead>
+                            <TableHead className="pl-4 whitespace-nowrap">Agent</TableHead>
                             <TableHead className="w-24">Status</TableHead>
                             <TableHead className="w-32">Configured</TableHead>
-                            <SortHead className="w-24 text-right">Numbers</SortHead>
-                            <SortHead className="w-24 text-right">Calls</SortHead>
-                            <SortHead className="w-24 text-right">Docs</SortHead>
-                            <SortHead className="w-24 text-right">Tools</SortHead>
+                            <TableHead className="w-24 text-right whitespace-nowrap">Numbers</TableHead>
+                            <TableHead className="w-24 text-right whitespace-nowrap">Calls</TableHead>
+                            <TableHead className="w-24 text-right whitespace-nowrap">Docs</TableHead>
+                            <TableHead className="w-24 text-right whitespace-nowrap">Tools</TableHead>
                             <TableHead className="w-14 pr-4 text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -246,22 +200,10 @@ export function AgentsTable({ agents, isLoading }: Props) {
                             <TableRow
                                 key={agent.agentId}
                                 onClick={() => router.push(`/agents/${agent.agentId}`)}
-                                className={cn(
-                                    "cursor-pointer border-b transition-colors hover:bg-muted/10",
-                                    selected.has(agent.agentId) && "bg-primary/5"
-                                )}
+                                className="cursor-pointer border-b transition-colors hover:bg-muted/10"
                             >
-                                {/* checkbox — stop propagation so clicking it doesn't navigate */}
-                                <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
-                                    <Checkbox
-                                        checked={selected.has(agent.agentId)}
-                                        onCheckedChange={() => toggleOne(agent.agentId)}
-                                        aria-label="Select row"
-                                    />
-                                </TableCell>
-
                                 {/* agent name + slug */}
-                                <TableCell>
+                                <TableCell className="pl-4">
                                     <div className="flex items-center gap-3">
                                         <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
                                             <Bot className="size-4" />
@@ -327,11 +269,8 @@ export function AgentsTable({ agents, isLoading }: Props) {
             </div>
 
             {/* ── pagination bar ── */}
-            <div className="flex items-center justify-between gap-2 px-1 text-sm text-muted-foreground">
-                <span className="shrink-0">
-                    {selected.size} of {agents.length} row(s) selected.
-                </span>
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 px-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
                     <span className="whitespace-nowrap font-medium text-foreground">
                         Page {page} of {totalPages}
                     </span>

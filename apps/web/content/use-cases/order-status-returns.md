@@ -154,4 +154,4 @@ With AI:
 
 ---
 
-*QuickVoice handles order status and returns automation for 150+ retail and e-commerce brands. No code required. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice handles order status and returns automation for 150+ retail and e-commerce brands. No code required. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

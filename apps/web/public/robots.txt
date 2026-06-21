@@ -19,7 +19,6 @@ Disallow: /api/
 
 # Block auth pages
 Disallow: /login
-Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify
@@ -42,7 +41,6 @@ Disallow: /checkout
 Disallow: /under-construction
 Disallow: /api/
 Disallow: /login
-Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify
@@ -64,7 +62,6 @@ Disallow: /checkout
 Disallow: /under-construction
 Disallow: /api/
 Disallow: /login
-Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify
@@ -86,7 +83,6 @@ Disallow: /checkout
 Disallow: /under-construction
 Disallow: /api/
 Disallow: /login
-Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /verify

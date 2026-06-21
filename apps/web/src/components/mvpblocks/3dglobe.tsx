@@ -26,16 +26,17 @@ export default function Globe3D() {
       <div className="relative z-10 container mx-auto max-w-2xl px-4 text-center md:max-w-4xl md:px-6 lg:max-w-7xl">
         <div>
           <span className="mb-6 mt-10 inline-block rounded-full border px-3 py-1 text-xs border-primary/60 text-primary/80 dark:border-primary/30 dark:text-primary">
-            NO CODING REQUIRED
+            OPEN-SOURCE PHONE AGENTS
           </span>
           <h1 className="mx-auto mb-6 max-w-4xl text-4xl font-light md:text-5xl lg:text-7xl text-foreground">
-            Stop Losing Customers — Start Converting with{" "}
-            <span className="text-primary">AI-Powered</span> Voice Agents
+            Build AI phone agents on infrastructure you can{" "}
+            <span className="text-primary">inspect and run</span>
           </h1>
 
           <p className="mx-auto mb-10 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Combine artificial intelligence with cutting-edge voice technology
-            to automate customer support, scheduling, and outbound sales.
+            The self-hostable alternative to closed voice-agent platforms:
+            console, API, LiveKit worker, telephony integrations, knowledge
+            bases, campaigns, call logs, and billing paths in one repo.
           </p>
 
           <div className="mb-10 flex flex-col items-center justify-center gap-4 sm:mb-0 sm:flex-row">

@@ -17,12 +17,11 @@ export default function CTA2() {
 
       <div className="relative z-10">
         <h2 className="mb-3 text-3xl font-bold text-white sm:text-4xl md:mb-4 md:text-5xl">
-          Let&apos;s Get In Touch.
+          Build On A Stack You Can Inspect
         </h2>
         <p className="mb-6 max-w-md text-base text-white sm:text-lg md:mb-8">
-          Stop paying for missed opportunities. Start building smarter
-          connections today with industry-leading AI voice automation at just 20
-          cents per minute.
+          Start from the open-source repo, evaluate the local path, and talk
+          through the right self-hosted or managed setup for real phone calls.
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">

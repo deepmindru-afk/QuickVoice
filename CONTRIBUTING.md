@@ -2,15 +2,42 @@
 
 Thanks for helping improve QuickVoice. This repo is open source so teams can inspect, self-host, and extend AI phone-agent infrastructure.
 
+## Positioning Guardrails
+
+QuickVoice is the open-source, self-hostable Retell alternative for teams that want more control over AI phone-agent infrastructure. When you touch public copy, docs, examples, or launch material:
+
+- Emphasize control, self-hosting, privacy review, cost visibility, and extensibility.
+- Compare against closed hosted APIs by explaining tradeoffs, not by attacking competitors.
+- Do not invent customer metrics, benchmarks, screenshots, compliance status, or provider partnerships.
+- Be explicit when real calls, billing, OAuth, email, storage, or production deployment require external credentials and operational decisions.
+
 ## Good First Contributions
 
-- Bug fixes with a clear reproduction.
-- Documentation improvements for local setup, telephony providers, or deployment.
+A good first contribution should be scoped enough that a new contributor can finish it without production credentials, product decisions, or deep architecture context.
+
+Good candidates:
+
+- Bug fixes with a clear reproduction and a small expected behavior.
+- Documentation improvements for local setup, telephony providers, deployment, or env boundaries.
 - Tests for existing behavior.
-- Small product improvements that do not introduce a new dependency or migration.
-- Integration notes for LiveKit, Twilio, Telnyx, Stripe, Postgres, or S3-compatible storage.
+- Broken links, confusing copy, or missing setup notes in docs and launch material.
+- Small product improvements that follow existing UI patterns and do not introduce a new dependency or migration.
+- Integration notes for LiveKit, Twilio, Telnyx, Stripe, Postgres, or S3-compatible storage when they document current behavior.
+
+Poor first issues:
+
+- Changes that require live customer data, paid services, provider dashboards, or production secrets.
+- New auth, billing, telephony, database, worker-runtime, or deployment architecture.
+- Broad redesigns, new provider integrations, or compliance claims.
+- Performance, cost, customer, or reliability claims without public evidence.
 
 For larger changes, open an issue first so we can agree on the approach before you spend time on implementation.
+
+During launch windows, maintainers should keep first-time contributors unblocked with a short first response even when a full answer needs more investigation. See [Launch Day Triage](./docs/launch/launch-day-triage.md) for response expectations and good-first-issue criteria.
+
+## Non-Code Support
+
+If QuickVoice is useful but you are not ready to open an issue or PR, starring the GitHub repo helps surface interest in open voice-agent infrastructure. Setup reports and docs feedback are still more actionable than stars when something is unclear or broken.
 
 ## Local Setup
 

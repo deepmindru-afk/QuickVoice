@@ -10,7 +10,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "reason"],
+        "required": ["id", "reason", "expires"],
         "properties": {
           "id": {
             "type": "string",

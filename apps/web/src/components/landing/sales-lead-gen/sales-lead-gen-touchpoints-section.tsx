@@ -85,11 +85,13 @@ export function SalesLeadGenTouchpointsSection() {
                   {touchpoint.description}
                 </p>
 
-                {/* CTA */}
-                <button className="inline-flex items-center font-semibold text-primary transition-transform duration-300 group-hover:translate-x-1 hover:underline">
-                  Learn More
+                <Link
+                  href={REGISTER_URL}
+                  className="inline-flex items-center font-semibold text-primary transition-transform duration-300 group-hover:translate-x-1 hover:underline"
+                >
+                  Try the Builder
                   <ArrowRight className="ml-1 h-4 w-4" />
-                </button>
+                </Link>
               </div>
             </motion.div>
           ))}

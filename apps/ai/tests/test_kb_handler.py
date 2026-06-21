@@ -91,7 +91,9 @@ class KbHandlerTests(unittest.TestCase):
             kb_handler.MAX_CHUNKS_PER_DOCUMENT = original_max_chunks
 
         self.assertEqual(result[0]["status"], "error")
-        self.assertIn("chunk budget", result[0]["error"])
+        self.assertEqual(result[0]["code"], "KB_CHUNK_LIMIT_EXCEEDED")
+        self.assertEqual(result[0]["error"], result[0]["userMessage"])
+        self.assertFalse(result[0]["retryable"])
         self.assertEqual(calls, {"embed": 0, "upsert": 0})
 
     def test_process_documents_accepts_per_agent_chunk_budget_from_payload(self):
@@ -138,8 +140,150 @@ class KbHandlerTests(unittest.TestCase):
             kb_handler.upsert_to_pinecone = original_upsert
 
         self.assertEqual(result[0]["status"], "error")
-        self.assertIn("chunk budget", result[0]["error"])
+        self.assertEqual(result[0]["code"], "KB_CHUNK_LIMIT_EXCEEDED")
+        self.assertEqual(result[0]["error"], result[0]["userMessage"])
+        self.assertFalse(result[0]["retryable"])
         self.assertEqual(calls, {"embed": 0, "upsert": 0})
+
+    def test_process_documents_returns_structured_user_safe_empty_text_error(self):
+        async def fake_fetch_url(_url):
+            return "   "
+
+        original_fetch_url = kb_handler.fetch_url
+        try:
+            kb_handler.fetch_url = fake_fetch_url
+            result = asyncio.run(
+                kb_handler.process_documents(
+                    {
+                        "agentId": "agent_123",
+                        "organizationId": "org_123",
+                        "documents": [
+                            {
+                                "kbId": "kb_empty",
+                                "name": "Empty page",
+                                "sourceType": "URL",
+                                "url": "https://example.com/empty",
+                            }
+                        ],
+                    }
+                )
+            )
+        finally:
+            kb_handler.fetch_url = original_fetch_url
+
+        self.assertEqual(result[0]["status"], "error")
+        self.assertEqual(result[0]["stage"], "failed")
+        self.assertEqual(result[0]["code"], "KB_EMPTY_TEXT")
+        self.assertEqual(result[0]["userMessage"], "No readable text was found in this knowledge source.")
+        self.assertEqual(result[0]["error"], result[0]["userMessage"])
+        self.assertFalse(result[0]["retryable"])
+        self.assertNotIn("Extracted text is empty", result[0]["error"])
+
+    def test_kb_job_tracks_progress_and_final_document_results(self):
+        async def fake_process_documents(_payload, progress=None, should_cancel=None):
+            if progress:
+                await progress({"kbId": "kb_123", "status": "running", "stage": "embedding"})
+            return [{"kbId": "kb_123", "status": "ok", "stage": "indexed", "chunks": 3}]
+
+        original_process_documents = kb_handler.process_documents
+        try:
+            kb_handler.process_documents = fake_process_documents
+            job = kb_handler.create_kb_job(
+                {
+                    "agentId": "agent_123",
+                    "organizationId": "org_123",
+                    "documents": [
+                        {
+                            "kbId": "kb_123",
+                            "name": "Doc",
+                            "sourceType": "URL",
+                            "url": "https://example.com/doc",
+                        }
+                    ],
+                }
+            )
+            asyncio.run(kb_handler.run_kb_job(job["jobId"]))
+            finished = kb_handler.get_kb_job(job["jobId"])
+        finally:
+            kb_handler.process_documents = original_process_documents
+
+        self.assertEqual(finished["status"], "succeeded")
+        self.assertEqual(finished["stage"], "completed")
+        self.assertEqual(finished["progress"]["processed"], 1)
+        self.assertEqual(finished["progress"]["percent"], 100)
+        self.assertEqual(finished["documents"][0]["stage"], "indexed")
+        self.assertEqual(finished["documents"][0]["chunks"], 3)
+
+    def test_cancel_kb_job_marks_queued_documents_canceled(self):
+        job = kb_handler.create_kb_job(
+            {
+                "agentId": "agent_123",
+                "organizationId": "org_123",
+                "documents": [
+                    {
+                        "kbId": "kb_123",
+                        "name": "Doc",
+                        "sourceType": "URL",
+                        "url": "https://example.com/doc",
+                    }
+                ],
+            }
+        )
+
+        canceled = kb_handler.cancel_kb_job(job["jobId"])
+
+        self.assertEqual(canceled["status"], "canceled")
+        self.assertEqual(canceled["stage"], "canceled")
+        self.assertEqual(canceled["progress"]["processed"], 1)
+        self.assertEqual(canceled["progress"]["canceled"], 1)
+        self.assertEqual(canceled["documents"][0]["code"], "KB_JOB_CANCELED")
+
+    def test_retry_kb_job_requeues_failed_documents_only(self):
+        async def fake_process_documents(_payload, progress=None, should_cancel=None):
+            return [
+                {"kbId": "kb_ok", "status": "ok", "stage": "indexed", "chunks": 1},
+                {
+                    "kbId": "kb_failed",
+                    "status": "error",
+                    "stage": "failed",
+                    "code": "KB_EMPTY_TEXT",
+                    "userMessage": "No readable text was found in this knowledge source.",
+                    "retryable": False,
+                    "error": "No readable text was found in this knowledge source.",
+                },
+            ]
+
+        original_process_documents = kb_handler.process_documents
+        try:
+            kb_handler.process_documents = fake_process_documents
+            job = kb_handler.create_kb_job(
+                {
+                    "agentId": "agent_123",
+                    "organizationId": "org_123",
+                    "documents": [
+                        {
+                            "kbId": "kb_ok",
+                            "name": "OK",
+                            "sourceType": "URL",
+                            "url": "https://example.com/ok",
+                        },
+                        {
+                            "kbId": "kb_failed",
+                            "name": "Failed",
+                            "sourceType": "URL",
+                            "url": "https://example.com/failed",
+                        },
+                    ],
+                }
+            )
+            asyncio.run(kb_handler.run_kb_job(job["jobId"]))
+            retry = kb_handler.retry_kb_job(job["jobId"])
+        finally:
+            kb_handler.process_documents = original_process_documents
+
+        self.assertEqual(retry["status"], "queued")
+        self.assertEqual(retry["progress"]["total"], 1)
+        self.assertEqual(retry["documents"][0]["kbId"], "kb_failed")
 
     def test_upsert_deletes_existing_vectors_for_kb_before_replacement(self):
         calls = []

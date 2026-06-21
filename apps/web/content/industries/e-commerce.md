@@ -176,4 +176,4 @@ This proactive posture transforms customer service from a cost center into a rev
 
 ---
 
-*QuickVoice powers customer service automation for 150+ e-commerce brands. No code required. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers customer service automation for 150+ e-commerce brands. No code required. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

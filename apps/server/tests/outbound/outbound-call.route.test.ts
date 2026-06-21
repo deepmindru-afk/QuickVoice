@@ -7,6 +7,10 @@ import type { Server } from "node:http";
 let server: Server;
 let baseUrl: string;
 let serviceArgs: unknown[] = [];
+let listArgs: unknown[] = [];
+let getArgs: unknown[] = [];
+let cancelArgs: unknown[] = [];
+let retryArgs: unknown[] = [];
 
 before(async () => {
   process.env.STRIPE_SECRET_KEY ||= "sk_test_placeholder";
@@ -30,6 +34,8 @@ before(async () => {
         next();
       },
       requireCreatePermission: (_req: Request, _res: Response, next: NextFunction) => next(),
+      requireReadPermission: (_req: Request, _res: Response, next: NextFunction) => next(),
+      requireDeletePermission: (_req: Request, _res: Response, next: NextFunction) => next(),
       createQuickOutboundCall: async (args) => {
         serviceArgs.push(args);
         return {
@@ -37,7 +43,52 @@ before(async () => {
           livekitParticipant: { participantId: "sip-participant-123" },
         };
       },
-    })
+      listOutboundCalls: async (args: unknown) => {
+        listArgs.push(args);
+        return {
+          items: [
+            {
+              outboundId: "out_failed",
+              status: "FAILED",
+              phoneNumber: "+15550001111",
+              failureReason: "LiveKit unavailable",
+            },
+          ],
+          count: 1,
+          filters: { status: "FAILED" },
+        };
+      },
+      getOutboundCall: async (args: unknown) => {
+        getArgs.push(args);
+        return {
+          outboundId: "out_failed",
+          status: "FAILED",
+          phoneNumber: "+15550001111",
+          failureReason: "LiveKit unavailable",
+          updatedAt: "2026-06-20T00:00:00.000Z",
+        };
+      },
+      cancelOutboundCall: async (args: unknown) => {
+        cancelArgs.push(args);
+        return {
+          outboundId: "out_scheduled",
+          status: "FAILED",
+          cancellationReason: "No longer needed",
+        };
+      },
+      retryOutboundCall: async (args: unknown) => {
+        retryArgs.push(args);
+        return {
+          sourceOutboundId: "out_failed",
+          retry: {
+            outbound: {
+              outboundId: "out_retry",
+              status: "IN_PROGRESS",
+            },
+          },
+        };
+      },
+    } as any)
   );
 
   await new Promise<void>((resolve) => {
@@ -79,5 +130,97 @@ test("POST /quick validates and dispatches a quick outbound call", async () => {
     phoneNumber: "+15550001111",
     fromNumber: "+15551230000",
     username: "Ada",
+  });
+});
+
+test("GET / returns outbound calls with count and applied filters", async () => {
+  listArgs = [];
+  const response = await fetch(
+    `${baseUrl}/api/v1/outbound-calls?status=FAILED&agentId=8d55565f-1111-4111-8111-f95fd03f0df2&limit=10&cursor=out_123`
+  );
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.count, 1);
+  assert.equal(body.data.items[0].failureReason, "LiveKit unavailable");
+  assert.deepEqual(listArgs[0], {
+    organizationId: "org_123",
+    agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+    status: "FAILED",
+    limit: 10,
+    cursor: "out_123",
+  });
+});
+
+test("GET /:outboundId returns call detail with failure reason", async () => {
+  getArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/out_failed`);
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.outboundId, "out_failed");
+  assert.equal(body.data.failureReason, "LiveKit unavailable");
+  assert.deepEqual(getArgs[0], {
+    organizationId: "org_123",
+    outboundId: "out_failed",
+  });
+});
+
+test("GET /:outboundId/status returns a compact polling payload", async () => {
+  getArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/out_failed/status`);
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.deepEqual(body.data, {
+    outboundId: "out_failed",
+    status: "FAILED",
+    failureReason: "LiveKit unavailable",
+    updatedAt: "2026-06-20T00:00:00.000Z",
+  });
+  assert.deepEqual(getArgs[0], {
+    organizationId: "org_123",
+    outboundId: "out_failed",
+  });
+});
+
+test("POST /:outboundId/cancel records a cancellation reason", async () => {
+  cancelArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/out_scheduled/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason: "No longer needed" }),
+  });
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.cancellationReason, "No longer needed");
+  assert.deepEqual(cancelArgs[0], {
+    organizationId: "org_123",
+    userId: "user_123",
+    outboundId: "out_scheduled",
+    reason: "No longer needed",
+  });
+});
+
+test("POST /:outboundId/retry dispatches a replacement call", async () => {
+  retryArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/out_failed/retry`, {
+    method: "POST",
+  });
+
+  assert.equal(response.status, 201);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.sourceOutboundId, "out_failed");
+  assert.equal(body.data.retry.outbound.outboundId, "out_retry");
+  assert.deepEqual(retryArgs[0], {
+    organizationId: "org_123",
+    userId: "user_123",
+    outboundId: "out_failed",
   });
 });

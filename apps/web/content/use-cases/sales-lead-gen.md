@@ -136,4 +136,4 @@ AI agents work best when tightly integrated with your CRM:
 
 ---
 
-*QuickVoice powers sales and lead generation automation for B2B and B2C businesses. TCPA compliant, CRM integrated, no code required. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers sales and lead generation automation for B2B and B2C businesses. TCPA compliant, CRM integrated, no code required. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

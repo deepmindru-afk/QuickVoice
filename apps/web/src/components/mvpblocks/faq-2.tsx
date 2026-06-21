@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { PlusIcon } from 'lucide-react';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { PlusIcon } from "lucide-react";
 
 interface FaqItem {
   id: string;
@@ -16,143 +16,73 @@ interface FaqItem {
 const faqItems: FaqItem[] = [
   {
     id: "1",
-    question: "What is QuickVoice and how does it work?",
+    question: "What is QuickVoice?",
     answer:
-      "QuickVoice is an AI-powered voice automation platform that allows businesses to deploy human-like AI voice agents in minutes. Our no-code platform uses advanced natural language processing to handle customer calls, answer questions, and perform tasks without any coding required.",
+      "QuickVoice is open-source, self-hostable infrastructure for AI phone agents. The repo includes the web app, console, API, LiveKit worker, telephony integration points, knowledge bases, call logs, campaigns, billing paths, and local development tooling.",
     category: "general",
   },
   {
     id: "2",
-    question: "How quickly can I deploy an AI voice agent?",
+    question: "Is QuickVoice a Retell alternative?",
     answer:
-      "You can deploy your first AI voice agent in under 2 minutes. Our intuitive platform uses pre-built templates and drag-and-drop functionality to get you up and running immediately. No technical expertise required.",
+      "Yes. QuickVoice is positioned as an open-source Retell alternative for teams that want source-level control, self-hosting, privacy review, provider choice, cost visibility, and extensibility instead of only using a closed hosted API.",
     category: "general",
   },
   {
     id: "3",
-    question: "What languages does QuickVoice support?",
+    question: "How is this different from a hosted voice-agent API?",
     answer:
-      "QuickVoice supports over 100 languages and dialects worldwide. Our AI agents can communicate naturally in multiple languages, making it easy to serve global customers without language barriers.",
+      "Hosted APIs optimize for managed convenience. QuickVoice exposes the app, API, worker, storage, logs, and telephony boundaries so teams can inspect, self-host, and adapt the stack.",
     category: "technical",
   },
   {
     id: "4",
-    question: "Is QuickVoice HIPAA compliant?",
+    question: "Can I run QuickVoice locally?",
     answer:
-      "Yes, QuickVoice is fully HIPAA compliant. We implement enterprise-grade security measures including end-to-end encryption, secure data transmission, and strict access controls to ensure your sensitive customer data is always protected.",
-    category: "security",
+      "Yes. The README local path is `task up:dev`, which starts the local product surface and services for inspection and development.",
+    category: "technical",
   },
   {
     id: "5",
-    question: "How much does QuickVoice cost?",
+    question: "Can a fresh clone place real phone calls?",
     answer:
-      "QuickVoice pricing starts at just 20 cents per minute. We offer flexible pricing plans based on your call volume and requirements. Contact our sales team for a custom quote tailored to your business needs.",
-    category: "pricing",
+      "No. Real calls require LiveKit plus Twilio or Telnyx credentials. OAuth, billing, email, and object storage also require their own provider keys.",
+    category: "technical",
   },
   {
     id: "6",
-    question: "Can QuickVoice integrate with my existing CRM?",
+    question: "How does QuickVoice help with privacy review?",
     answer:
-      "Absolutely! QuickVoice seamlessly integrates with popular CRM systems like Salesforce, HubSpot, and custom solutions. Our API allows for easy data synchronization and workflow automation.",
-    category: "integration",
+      "Because the stack is inspectable, teams can review how call logs, transcripts, recordings, knowledge bases, credentials, and runtime configuration move through the system before production use.",
+    category: "security",
   },
   {
     id: "7",
-    question: "How does the AI understand complex customer requests?",
+    question: "Does the repository alone prove compliance?",
     answer:
-      "Our AI uses advanced natural language processing and machine learning to understand context, intent, and sentiment. It can handle complex conversations, follow up on previous interactions, and provide personalized responses.",
-    category: "technical",
+      "No. Compliance depends on deployment, access controls, provider agreements, retention policy, operations, and legal review. The repo makes technical paths inspectable, but it is not a standalone HIPAA, SOC 2, or similar claim.",
+    category: "security",
   },
   {
     id: "8",
-    question: "Can I customize the voice and personality of my AI agent?",
+    question: "How should I think about cost?",
     answer:
-      "Yes, you can fully customize your AI agent's voice, personality, and conversation style. Choose from various voice options and train the AI to match your brand's tone and communication style.",
-    category: "general",
+      "QuickVoice keeps provider boundaries visible. You can evaluate the costs of LiveKit, telephony, database, object storage, and deployment choices instead of treating the voice-agent stack as one opaque bundle.",
+    category: "pricing",
   },
   {
     id: "9",
-    question: "What happens if the AI can't handle a customer request?",
+    question: "Can I customize QuickVoice?",
     answer:
-      "Our AI agents are programmed to seamlessly transfer calls to human agents when they encounter complex requests or when human intervention is needed. This ensures customers always get the help they need.",
-    category: "technical",
+      "Yes. The AGPL repo is designed to be inspected and extended, including agents, knowledge sources, campaigns, permissions, billing paths, provider integrations, and deployment choices.",
+    category: "integration",
   },
   {
     id: "10",
-    question: "How does QuickVoice handle call analytics and reporting?",
-    answer:
-      "QuickVoice provides comprehensive analytics including call duration, success rates, customer satisfaction scores, and conversation insights. All data is automatically synced to your CRM for better customer relationship management.",
-    category: "technical",
-  },
-  {
-    id: "11",
     question: "Is there a free trial available?",
     answer:
       "Yes, the Free plan includes 15 browser-only minutes each month so you can test the builder before a production launch. No credit card is required.",
     category: "pricing",
-  },
-  {
-    id: "12",
-    question: "Can QuickVoice handle outbound calls and campaigns?",
-    answer:
-      "Yes, QuickVoice supports both inbound and outbound calling. You can create automated outbound campaigns for appointment reminders, follow-ups, and proactive customer engagement.",
-    category: "general",
-  },
-  {
-    id: "13",
-    question: "What security measures does QuickVoice implement?",
-    answer:
-      "QuickVoice implements enterprise-grade security including SSL/TLS encryption, secure data centers, regular security audits, and compliance with industry standards like SOC 2, GDPR, and HIPAA.",
-    category: "security",
-  },
-  {
-    id: "14",
-    question: "How does QuickVoice handle different accents and dialects?",
-    answer:
-      "Our AI is trained on diverse speech patterns and can understand various accents, dialects, and speech variations. The system continuously learns and improves its recognition capabilities.",
-    category: "technical",
-  },
-  {
-    id: "15",
-    question: "Can I use QuickVoice for my healthcare practice?",
-    answer:
-      "Absolutely! QuickVoice is specifically designed for healthcare applications with full HIPAA compliance. It can handle appointment scheduling, patient reminders, insurance verification, and other healthcare-related tasks.",
-    category: "general",
-  },
-  {
-    id: "16",
-    question: "What kind of support do you provide?",
-    answer:
-      "We provide 24/7 customer support including live chat, email support, and dedicated account managers for enterprise clients. Our team is always available to help you optimize your AI voice agents.",
-    category: "general",
-  },
-  {
-    id: "17",
-    question: "How does QuickVoice handle peak call volumes?",
-    answer:
-      "QuickVoice automatically scales to handle unlimited concurrent calls. Our cloud infrastructure ensures your AI agents can handle peak volumes without any performance degradation or additional costs.",
-    category: "technical",
-  },
-  {
-    id: "18",
-    question: "Can I use my existing phone numbers with QuickVoice?",
-    answer:
-      "Yes, you can port your existing phone numbers to QuickVoice or purchase new numbers through our platform. We support both local and toll-free numbers.",
-    category: "integration",
-  },
-  {
-    id: "19",
-    question: "How does QuickVoice ensure data privacy?",
-    answer:
-      "QuickVoice follows strict data privacy protocols including data encryption at rest and in transit, regular security audits, and compliance with international privacy regulations. We never share your customer data with third parties.",
-    category: "security",
-  },
-  {
-    id: "20",
-    question: "What industries can benefit from QuickVoice?",
-    answer:
-      "QuickVoice serves industries including healthcare, real estate, finance, e-commerce, logistics, insurance, and more. Our platform is designed to be versatile and adaptable to any business that handles customer calls.",
-    category: "general",
   },
 ];
 
@@ -166,11 +96,11 @@ const categories = [
 ];
 
 export default function Faq2() {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredFaqs =
-    activeCategory === 'all'
+    activeCategory === "all"
       ? faqItems
       : faqItems.filter((item) => item.category === activeCategory);
 
@@ -206,10 +136,10 @@ export default function Faq2() {
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                'rounded-full px-4 py-2 text-sm font-medium transition-all',
+                "rounded-full px-4 py-2 text-sm font-medium transition-all",
                 activeCategory === category.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
               )}
             >
               {category.label}
@@ -228,10 +158,10 @@ export default function Faq2() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 className={cn(
-                  'border-border h-fit overflow-hidden rounded-xl border',
+                  "border-border h-fit overflow-hidden rounded-xl border",
                   expandedId === faq.id
-                    ? 'shadow-3xl bg-card/50'
-                    : 'bg-card/50',
+                    ? "shadow-3xl bg-card/50"
+                    : "bg-card/50",
                 )}
               >
                 <button
@@ -244,7 +174,9 @@ export default function Faq2() {
                     {faq.question}
                   </h3>
                   <div className="ml-4 flex-shrink-0">
-                    <PlusIcon className={`text-primary h-5 w-5 transition-transform duration-300 ${expandedId === faq.id ? "rotate-45" : ""}`} />
+                    <PlusIcon
+                      className={`text-primary h-5 w-5 transition-transform duration-300 ${expandedId === faq.id ? "rotate-45" : ""}`}
+                    />
                   </div>
                 </button>
 
@@ -253,7 +185,7 @@ export default function Faq2() {
                     <motion.div
                       id={`faq-answer-${faq.id}`}
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"

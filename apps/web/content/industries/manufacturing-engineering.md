@@ -200,4 +200,4 @@ The return on AI voice agent deployment varies by manufacturing segment, driven 
 
 ---
 
-*QuickVoice serves manufacturers across automotive, aerospace, consumer goods, food & beverage, and electronics. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves manufacturers across automotive, aerospace, consumer goods, food & beverage, and electronics. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

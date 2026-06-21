@@ -27,13 +27,23 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(client.get("/health").status_code, 200)
                 self.assertEqual(client.get("/agents/agent_123/config").status_code, 401)
 
-    def test_kb_process_returns_207_when_any_document_fails(self):
+    def test_kb_process_returns_accepted_job_and_status_exposes_results(self):
         import api
 
-        async def fake_process_documents(_payload):
+        async def fake_process_documents(_payload, progress=None, should_cancel=None):
+            if progress:
+                await progress({"kbId": "kb_ok", "status": "running", "stage": "extracting"})
             return [
-                {"kbId": "kb_ok", "status": "ok"},
-                {"kbId": "kb_bad", "status": "error", "error": "failed"},
+                {"kbId": "kb_ok", "status": "ok", "stage": "indexed", "chunks": 2},
+                {
+                    "kbId": "kb_bad",
+                    "status": "error",
+                    "stage": "failed",
+                    "code": "KB_EMPTY_TEXT",
+                    "userMessage": "No readable text was found in this knowledge source.",
+                    "retryable": False,
+                    "error": "No readable text was found in this knowledge source.",
+                },
             ]
 
         original_process_documents = api.kb_handler.process_documents
@@ -53,11 +63,58 @@ class ApiTests(unittest.TestCase):
                             ],
                         },
                     )
+                    status_response = client.get(
+                        response.json()["statusUrl"],
+                        headers={"x-internal-key": "internal-secret"},
+                    )
         finally:
             api.kb_handler.process_documents = original_process_documents
 
-        self.assertEqual(response.status_code, 207)
-        self.assertFalse(response.json()["success"])
+        self.assertEqual(response.status_code, 202)
+        body = response.json()
+        self.assertTrue(body["success"])
+        self.assertEqual(body["status"], "queued")
+        self.assertIn("jobId", body)
+        self.assertEqual(body["progress"]["total"], 2)
+        self.assertEqual(body["progress"]["processed"], 0)
+
+        self.assertEqual(status_response.status_code, 200)
+        job = status_response.json()
+        self.assertEqual(job["jobId"], body["jobId"])
+        self.assertEqual(job["status"], "partial_failed")
+        self.assertEqual(job["progress"]["processed"], 2)
+        self.assertEqual(job["progress"]["succeeded"], 1)
+        self.assertEqual(job["progress"]["failed"], 1)
+        self.assertEqual(job["progress"]["percent"], 100)
+        self.assertEqual(job["documents"][0]["stage"], "indexed")
+        self.assertEqual(job["documents"][1]["code"], "KB_EMPTY_TEXT")
+        self.assertFalse(job["documents"][1]["retryable"])
+
+    def test_kb_process_returns_413_for_document_budget_overflow(self):
+        import api
+
+        original_max_documents = api.kb_handler.MAX_DOCUMENTS_PER_JOB
+        try:
+            api.kb_handler.MAX_DOCUMENTS_PER_JOB = 1
+            with patch.dict(os.environ, {"INTERNAL_API_KEY": "internal-secret"}, clear=False):
+                with TestClient(api.app, raise_server_exceptions=False) as client:
+                    response = client.post(
+                        "/kb/process",
+                        headers={"x-internal-key": "internal-secret"},
+                        json={
+                            "agentId": "agent_123",
+                            "organizationId": "org_123",
+                            "documents": [
+                                {"kbId": "kb_1", "name": "One", "sourceType": "URL", "url": "https://example.com/1"},
+                                {"kbId": "kb_2", "name": "Two", "sourceType": "URL", "url": "https://example.com/2"},
+                            ],
+                        },
+                    )
+        finally:
+            api.kb_handler.MAX_DOCUMENTS_PER_JOB = original_max_documents
+
+        self.assertEqual(response.status_code, 413)
+        self.assertEqual(response.json()["detail"]["code"], "KB_DOCUMENT_LIMIT_EXCEEDED")
 
 
 if __name__ == "__main__":

@@ -6,10 +6,15 @@ KB processing pipeline:
 
 import os
 import io
+import copy
 import ipaddress
+import inspect
 import json
+import secrets
 import socket
 import time
+from datetime import datetime, timezone
+from threading import RLock
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
@@ -52,6 +57,479 @@ ALLOWED_CONTENT_TYPES = (
     "application/csv",
     "application/octet-stream",
 )
+
+TERMINAL_JOB_STATUSES = {"succeeded", "partial_failed", "failed", "canceled"}
+PROCESSED_DOCUMENT_STATUSES = {"ok", "error", "canceled"}
+_KB_JOBS: dict[str, dict] = {}
+_KB_JOB_LOCK = RLock()
+
+
+class KbJobValidationError(ValueError):
+    def __init__(
+        self,
+        *,
+        status_code: int,
+        code: str,
+        user_message: str,
+        retryable: bool = False,
+        details: dict | None = None,
+    ):
+        super().__init__(user_message)
+        self.status_code = status_code
+        self.code = code
+        self.user_message = user_message
+        self.retryable = retryable
+        self.details = details or {}
+
+    def to_detail(self) -> dict:
+        return {
+            "code": self.code,
+            "userMessage": self.user_message,
+            "retryable": self.retryable,
+            "details": self.details,
+        }
+
+
+# ── KB job state ─────────────────────────────────────────────────────────────
+
+def create_kb_job(payload: dict) -> dict:
+    normalized = _validate_process_payload(payload)
+    job_id = _new_job_id()
+    now = _now_iso()
+    job = {
+        "jobId": job_id,
+        "agentId": normalized["agentId"],
+        "organizationId": normalized["organizationId"],
+        "status": "queued",
+        "stage": "queued",
+        "progress": _progress_for_documents([]),
+        "documents": [_queued_document_state(doc) for doc in normalized["documents"]],
+        "statusUrl": f"/kb/jobs/{job_id}",
+        "createdAt": now,
+        "updatedAt": now,
+        "finishedAt": None,
+        "error": None,
+        "_payload": copy.deepcopy(normalized),
+        "_cancelRequested": False,
+    }
+    job["progress"] = _progress_for_documents(job["documents"])
+
+    with _KB_JOB_LOCK:
+        _KB_JOBS[job_id] = job
+
+    emit_metric(
+        "kb_job_created",
+        agent_id=normalized["agentId"],
+        organization_id=normalized["organizationId"],
+        job_id=job_id,
+        documents=len(normalized["documents"]),
+    )
+    logger.info(
+        "[kb] job created {}",
+        redact_sensitive({"jobId": job_id, "agentId": normalized["agentId"], "documents": len(normalized["documents"])}),
+    )
+    return _public_job(job)
+
+
+def get_kb_job(job_id: str) -> dict:
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS.get(job_id)
+        if not job:
+            raise KeyError(job_id)
+        return _public_job(job)
+
+
+def cancel_kb_job(job_id: str) -> dict:
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS.get(job_id)
+        if not job:
+            raise KeyError(job_id)
+        if job["status"] in TERMINAL_JOB_STATUSES:
+            return _public_job(job)
+
+        job["_cancelRequested"] = True
+        if job["status"] == "queued":
+            _mark_remaining_documents_canceled_locked(job)
+            _finalize_job_locked(job, canceled=True)
+        else:
+            job["status"] = "canceling"
+            job["stage"] = "canceling"
+            job["updatedAt"] = _now_iso()
+        return _public_job(job)
+
+
+def retry_kb_job(job_id: str) -> dict:
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS.get(job_id)
+        if not job:
+            raise KeyError(job_id)
+        failed_ids = {doc["kbId"] for doc in job["documents"] if doc.get("status") == "error"}
+        if not failed_ids:
+            raise KbJobValidationError(
+                status_code=400,
+                code="KB_JOB_HAS_NO_FAILED_DOCUMENTS",
+                user_message="There are no failed knowledge sources to retry for this job.",
+                retryable=False,
+            )
+        payload = copy.deepcopy(job["_payload"])
+
+    payload["documents"] = [doc for doc in payload["documents"] if doc.get("kbId") in failed_ids]
+    return create_kb_job(payload)
+
+
+async def run_kb_job(job_id: str) -> dict:
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS.get(job_id)
+        if not job:
+            raise KeyError(job_id)
+        if job["status"] in TERMINAL_JOB_STATUSES:
+            return _public_job(job)
+        if job.get("_cancelRequested"):
+            _mark_remaining_documents_canceled_locked(job)
+            _finalize_job_locked(job, canceled=True)
+            return _public_job(job)
+
+        job["status"] = "running"
+        job["stage"] = "processing"
+        job["updatedAt"] = _now_iso()
+        payload = copy.deepcopy(job["_payload"])
+
+    async def progress(event: dict) -> None:
+        _apply_job_progress(job_id, event)
+
+    def should_cancel() -> bool:
+        with _KB_JOB_LOCK:
+            current = _KB_JOBS.get(job_id)
+            return bool(current and current.get("_cancelRequested"))
+
+    try:
+        results = await process_documents(payload, progress=progress, should_cancel=should_cancel)
+    except Exception as exc:
+        detail = _job_error_detail(exc)
+        with _KB_JOB_LOCK:
+            job = _KB_JOBS[job_id]
+            job["status"] = "failed"
+            job["stage"] = "failed"
+            job["error"] = detail
+            job["updatedAt"] = _now_iso()
+            job["finishedAt"] = job["updatedAt"]
+            for doc in job["documents"]:
+                if doc.get("status") not in PROCESSED_DOCUMENT_STATUSES:
+                    doc.update(_document_error_fields(exc, budget=_budget_for_agent(job["agentId"], job["_payload"])))
+            job["progress"] = _progress_for_documents(job["documents"])
+            public = _public_job(job)
+        emit_metric("kb_job_completed", status="failed", job_id=job_id, error_code=detail["code"])
+        logger.error("[kb] job failed {}", redact_sensitive({"jobId": job_id, "code": detail["code"]}))
+        return public
+
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS[job_id]
+        for result in results:
+            _apply_document_result_locked(job, result)
+        if job.get("_cancelRequested") or any(result.get("status") == "canceled" for result in results):
+            _mark_remaining_documents_canceled_locked(job)
+            _finalize_job_locked(job, canceled=True)
+        else:
+            _finalize_job_locked(job)
+        public = _public_job(job)
+
+    emit_metric(
+        "kb_job_completed",
+        status=public["status"],
+        job_id=job_id,
+        agent_id=public["agentId"],
+        documents=public["progress"]["total"],
+        succeeded=public["progress"]["succeeded"],
+        failed=public["progress"]["failed"],
+    )
+    logger.info("[kb] job completed {}", redact_sensitive({"jobId": job_id, "status": public["status"]}))
+    return public
+
+
+def _new_job_id() -> str:
+    return f"kbjob_{secrets.token_urlsafe(12)}"
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _validate_process_payload(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        raise KbJobValidationError(
+            status_code=400,
+            code="KB_REQUEST_INVALID",
+            user_message="Knowledge processing requires a valid request body.",
+            retryable=False,
+        )
+
+    agent_id = str(payload.get("agentId") or "").strip()
+    if not agent_id:
+        raise KbJobValidationError(
+            status_code=400,
+            code="KB_AGENT_ID_REQUIRED",
+            user_message="Choose an agent before processing knowledge sources.",
+            retryable=False,
+        )
+
+    organization_id = str(payload.get("organizationId") or "").strip()
+    if not organization_id:
+        raise KbJobValidationError(
+            status_code=400,
+            code="KB_ORGANIZATION_ID_REQUIRED",
+            user_message="Choose an organization before processing knowledge sources.",
+            retryable=False,
+        )
+
+    documents = payload.get("documents")
+    if not isinstance(documents, list) or not documents:
+        raise KbJobValidationError(
+            status_code=400,
+            code="KB_DOCUMENTS_REQUIRED",
+            user_message="Add at least one knowledge source before starting processing.",
+            retryable=False,
+        )
+    if any(not isinstance(doc, dict) for doc in documents):
+        raise KbJobValidationError(
+            status_code=400,
+            code="KB_DOCUMENT_INVALID",
+            user_message="Each knowledge source must include document metadata.",
+            retryable=False,
+        )
+
+    budget = _budget_for_agent(agent_id, payload)
+    max_documents = budget["max_documents_per_job"]
+    if len(documents) > max_documents:
+        raise KbJobValidationError(
+            status_code=413,
+            code="KB_DOCUMENT_LIMIT_EXCEEDED",
+            user_message=f"This job has {len(documents)} knowledge sources, but the limit is {max_documents}.",
+            retryable=False,
+            details={"maxDocumentsPerJob": max_documents, "documentCount": len(documents)},
+        )
+
+    normalized = copy.deepcopy(payload)
+    normalized["agentId"] = agent_id
+    normalized["organizationId"] = organization_id
+    normalized["documents"] = [copy.deepcopy(doc) for doc in documents]
+    return normalized
+
+
+def _queued_document_state(doc: dict) -> dict:
+    kb_id = str(doc.get("kbId") or "")
+    return {
+        "kbId": kb_id,
+        "name": doc.get("name") or doc.get("originalFileName") or kb_id,
+        "sourceType": doc.get("sourceType", "TXT"),
+        "status": "queued",
+        "stage": "queued",
+    }
+
+
+def _public_job(job: dict) -> dict:
+    public = {
+        key: copy.deepcopy(value)
+        for key, value in job.items()
+        if not key.startswith("_") and value is not None
+    }
+    public["documents"] = [_public_document(doc) for doc in job.get("documents", [])]
+    return public
+
+
+def _public_document(doc: dict) -> dict:
+    return {
+        key: copy.deepcopy(value)
+        for key, value in doc.items()
+        if not key.startswith("_") and value is not None
+    }
+
+
+def _progress_for_documents(documents: list[dict]) -> dict:
+    total = len(documents)
+    succeeded = sum(1 for doc in documents if doc.get("status") == "ok")
+    failed = sum(1 for doc in documents if doc.get("status") == "error")
+    canceled = sum(1 for doc in documents if doc.get("status") == "canceled")
+    processed = succeeded + failed + canceled
+    percent = int((processed / total) * 100) if total else 0
+    return {
+        "total": total,
+        "processed": processed,
+        "succeeded": succeeded,
+        "failed": failed,
+        "canceled": canceled,
+        "percent": percent,
+    }
+
+
+def _find_job_document(job: dict, kb_id: str) -> dict | None:
+    for doc in job.get("documents", []):
+        if doc.get("kbId") == kb_id:
+            return doc
+    return None
+
+
+def _apply_job_progress(job_id: str, event: dict) -> None:
+    with _KB_JOB_LOCK:
+        job = _KB_JOBS.get(job_id)
+        if not job:
+            return
+        if job["status"] != "canceling":
+            job["status"] = "running"
+            job["stage"] = "processing"
+        _apply_document_result_locked(job, event)
+        job["updatedAt"] = _now_iso()
+
+
+def _apply_document_result_locked(job: dict, result: dict) -> None:
+    kb_id = result.get("kbId")
+    if not kb_id:
+        return
+    doc = _find_job_document(job, kb_id)
+    if not doc:
+        doc = {"kbId": kb_id, "name": result.get("name") or kb_id, "sourceType": result.get("sourceType", "TXT")}
+        job["documents"].append(doc)
+
+    for key in ("name", "sourceType", "status", "stage", "chunks", "code", "userMessage", "retryable", "details", "error"):
+        if key in result:
+            doc[key] = copy.deepcopy(result[key])
+
+    if doc.get("status") == "ok":
+        doc.setdefault("stage", "indexed")
+        for key in ("code", "userMessage", "retryable", "details", "error"):
+            doc.pop(key, None)
+    elif doc.get("status") == "error":
+        doc.setdefault("stage", "failed")
+    elif doc.get("status") == "canceled":
+        doc.setdefault("stage", "canceled")
+
+    job["progress"] = _progress_for_documents(job["documents"])
+    job["updatedAt"] = _now_iso()
+
+
+def _mark_remaining_documents_canceled_locked(job: dict) -> None:
+    for doc in job.get("documents", []):
+        if doc.get("status") not in PROCESSED_DOCUMENT_STATUSES:
+            doc.update(_canceled_document_fields())
+    job["progress"] = _progress_for_documents(job["documents"])
+    job["updatedAt"] = _now_iso()
+
+
+def _finalize_job_locked(job: dict, *, canceled: bool = False) -> None:
+    job["progress"] = _progress_for_documents(job["documents"])
+    progress = job["progress"]
+    if canceled:
+        job["status"] = "canceled"
+        job["stage"] = "canceled"
+    elif progress["failed"] == 0 and progress["canceled"] == 0:
+        job["status"] = "succeeded"
+        job["stage"] = "completed"
+    elif progress["succeeded"] == 0 and progress["canceled"] == 0:
+        job["status"] = "failed"
+        job["stage"] = "failed"
+    else:
+        job["status"] = "partial_failed"
+        job["stage"] = "completed"
+    job["updatedAt"] = _now_iso()
+    job["finishedAt"] = job["updatedAt"]
+
+
+def _canceled_document_fields() -> dict:
+    user_message = "Knowledge processing was canceled before this source finished."
+    return {
+        "status": "canceled",
+        "stage": "canceled",
+        "code": "KB_JOB_CANCELED",
+        "userMessage": user_message,
+        "retryable": True,
+        "error": user_message,
+    }
+
+
+def _job_error_detail(exc: Exception) -> dict:
+    if isinstance(exc, KbJobValidationError):
+        return exc.to_detail()
+    error = _document_error_fields(exc, budget={})
+    return {
+        "code": error["code"],
+        "userMessage": error["userMessage"],
+        "retryable": error["retryable"],
+        "details": error.get("details", {}),
+    }
+
+
+def _document_error_fields(exc: Exception, *, budget: dict) -> dict:
+    message = str(exc)
+    details: dict = {}
+    retryable = False
+
+    if "url is required for URL source type" in message:
+        code = "KB_URL_REQUIRED"
+        user_message = "Add a URL for this knowledge source and try again."
+    elif "presignedUrl is required for file source types" in message:
+        code = "KB_FILE_URL_REQUIRED"
+        user_message = "Upload the file again so QuickVoice can read it."
+        retryable = True
+    elif "Only http and https URLs are allowed" in message:
+        code = "KB_URL_UNSUPPORTED_SCHEME"
+        user_message = "Use an http or https URL for this knowledge source."
+    elif "URL host is required" in message:
+        code = "KB_URL_HOST_REQUIRED"
+        user_message = "Enter a complete URL with a host name."
+    elif "URL credentials are not allowed" in message:
+        code = "KB_URL_CREDENTIALS_NOT_ALLOWED"
+        user_message = "Remove credentials from the URL before processing this source."
+    elif "Local hosts are not allowed" in message or "Private, local, or reserved IP addresses" in message:
+        code = "KB_URL_PRIVATE_HOST"
+        user_message = "Use a public URL for this knowledge source."
+    elif "URL host is not allowed" in message:
+        code = "KB_URL_HOST_NOT_ALLOWED"
+        user_message = "This URL host is not allowed for knowledge ingestion."
+    elif "URL host could not be resolved" in message:
+        code = "KB_URL_HOST_UNRESOLVED"
+        user_message = "QuickVoice could not reach this URL host. Check the URL and try again."
+        retryable = True
+    elif "download exceeds" in message:
+        code = "KB_DOWNLOAD_TOO_LARGE"
+        user_message = "This knowledge source is larger than the allowed download size."
+    elif "Too many redirects" in message:
+        code = "KB_TOO_MANY_REDIRECTS"
+        user_message = "This URL redirects too many times. Use the final destination URL and try again."
+    elif "Unsupported URL content type" in message:
+        code = "KB_UNSUPPORTED_URL_CONTENT_TYPE"
+        user_message = "This URL does not point to a supported web page."
+    elif "Unsupported file content type" in message:
+        code = "KB_UNSUPPORTED_FILE_CONTENT_TYPE"
+        user_message = "This file type is not supported for knowledge ingestion."
+    elif "Extracted text is empty" in message or "No chunks produced" in message:
+        code = "KB_EMPTY_TEXT"
+        user_message = "No readable text was found in this knowledge source."
+    elif "Document exceeds chunk budget" in message:
+        max_chunks = budget.get("max_chunks_per_document") or MAX_CHUNKS_PER_DOCUMENT
+        code = "KB_CHUNK_LIMIT_EXCEEDED"
+        user_message = f"This knowledge source is too large to index. Reduce it to {max_chunks} chunks or fewer and try again."
+        details = {"maxChunksPerDocument": max_chunks}
+    else:
+        code = "KB_PROCESSING_FAILED"
+        user_message = "QuickVoice could not process this knowledge source. Try again later."
+        retryable = True
+
+    return {
+        "status": "error",
+        "stage": "failed",
+        "code": code,
+        "userMessage": user_message,
+        "retryable": retryable,
+        "details": details,
+        "error": user_message,
+    }
+
+
+async def _notify_progress(progress, event: dict) -> None:
+    if not progress:
+        return
+    result = progress(event)
+    if inspect.isawaitable(result):
+        await result
 
 
 # ── text extraction ──────────────────────────────────────────────────────────
@@ -290,30 +768,36 @@ def _delete_kb_vectors(*, index, namespace: str, kb_id: str) -> None:
 
 # ── main entry ────────────────────────────────────────────────────────────────
 
-async def process_documents(payload: dict) -> list[dict]:
+async def process_documents(payload: dict, progress=None, should_cancel=None) -> list[dict]:
     """
     Process each document in the payload. Returns a list of
-    {kbId, status} dicts — 'ok' on success, 'error' on failure.
+    structured per-document results — 'ok' on success, 'error' on failure.
     """
-    agent_id: str = payload.get("agentId") or ""
-    if not agent_id:
-        raise ValueError("agentId is required — KB sources must be assigned to an agent before processing")
+    payload = _validate_process_payload(payload)
+    agent_id: str = payload["agentId"]
     documents: list[dict] = payload["documents"]
     budget = _budget_for_agent(agent_id, payload)
-    if len(documents) > budget["max_documents_per_job"]:
-        raise ValueError(f"KB job exceeds document budget of {budget['max_documents_per_job']}")
     results: list[dict] = []
 
     for doc in documents:
-        started = time.perf_counter()
         kb_id: str = doc["kbId"]
         name: str = doc.get("name", kb_id)
         source_type: str = doc.get("sourceType", "TXT")
         url: Optional[str] = doc.get("url")
         presigned_url: Optional[str] = doc.get("presignedUrl")
+        result_base = {"kbId": kb_id, "name": name, "sourceType": source_type}
+
+        if should_cancel and should_cancel():
+            result = {**result_base, **_canceled_document_fields()}
+            await _notify_progress(progress, result)
+            results.append(result)
+            continue
+
+        started = time.perf_counter()
 
         try:
             # 1. Extract text
+            await _notify_progress(progress, {**result_base, "status": "running", "stage": "extracting"})
             if source_type.upper() == "URL":
                 if not url:
                     raise ValueError("url is required for URL source type")
@@ -330,6 +814,12 @@ async def process_documents(payload: dict) -> list[dict]:
                 raise ValueError("Extracted text is empty")
 
             # 2. Chunk
+            if should_cancel and should_cancel():
+                result = {**result_base, **_canceled_document_fields()}
+                await _notify_progress(progress, result)
+                results.append(result)
+                continue
+            await _notify_progress(progress, {**result_base, "status": "running", "stage": "chunking"})
             chunks = chunk_text(text)
             if not chunks:
                 raise ValueError("No chunks produced")
@@ -337,9 +827,27 @@ async def process_documents(payload: dict) -> list[dict]:
                 raise ValueError(f"Document exceeds chunk budget of {budget['max_chunks_per_document']}")
 
             # 3. Embed
+            if should_cancel and should_cancel():
+                result = {**result_base, **_canceled_document_fields()}
+                await _notify_progress(progress, result)
+                results.append(result)
+                continue
+            await _notify_progress(
+                progress,
+                {**result_base, "status": "running", "stage": "embedding", "chunks": len(chunks)},
+            )
             embeddings = await embed_chunks(chunks)
 
             # 4. Upsert to Pinecone (namespace = agentId for per-agent isolation)
+            if should_cancel and should_cancel():
+                result = {**result_base, **_canceled_document_fields()}
+                await _notify_progress(progress, result)
+                results.append(result)
+                continue
+            await _notify_progress(
+                progress,
+                {**result_base, "status": "running", "stage": "indexing", "chunks": len(chunks)},
+            )
             upsert_to_pinecone(chunks, embeddings, namespace=agent_id, kb_id=kb_id, doc_name=name)
 
             emit_metric(
@@ -356,19 +864,25 @@ async def process_documents(payload: dict) -> list[dict]:
                 "[kb] processed {}",
                 redact_sensitive({"kbId": kb_id, "chunks": len(chunks), "sourceType": source_type}),
             )
-            results.append({"kbId": kb_id, "status": "ok", "chunks": len(chunks)})
+            result = {**result_base, "status": "ok", "stage": "indexed", "chunks": len(chunks)}
+            await _notify_progress(progress, result)
+            results.append(result)
 
         except Exception as exc:
+            error = _document_error_fields(exc, budget=budget)
             emit_metric(
                 "kb_document_processed",
                 status="error",
                 agent_id=agent_id,
                 kb_id=kb_id,
                 source_type=source_type,
+                error_code=error["code"],
                 latency_ms=int((time.perf_counter() - started) * 1000),
             )
-            logger.error("[kb] failed {}", redact_sensitive({"kbId": kb_id, "error": str(exc)}))
-            results.append({"kbId": kb_id, "status": "error", "error": str(exc)})
+            logger.error("[kb] failed {}", redact_sensitive({"kbId": kb_id, "code": error["code"], "error": str(exc)}))
+            result = {**result_base, **error}
+            await _notify_progress(progress, result)
+            results.append(result)
 
     return results
 

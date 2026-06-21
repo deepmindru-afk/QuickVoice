@@ -171,3 +171,76 @@ test("conversion CTA clicks have analytics instrumentation without hard dependen
   assert.match(analytics, /DEMO_BOOKING_URL/);
   assert.match(analytics, /REGISTER_URL/);
 });
+
+test("legacy /register conversion paths resolve to the external console signup", () => {
+  const nextConfig = read("next.config.ts");
+  const robots = read("public/robots.txt");
+  const markdownRenderer = read("src/components/blog/MarkdownRenderer.tsx");
+  const contentFiles = walk(join(WEB_ROOT, "content"))
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => relative(WEB_ROOT, file));
+
+  assert.match(nextConfig, /async\s+redirects\(\)/);
+  assert.match(nextConfig, /source:\s*["']\/register["']/);
+  assert.match(nextConfig, /https:\/\/console\.quickvoice\.co/);
+  assert.match(nextConfig, /destination:\s*`\$\{consoleUrl\}\/register`/);
+  assert.doesNotMatch(robots, /Disallow:\s*\/register\b/);
+  assert.match(markdownRenderer, /REGISTER_URL/);
+  assert.match(markdownRenderer, /href\s*===\s*["']\/register["']/);
+
+  for (const file of contentFiles) {
+    assert.doesNotMatch(
+      read(file),
+      /\]\(\/register\)/,
+      `${file} still links markdown readers to the unavailable marketing /register route`,
+    );
+  }
+});
+
+test("homepage contact form posts through the app contact route with accessible status", () => {
+  const homepageContact = read("src/components/mvpblocks/contact-us-1.tsx");
+
+  assert.match(homepageContact, /fetch\(["']\/api\/contact["']/);
+  assert.doesNotMatch(homepageContact, /mailto:/);
+  assert.doesNotMatch(homepageContact, /window\.open/);
+  assert.match(homepageContact, /aria-live=["']polite["']/);
+  assert.match(homepageContact, /role=["']alert["']/);
+  assert.match(homepageContact, /role=["']status["']/);
+  assert.match(homepageContact, /aria-invalid/);
+  assert.match(homepageContact, /aria-describedby/);
+});
+
+test("dedicated contact form associates validation errors with fields", () => {
+  const contactPageForm = read(
+    "src/components/landing/contact-us/contact-us-form-section.tsx",
+  );
+
+  for (const field of ["name", "email", "phone", "lookingFor", "message"]) {
+    assert.match(contactPageForm, new RegExp(`id=["']${field}-error["']`));
+    assert.match(
+      contactPageForm,
+      new RegExp(`aria-describedby=\\{errors\\.${field}\\s*\\?\\s*["']${field}-error["']`),
+    );
+    assert.match(
+      contactPageForm,
+      new RegExp(`aria-invalid=\\{Boolean\\(errors\\.${field}\\)\\}`),
+    );
+  }
+});
+
+test("known sales and education card affordances are real links, not inert buttons", () => {
+  const inertAffordanceFiles = [
+    "src/components/landing/sales-lead-gen/sales-lead-gen-touchpoints-section.tsx",
+    "src/components/landing/education/education-features-section.tsx",
+  ];
+
+  for (const file of inertAffordanceFiles) {
+    const source = read(file);
+    assert.doesNotMatch(
+      source,
+      /<button[\s\S]*?(Learn More|LEARN MORE)[\s\S]*?<\/button>/,
+      `${file} still renders an inert Learn More button`,
+    );
+    assert.match(source, /<Link[\s\S]+href=/);
+  }
+});

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +40,6 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { SOURCE_META, FALLBACK_META, StatusChip } from "@/src/components/kb/kb-utils";
 import { useDeleteKb } from "@/src/hooks/queries/kb";
 import type { Agent, KnowledgeSource } from "@/src/lib/api/types";
-import { cn } from "@/src/lib/utils";
 
 const PAGE_SIZE = 10;
 
@@ -53,17 +50,6 @@ function fmtDate(iso: string | null) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function SortableHead({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <TableHead className={cn("whitespace-nowrap", className)}>
-      <span className="inline-flex items-center gap-1.5">
-        {children}
-        <ArrowUpDown className="size-3 text-muted-foreground/50" />
-      </span>
-    </TableHead>
-  );
 }
 
 function DeleteRow({ kbId, name }: { kbId: string; name: string }) {
@@ -120,27 +106,12 @@ interface Props {
 
 export function KbTable({ sources, agents, isLoading }: Props) {
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const agentName = (id: string | null) =>
     agents?.find((a) => a.agentId === id)?.name ?? null;
 
   const totalPages = Math.max(1, Math.ceil(sources.length / PAGE_SIZE));
   const slice = sources.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const allSelected = slice.length > 0 && slice.every((s) => selected.has(s.kbId));
-  const toggleAll = () =>
-    setSelected(allSelected ? new Set() : new Set(slice.map((s) => s.kbId)));
-  const toggleOne = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
 
   if (isLoading) {
     return (
@@ -159,17 +130,9 @@ export function KbTable({ sources, agents, isLoading }: Props) {
           return (
             <div
               key={s.kbId}
-              className={cn(
-                "border bg-card p-4",
-                selected.has(s.kbId) && "border-primary/40 bg-primary/5"
-              )}
+              className="border bg-card p-4"
             >
               <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={selected.has(s.kbId)}
-                  onCheckedChange={() => toggleOne(s.kbId)}
-                  aria-label="Select row"
-                />
                 <div className={`flex size-8 shrink-0 items-center justify-center rounded border ${iconCls}`}>
                   <Icon className="size-4" />
                 </div>
@@ -206,18 +169,15 @@ export function KbTable({ sources, agents, isLoading }: Props) {
         })}
       </div>
       <div className="hidden overflow-x-auto border bg-card md:block">
-        <Table className="min-w-[920px]">
+        <Table className="min-w-[860px]">
           <TableHeader>
             <TableRow className="border-b bg-muted/20 hover:bg-muted/20">
-              <TableHead className="w-12 pl-4">
-                <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all" />
-              </TableHead>
-              <TableHead className="w-12">Type</TableHead>
-              <SortableHead>Name</SortableHead>
-              <SortableHead className="w-32">Status</SortableHead>
-              <SortableHead className="w-36">Agent</SortableHead>
-              <SortableHead className="w-32">Uploaded</SortableHead>
-              <SortableHead className="w-32">Indexed</SortableHead>
+              <TableHead className="w-12 pl-4">Type</TableHead>
+              <TableHead className="whitespace-nowrap">Name</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Status</TableHead>
+              <TableHead className="w-36 whitespace-nowrap">Agent</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Uploaded</TableHead>
+              <TableHead className="w-32 whitespace-nowrap">Indexed</TableHead>
               <TableHead className="w-14 pr-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -228,21 +188,10 @@ export function KbTable({ sources, agents, isLoading }: Props) {
               return (
                 <TableRow
                   key={s.kbId}
-                  className={cn(
-                    "border-b transition-colors hover:bg-muted/10",
-                    selected.has(s.kbId) && "bg-primary/5"
-                  )}
+                  className="border-b transition-colors hover:bg-muted/10"
                 >
-                  <TableCell className="pl-4">
-                    <Checkbox
-                      checked={selected.has(s.kbId)}
-                      onCheckedChange={() => toggleOne(s.kbId)}
-                      aria-label="Select row"
-                    />
-                  </TableCell>
-
                   {/* type icon */}
-                  <TableCell>
+                  <TableCell className="pl-4">
                     <div className={`flex size-8 items-center justify-center rounded border ${iconCls}`}>
                       <Icon className="size-4" />
                     </div>
@@ -287,11 +236,8 @@ export function KbTable({ sources, agents, isLoading }: Props) {
       </div>
 
       {/* pagination bar */}
-      <div className="flex items-center justify-between gap-2 px-1 text-sm text-muted-foreground">
-        <span className="shrink-0">
-          {selected.size} of {sources.length} row(s) selected.
-        </span>
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 px-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
           <span className="whitespace-nowrap font-medium text-foreground">
             Page {page} of {totalPages}
           </span>

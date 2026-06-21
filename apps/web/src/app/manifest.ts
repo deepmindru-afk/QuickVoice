@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "QuickVoice — No-Code AI Voice Agents",
+    name: "QuickVoice - Open-Source AI Phone Agent Stack",
     short_name: "QuickVoice",
     description:
-      "Deploy human-like AI voice agents without coding. Automate customer support, appointment scheduling, and outbound sales.",
+      "Run, inspect, and extend the QuickVoice stack for AI phone agents.",
     start_url: "/",
     display: "standalone",
     background_color: "#0f172a",

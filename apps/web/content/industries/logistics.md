@@ -198,4 +198,4 @@ The combination of real-time visibility data and AI voice automation creates a p
 
 ---
 
-*QuickVoice powers communication automation for carriers, 3PLs, brokers, and last-mile delivery operations. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers communication automation for carriers, 3PLs, brokers, and last-mile delivery operations. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

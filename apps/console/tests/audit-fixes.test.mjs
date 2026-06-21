@@ -112,3 +112,33 @@ test("dense data pages include mobile card views", () => {
   assert.match(read("src/components/kb/KbTable.tsx"), /md:hidden/);
   assert.match(read("src/app/(app)/numbers/page.tsx"), /md:hidden/);
 });
+
+test("dense data tables avoid unsupported sort and bulk-selection affordances", () => {
+  const tables = [
+    read("src/components/agents/AgentsTable.tsx"),
+    read("src/components/calls/CallsTable.tsx"),
+    read("src/components/kb/KbTable.tsx"),
+  ];
+
+  for (const source of tables) {
+    assert.doesNotMatch(source, /ArrowUpDown/);
+    assert.doesNotMatch(source, /row\(s\) selected/);
+    assert.doesNotMatch(source, /aria-label="Select row"/);
+    assert.doesNotMatch(source, /aria-label="Select all"/);
+  }
+});
+
+test("permission matrix exposes cell-specific checkbox names", () => {
+  const source = read("src/components/settings/PermissionMatrix.tsx");
+
+  assert.match(source, /aria-label=\{`Allow \$\{r\.label\} \$\{a\}`\}/);
+});
+
+test("agent advanced danger zone uses the supported delete flow", () => {
+  const source = read("src/components/agents/tabs/AdvancedTab.tsx");
+
+  assert.match(source, /useDeleteAgent/);
+  assert.match(source, /router\.push\("\/agents"\)/);
+  assert.doesNotMatch(source, /not yet supported/i);
+  assert.doesNotMatch(source, /<AlertDialogAction disabled>Delete<\/AlertDialogAction>/);
+});

@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import { REGISTER_URL } from "@/lib/links";
 
 const components: Components = {
   h1: ({ children }) => (
@@ -79,16 +80,21 @@ const components: Components = {
   td: ({ children }) => (
     <td className="px-4 py-3 text-muted-foreground">{children}</td>
   ),
-  a: ({ href, children }) => (
-    <a
-      href={href}
-      className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
-      target={href?.startsWith("http") ? "_blank" : undefined}
-      rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
-    >
-      {children}
-    </a>
-  ),
+  a: ({ href, children }) => {
+    const normalizedHref = href === "/register" ? REGISTER_URL : href;
+    const isExternal = normalizedHref?.startsWith("http");
+
+    return (
+      <a
+        href={normalizedHref}
+        className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noopener noreferrer" : undefined}
+      >
+        {children}
+      </a>
+    );
+  },
   strong: ({ children }) => (
     <strong className="font-semibold text-foreground">{children}</strong>
   ),

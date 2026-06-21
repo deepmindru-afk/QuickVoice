@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,6 +31,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import {
  useAgentConfig,
+ useDeleteAgent,
  useSaveAgentConfig,
  useUpdateAgent,
 } from "@/src/hooks/queries/agents";
@@ -43,9 +45,11 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export function AdvancedTab({ agentId }: { agentId: string }) {
+ const router = useRouter();
  const { data: config, isLoading } = useAgentConfig(agentId);
  const save = useSaveAgentConfig(agentId);
  const update = useUpdateAgent(agentId);
+ const deleteAgent = useDeleteAgent();
  const [confirming, setConfirming] = useState(false);
 
  const form = useForm<FormValues>({
@@ -73,6 +77,12 @@ export function AdvancedTab({ agentId }: { agentId: string }) {
  async function resumeAgent() {
  await update.mutateAsync({ isActive: true });
  toast.success("Agent resumed");
+ }
+
+ async function confirmDelete() {
+ await deleteAgent.mutateAsync(agentId);
+ setConfirming(false);
+ router.push("/agents");
  }
 
  return (
@@ -158,20 +168,20 @@ export function AdvancedTab({ agentId }: { agentId: string }) {
  Danger zone
  </h2>
  <p className="text-sm text-muted-foreground">
- Pausing stops the agent from taking new calls. Active calls
- continue.
+ Pause the agent to stop new calls temporarily, or delete it
+ permanently.
  </p>
  </div>
  <div className="flex items-center gap-2">
- <Button variant="outline" onClick={pauseAgent} disabled={update.isPending}>
+ <Button variant="outline" onClick={pauseAgent} disabled={update.isPending || deleteAgent.isPending}>
  Pause agent
  </Button>
- <Button variant="outline" onClick={resumeAgent} disabled={update.isPending}>
+ <Button variant="outline" onClick={resumeAgent} disabled={update.isPending || deleteAgent.isPending}>
  Resume agent
  </Button>
  <AlertDialog open={confirming} onOpenChange={setConfirming}>
  <AlertDialogTrigger asChild>
- <Button variant="destructive">
+ <Button variant="destructive" disabled={deleteAgent.isPending}>
  <Trash2 /> Delete
  </Button>
  </AlertDialogTrigger>
@@ -179,13 +189,25 @@ export function AdvancedTab({ agentId }: { agentId: string }) {
  <AlertDialogHeader>
  <AlertDialogTitle>Delete this agent?</AlertDialogTitle>
  <AlertDialogDescription>
- Delete is not yet supported via API. Pause the agent to
- stop it from taking calls.
+ This deletes the agent and detaches it from phone numbers,
+ tools, and knowledge sources. This cannot be undone.
  </AlertDialogDescription>
  </AlertDialogHeader>
  <AlertDialogFooter>
- <AlertDialogCancel>Close</AlertDialogCancel>
- <AlertDialogAction disabled>Delete</AlertDialogAction>
+ <AlertDialogCancel>Cancel</AlertDialogCancel>
+ <AlertDialogAction
+ onClick={confirmDelete}
+ disabled={deleteAgent.isPending}
+ className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+ >
+ {deleteAgent.isPending ? (
+ <>
+ <Loader2 className="animate-spin" /> Deleting...
+ </>
+ ) : (
+ "Delete"
+ )}
+ </AlertDialogAction>
  </AlertDialogFooter>
  </AlertDialogContent>
  </AlertDialog>

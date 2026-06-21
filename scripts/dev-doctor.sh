@@ -159,6 +159,8 @@ if command -v python3 >/dev/null 2>&1; then
   check_port "${SERVER_PORT:-5000}" "server"
   check_port "${CONSOLE_PORT:-3000}" "console"
   check_port "${WEB_PORT:-3001}" "web"
+  check_port "${POSTGRES_PORT:-5432}" "Postgres"
+  check_port "${REDIS_PORT:-6379}" "Redis"
   check_port "${AI_API_PORT:-5555}" "AI API"
   check_redis
 else

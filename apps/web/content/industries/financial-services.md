@@ -185,4 +185,4 @@ Monthly savings: $56,000. Annual savings: $672,000. QuickVoice platform cost at 
 
 ---
 
-*QuickVoice serves leading banks, credit unions, insurance companies, and fintech firms. SOC 2 certified, HIPAA-ready, TCPA/FDCPA compliant. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves leading banks, credit unions, insurance companies, and fintech firms. SOC 2 certified, HIPAA-ready, TCPA/FDCPA compliant. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

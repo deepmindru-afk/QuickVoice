@@ -18,6 +18,9 @@ test("required CI workflow gates pull requests with the root quality suite", asy
   assert.match(ci, /python -m pip install pytest/);
   assert.match(ci, /docker\/setup-buildx-action@v3/);
   assert.match(ci, /scripts\/ci-docker-build\.sh/);
+  assert.match(ci, /Write quality gate summary/);
+  assert.match(ci, /## Quality gate/);
+  assert.match(ci, /GITHUB_STEP_SUMMARY/);
 });
 
 test("security audit fails on high advisories and uses explicit suppressions", async () => {
@@ -60,6 +63,12 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
     assert.match(workflow, /uses: \.\/\.github\/workflows\/ci\.yml/);
     assert.match(workflow, /needs: quality-gate/);
     assert.match(workflow, /environment:/);
+    assert.match(workflow, /Validate deployment configuration/);
+    assert.match(workflow, /REQUIRED_AWS_ROLE_ARN/);
+    assert.match(workflow, /REQUIRED_AWS_REGION/);
+    assert.match(workflow, /REQUIRED_ECR_REPOSITORY/);
+    assert.match(workflow, /GITHUB_STEP_SUMMARY/);
+    assert.match(workflow, /GitHub repository variables/);
     assert.match(workflow, /github\.sha/);
     assert.doesNotMatch(workflow, /:latest/);
     assert.match(workflow, /sbom: true/);
@@ -69,6 +78,19 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
     assert.match(workflow, /cosign sign/);
     assert.match(workflow, /Rollback metadata/);
   }
+});
+
+test("GitHub templates surface contributor workflow expectations", async () => {
+  const pr = await text(".github/pull_request_template.md");
+  const issue = await text(".github/ISSUE_TEMPLATE.md");
+
+  assert.match(pr, /task doctor/);
+  assert.match(pr, /pnpm ci:local/);
+  assert.match(pr, /Dependency changes/);
+  assert.match(pr, /UI screenshots/);
+  assert.match(pr, /Environment changes/);
+  assert.match(issue, /Blocks `task up:dev`/);
+  assert.match(issue, /Security issue disclosure question only/);
 });
 
 test("server runtime image installs only production server dependencies", async () => {

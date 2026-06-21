@@ -169,4 +169,4 @@ This shift from reactive to proactive operations is where AI voice agents genera
 
 ---
 
-*QuickVoice powers operations automation for service businesses, manufacturers, distributors, healthcare organizations, and multi-location retailers. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers operations automation for service businesses, manufacturers, distributors, healthcare organizations, and multi-location retailers. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

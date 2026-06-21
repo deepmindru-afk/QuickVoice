@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,60 +10,121 @@ import { SparklesCore } from '@/components/ui/sparkles';
 import { Label } from '@/components/ui/label';
 import { Check, Loader2 } from 'lucide-react';
 
+type ContactField = 'name' | 'email' | 'message';
+type ContactErrors = Partial<Record<ContactField, string>>;
+
 export default function ContactUs1() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [errors, setErrors] = useState<ContactErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const formRef = useRef(null);
   const isInView = useInView(formRef, { once: true, amount: 0.3 });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  const clearFieldError = (field: ContactField) => {
+    setErrors((current) =>
+      current[field] ? { ...current, [field]: undefined } : current,
+    );
+  };
+
+  const validateForm = () => {
+    const nextErrors: ContactErrors = {};
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedMessage = message.trim();
+
+    if (!trimmedName) {
+      nextErrors.name = 'Name is required';
+    } else if (trimmedName.length < 2) {
+      nextErrors.name = 'Name must be at least 2 characters';
+    }
+
+    if (!trimmedEmail) {
+      nextErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!trimmedMessage) {
+      nextErrors.message = 'Message is required';
+    } else if (trimmedMessage.length < 10) {
+      nextErrors.message = 'Message must be at least 10 characters';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setSubmitError('');
     setIsSubmitted(false);
+    setSuccessMessage('');
 
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      // Validate required fields
-      if (!name || !email || !message) {
-        setSubmitError('Please fill in all required fields');
-        return;
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          company: '',
+          phone: '',
+          lookingFor: 'General Inquiry',
+          message,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Unable to process your request at this time');
       }
 
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setSubmitError('Please enter a valid email address');
-        return;
-      }
-
-      // Open mailto with pre-filled data
-      const subject = encodeURIComponent(`Contact from ${name}`);
-      const body = encodeURIComponent(
-        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-      );
-      window.open(`mailto:info@quickvoice.co?subject=${subject}&body=${body}`, '_self');
-
-      // Clear form data
       setName('');
       setEmail('');
       setMessage('');
+      setErrors({});
       setIsSubmitted(true);
+      setSuccessMessage(
+        data.message || 'Thanks. A QuickVoice specialist will follow up within one business day.',
+      );
 
-      // Reset success message after 10 seconds
-      setTimeout(() => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
         setIsSubmitted(false);
+        setSuccessMessage('');
       }, 10000);
     } catch (error: unknown) {
       console.error('Error submitting form:', error);
-      setSubmitError('We encountered an issue. Please contact us directly at info@quickvoice.co');
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'We encountered an issue processing your request. Please try again or contact us directly at info@quickvoice.co.';
+      setSubmitError(errorMessage);
 
-      // Clear error message after 10 seconds
-      setTimeout(() => {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => {
         setSubmitError('');
       }, 10000);
     } finally {
@@ -131,6 +192,7 @@ export default function ContactUs1() {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 onSubmit={handleSubmit}
                 className="mt-8 space-y-6"
+                noValidate
               >
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <motion.div
@@ -143,10 +205,25 @@ export default function ContactUs1() {
                     <Input
                       id="name"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        clearFieldError('name');
+                      }}
                       placeholder="Enter your name"
                       required
+                      aria-invalid={Boolean(errors.name)}
+                      aria-describedby={
+                        errors.name ? 'homepage-contact-name-error' : undefined
+                      }
                     />
+                    {errors.name && (
+                      <p
+                        id="homepage-contact-name-error"
+                        className="text-sm text-red-600 dark:text-red-400"
+                      >
+                        {errors.name}
+                      </p>
+                    )}
                   </motion.div>
 
                   <motion.div
@@ -160,10 +237,25 @@ export default function ContactUs1() {
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        clearFieldError('email');
+                      }}
                       placeholder="Enter your email"
                       required
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={
+                        errors.email ? 'homepage-contact-email-error' : undefined
+                      }
                     />
+                    {errors.email && (
+                      <p
+                        id="homepage-contact-email-error"
+                        className="text-sm text-red-600 dark:text-red-400"
+                      >
+                        {errors.email}
+                      </p>
+                    )}
                   </motion.div>
                 </div>
 
@@ -177,32 +269,51 @@ export default function ContactUs1() {
                   <Textarea
                     id="message"
                     value={message}
-                    onChange={(e) => setMessage(e.target.value)}
+                    onChange={(e) => {
+                      setMessage(e.target.value);
+                      clearFieldError('message');
+                    }}
                     placeholder="Enter your message"
                     required
+                    aria-invalid={Boolean(errors.message)}
+                    aria-describedby={
+                      errors.message ? 'homepage-contact-message-error' : undefined
+                    }
                     className="h-40 resize-none"
                   />
+                  {errors.message && (
+                    <p
+                      id="homepage-contact-message-error"
+                      className="text-sm text-red-600 dark:text-red-400"
+                    >
+                      {errors.message}
+                    </p>
+                  )}
                 </motion.div>
 
-                {submitError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400"
-                  >
-                    {submitError}
-                  </motion.div>
-                )}
+                <div aria-live="polite" aria-atomic="true">
+                  {submitError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      role="alert"
+                      className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-400"
+                    >
+                      {submitError}
+                    </motion.div>
+                  )}
 
-                {isSubmitted && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400"
-                  >
-                    Thank you! Your message has been sent successfully. We&apos;ll get back to you within 24 hours.
-                  </motion.div>
-                )}
+                  {isSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      role="status"
+                      className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-950/20 dark:text-green-400"
+                    >
+                      {successMessage}
+                    </motion.div>
+                  )}
+                </div>
 
                 <motion.div
                   whileHover={{ scale: 1.02 }}

@@ -54,3 +54,12 @@ jobs:
 
       - name: Run local CI suite
         run: pnpm ci:local
+
+      - name: Write quality gate summary
+        if: always()
+        run: |
+          {
+            echo "## Quality gate"
+            echo "- Command: pnpm ci:local"
+            echo "- Result: ${{ job.status }}"
+          } >> "$GITHUB_STEP_SUMMARY"

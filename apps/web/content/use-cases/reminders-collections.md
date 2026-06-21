@@ -143,4 +143,4 @@ Additional recovery: $98,175
 
 ---
 
-*QuickVoice powers reminder and collections automation for healthcare, financial services, utilities, SaaS, and professional services businesses. FDCPA/TCPA compliant. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice powers reminder and collections automation for healthcare, financial services, utilities, SaaS, and professional services businesses. FDCPA/TCPA compliant. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*

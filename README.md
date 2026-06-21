@@ -1,20 +1,116 @@
 # QuickVoice
 
-The open-source alternative to Retell for AI phone agents.
+**Open-source AI phone-agent infrastructure you can run, inspect, and extend.**
 
-QuickVoice is an open-source platform for building, self-hosting, and operating AI agents that make and receive phone calls. It gives teams the full voice-agent stack: a marketing site, customer console, API server, LiveKit-powered AI worker, telephony integrations, knowledge bases, call logs, campaigns, billing, and local development tooling.
+QuickVoice is the open-source Retell alternative for teams that want control over the voice-agent stack instead of only consuming a closed hosted API. It gives teams the full product surface in one repo: a marketing site, customer console, API server, LiveKit-powered AI worker, telephony integrations, knowledge bases, call logs, outbound campaigns, billing paths, and local development tooling.
 
 Website: [quickvoice.co](https://quickvoice.co)
 
+[![GitHub stars](https://img.shields.io/github/stars/allgpt-co/QuickVoice?style=social)](https://github.com/allgpt-co/QuickVoice/stargazers)
+
+<p align="center">
+  <img src="./apps/web/public/dashboard.png" alt="QuickVoice console dashboard preview" width="920">
+</p>
+
+## 30-Second Tour
+
+- **What it does:** build AI agents that answer inbound calls, place outbound calls, use uploaded knowledge, and record operational outcomes.
+- **Why it exists:** keep the voice-agent stack inspectable instead of outsourcing every runtime, data, cost, and telephony decision to a closed platform.
+- **What you can run locally:** the web app, console, API, AI service, Postgres, Redis, Prisma migrations, and generated dev env files.
+- **What needs real credentials:** real phone calls require LiveKit plus Twilio or Telnyx credentials; billing, OAuth, email, and storage need their provider keys.
+
+```mermaid
+flowchart LR
+  Visitor[GitHub visitor] --> Run[task up:dev]
+  Run --> Web[Marketing site]
+  Run --> Console[Customer console]
+  Run --> API[Express API and docs]
+  API --> DB[(Postgres)]
+  API --> Redis[(Redis)]
+  API --> Worker[AI service and LiveKit worker]
+  Worker --> Phone[Twilio or Telnyx]
+```
+
+## Quick Start
+
+If your machine already has Docker, Docker Compose, Go Task, Node.js `>=18`, and Python 3, the local path is one command:
+
+```sh
+task up:dev
+```
+
+`task up` and `task dev` are aliases. Go Task treats spaces as separate task names, so prefer `task up:dev` for the explicit form.
+
+First things to open:
+
+- Console: `http://localhost:3000`
+- Marketing site: `http://localhost:3001`
+- API health: `http://localhost:5000/api/v1/health`
+- API docs: `http://localhost:5000/api/v1/docs`
+- AI API health: `http://localhost:5555/health`
+
+On a fresh Ubuntu host, install the missing host tools first:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y docker.io docker-compose-v2 golang-go
+sudo usermod -aG docker "$USER"
+go install github.com/go-task/task/v3/cmd/task@latest
+export PATH="$PATH:$HOME/go/bin"
+```
+
+Reconnect the SSH session after changing Docker group membership. Then run:
+
+```sh
+task up:dev
+```
+
+The task creates local env files from `*.env.dev.example`, activates `pnpm@9.0.0`, installs Node dependencies with the frozen lockfile, creates the AI Python virtualenv, starts Postgres and Redis through `docker-compose.dev.yml`, runs Prisma migrations, and launches the local services above.
+
+The Docker Compose database credentials are dev-only placeholders (`quickvoice` / `quickvoice`) and the Postgres and Redis ports are bound to `127.0.0.1`. Edit the generated env files after the first run if you need real Google, Stripe, LiveKit, Twilio, Telnyx, SMTP, or AWS credentials. Generated env files are ignored by git.
+
+Optional local email testing is available through a Docker Compose profile:
+
+```sh
+docker compose -f docker-compose.dev.yml --env-file .env.dev --profile mail up -d mailpit
+```
+
+Useful individual tasks:
+
+```sh
+task doctor
+task env:dev
+task docker:up
+task db:migrate
+task db:seed -- --email you@example.com
+task ci
+task server:dev
+task console:dev
+task web:dev
+task ai:api
+task ai:worker
+```
+
+Common root commands:
+
+```sh
+pnpm build
+pnpm lint
+pnpm check-types
+pnpm test
+pnpm ci:local
+pnpm audit:deps -- --audit-level high
+```
+
 ## Why QuickVoice
 
-Voice agents are becoming core business infrastructure. The teams building them need more than a black-box API.
+Voice agents are becoming core business infrastructure. Hosted APIs are useful when speed and convenience matter most. QuickVoice is for teams that also need source-level control, self-hosting options, privacy review, cost visibility, and a path to extend the product for their own workflows.
 
-- Own the stack: run the console, API, worker, database, and telephony bindings yourself.
-- Keep control of customer data: inspect storage, logs, call metadata, and runtime configuration.
-- Customize the workflow: adapt agents, knowledge sources, campaigns, permissions, billing, and integrations to your use case.
-- Bring your providers: LiveKit for voice runtime, Twilio or Telnyx for phone numbers, S3-compatible storage for files and recordings.
-- Avoid vendor lock-in: fork it, extend it, self-host it, or use QuickVoice Cloud when you want managed infrastructure.
+- **Control:** run the console, API, worker, database, and telephony bindings yourself.
+- **Self-hosting:** evaluate the local stack with `task up:dev`, then decide how and where to deploy.
+- **Privacy:** inspect storage, logs, call metadata, recordings, transcripts, and runtime configuration before production use.
+- **Cost visibility:** bring your own LiveKit, Twilio or Telnyx, Postgres, Redis, and S3-compatible storage instead of treating every dependency as an opaque bundle.
+- **Extensibility:** fork the repo, modify agents, add knowledge sources, wire new providers, or adapt permissions, billing, and campaign workflows.
 
 ## What You Can Build
 
@@ -44,74 +140,6 @@ Voice agents are becoming core business infrastructure. The teams building them 
 - Billing: Stripe
 - Monorepo: pnpm and Turborepo
 
-## Quick Start
-
-The easiest local path is Go Task:
-
-```sh
-task up:dev
-```
-
-`task up` and `task dev` are aliases. Go Task treats spaces as separate task names, so prefer `task up:dev` for the explicit form.
-
-On a fresh Ubuntu host, install Docker, Docker Compose, Go, and go-task if they are missing:
-
-```sh
-sudo apt-get update
-sudo apt-get install -y docker.io docker-compose-v2 golang-go
-sudo usermod -aG docker "$USER"
-go install github.com/go-task/task/v3/cmd/task@latest
-export PATH="$PATH:$HOME/go/bin"
-```
-
-Reconnect the SSH session after changing Docker group membership. Then run:
-
-```sh
-task up:dev
-```
-
-The task creates local env files from `*.env.dev.example`, activates `pnpm@9.0.0`, installs Node dependencies with the frozen lockfile, creates the AI Python virtualenv, starts Postgres and Redis through `docker-compose.dev.yml`, runs Prisma migrations, and launches:
-
-- Console: `http://localhost:3000`
-- Marketing site: `http://localhost:3001`
-- API: `http://localhost:5000/api/v1/health`
-- API docs: `http://localhost:5000/api/v1/docs`
-- AI API: `http://localhost:5555/health`
-
-The Docker Compose database credentials are dev-only placeholders (`quickvoice` / `quickvoice`) and the Postgres and Redis ports are bound to `127.0.0.1`. Edit the generated env files after the first run if you need real Google, Stripe, LiveKit, Twilio, Telnyx, or AWS credentials. Generated env files are ignored by git.
-
-An optional local mail substitute is available through a Docker Compose profile:
-
-```sh
-docker compose -f docker-compose.dev.yml --env-file .env.dev --profile mail up -d mailpit
-```
-
-Useful individual tasks:
-
-```sh
-task doctor
-task env:dev
-task docker:up
-task db:migrate
-task ci
-task server:dev
-task console:dev
-task web:dev
-task ai:api
-task ai:worker
-```
-
-Common root commands:
-
-```sh
-pnpm build
-pnpm lint
-pnpm check-types
-pnpm test
-pnpm ci:local
-pnpm audit:deps -- --audit-level high
-```
-
 ## Open Source And Commercial Use
 
 QuickVoice is licensed under the [GNU Affero General Public License v3.0](./LICENSE).
@@ -122,11 +150,18 @@ For teams that need a commercial license, managed hosting, implementation suppor
 
 This section is not legal advice. Review the AGPL and consult counsel for your specific use case.
 
+## Support The Project
+
+If QuickVoice helps you evaluate open voice-agent infrastructure, a GitHub star is a useful public signal. It helps maintainers see where there is interest without adding prompts to the product or asking for coordinated votes.
+
+[Star QuickVoice on GitHub](https://github.com/allgpt-co/QuickVoice)
+
+[![QuickVoice Star History](https://api.star-history.com/svg?repos=allgpt-co/QuickVoice&type=Date)](https://www.star-history.com/#allgpt-co/QuickVoice&Date)
+
 ## Community
 
 QuickVoice is built in public for teams that want programmable, inspectable phone automation.
 
-- Star the repo if you want open voice-agent infrastructure to exist.
 - Open issues for bugs, gaps, and integration requests.
 - Read [CONTRIBUTING.md](./CONTRIBUTING.md) before submitting a pull request.
 - Report security issues through [SECURITY.md](./SECURITY.md).

@@ -40,40 +40,40 @@ const iconComponents = {
 
 const defaultValues: AboutUsProps["values"] = [
   {
-    title: "Innovation",
+    title: "Control",
     description:
-      "We constantly push boundaries and explore new possibilities to create cutting-edge solutions.",
+      "Teams should be able to inspect and change the infrastructure that handles their phone workflows.",
     icon: "Lightbulb",
   },
   {
-    title: "Collaboration",
+    title: "Portability",
     description:
-      "We believe in the power of teamwork and diverse perspectives to achieve extraordinary results.",
+      "Self-hosting, provider choice, and source access keep deployment decisions in your hands.",
     icon: "Users",
   },
   {
-    title: "Excellence",
+    title: "Privacy",
     description:
-      "We strive for perfection in everything we do, consistently delivering high-quality work.",
+      "Call data, transcripts, recordings, and knowledge sources deserve clear, reviewable data paths.",
     icon: "Sparkles",
   },
   {
-    title: "Impact",
+    title: "Extensibility",
     description:
-      "We measure our success by the positive difference we make in people's lives and businesses.",
+      "The product should adapt to real workflows instead of forcing every team through the same black box.",
     icon: "Globe",
   },
 ];
 
 export default function AboutUs1() {
   const aboutData = {
-    title: "One Tool, Limitless Applications",
+    title: "Own The Voice-Agent Path",
     subtitle:
-      "QuickVoice is purpose-built to be the versatile voice automation solution for any industry. From healthcare to e-commerce, our AI voice agents adapt to your business needs.",
+      "QuickVoice is built for teams that need more than a managed endpoint: source access, self-hosting, provider boundaries, and workflows they can extend.",
     mission:
-      "Our mission is to empower businesses with AI-driven voice solutions that enhance customer engagement, streamline operations, and drive growth.",
+      "Our mission is to make AI phone-agent infrastructure inspectable, self-hostable, and practical for teams that need control over privacy-sensitive voice operations.",
     vision:
-      "We envision a future where AI voice technology transforms how businesses interact with their customers, making communication seamless, efficient, and personalized.",
+      "We want teams to choose the right tradeoff for each deployment: managed convenience when it fits, or open infrastructure when control, privacy review, cost visibility, and customization matter more.",
     values: defaultValues,
     className: "relative overflow-hidden py-20",
   };
@@ -98,7 +98,8 @@ export default function AboutUs1() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mx-auto mb-16 max-w-2xl text-center">
+          className="mx-auto mb-16 max-w-2xl text-center"
+        >
           <h2 className="from-foreground/80 via-foreground to-foreground/80 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl md:text-6xl">
             {aboutData.title}
           </h2>
@@ -115,10 +116,12 @@ export default function AboutUs1() {
               missionInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }
             }
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="relative z-10 grid gap-12 md:grid-cols-2">
+            className="relative z-10 grid gap-12 md:grid-cols-2"
+          >
             <motion.div
               whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-              className="group border-border/40 relative block overflow-hidden rounded-2xl border bg-gradient-to-br p-10 backdrop-blur-3xl">
+              className="group border-border/40 relative block overflow-hidden rounded-2xl border bg-gradient-to-br p-10 backdrop-blur-3xl"
+            >
               <BorderBeam
                 duration={8}
                 size={300}
@@ -142,14 +145,15 @@ export default function AboutUs1() {
 
             <motion.div
               whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-              className="group border-border/40 relative block overflow-hidden rounded-2xl border bg-gradient-to-br p-10 backdrop-blur-3xl">
+              className="group border-border/40 relative block overflow-hidden rounded-2xl border bg-gradient-to-br p-10 backdrop-blur-3xl"
+            >
               <BorderBeam
                 duration={8}
                 size={300}
                 className="from-transparent via-blue-500/40 to-transparent"
                 reverse
               />
-             <div className="from-primary/20 to-primary/5 mb-6 inline-flex aspect-square h-16 w-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-br backdrop-blur-sm">
+              <div className="from-primary/20 to-primary/5 mb-6 inline-flex aspect-square h-16 w-16 flex-1 items-center justify-center rounded-2xl bg-gradient-to-br backdrop-blur-sm">
                 <Target className="text-primary h-8 w-8" />
               </div>
 
@@ -171,7 +175,8 @@ export default function AboutUs1() {
               valuesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
             }
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-12 text-center">
+            className="mb-12 text-center"
+          >
             <h2 className="from-foreground/80 via-foreground to-foreground/80 bg-gradient-to-r bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
               Our Core Values
             </h2>
@@ -197,7 +202,8 @@ export default function AboutUs1() {
                     delay: index * 0.1 + 0.2,
                     ease: "easeOut",
                   }}
-                  whileHover={{ y: -5, scale: 1.02 }}>
+                  whileHover={{ y: -5, scale: 1.02 }}
+                >
                   <CardHoverEffect
                     icon={<IconComponent className="h-6 w-6" />}
                     title={value.title}

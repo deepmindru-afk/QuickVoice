@@ -187,4 +187,4 @@ Previous human handling cost estimated at $14/call based on average 8-minute cal
 
 ---
 
-*QuickVoice serves K-12 schools, universities, community colleges, and online education platforms. Free 14-day trial at [quickvoice.co/register](/register).*
+*QuickVoice serves K-12 schools, universities, community colleges, and online education platforms. Free 14-day trial at [console.quickvoice.co/register](https://console.quickvoice.co/register).*
