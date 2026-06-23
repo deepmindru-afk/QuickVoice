@@ -54,11 +54,11 @@ export type ListOutboundCallsArgs = ListOutboundCallsQuery & {
 };
 
 export type CancelOutboundCallInput = z.infer<typeof cancelOutboundCallSchema>;
-const supportedBatchExtension = /\.(csv|xls|xlsx)$/i;
+const supportedBatchExtension = /\.(csv|xlsx)$/i;
 
 export const batchUploadUrlQuerySchema = z.object({
   fileName: z.string().min(1).refine((value) => supportedBatchExtension.test(value), {
-    message: "Batch file must be a CSV, XLS, or XLSX file",
+    message: "Batch file must be a CSV or XLSX file",
   }),
   contentType: z.string().min(1),
 });

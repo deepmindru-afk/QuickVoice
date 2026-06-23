@@ -38,7 +38,7 @@ import {
   batchCampaignSchema,
 } from "@/src/models/outbound/campaign";
 
-const ACCEPT_STRING = ".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const ACCEPT_STRING = ".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 function asDialableAgents(agents: Agent[], numbers: PhoneNumber[]) {
   return agents
@@ -56,7 +56,7 @@ function contentTypeFor(file: File) {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
     return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   }
-  return "application/vnd.ms-excel";
+  return "application/octet-stream";
 }
 
 function formatDate(value: string | null) {
