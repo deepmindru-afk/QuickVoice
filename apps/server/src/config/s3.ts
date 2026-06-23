@@ -115,3 +115,12 @@ export const deleteObject = async (key: string): Promise<void> => {
   const command = new DeleteObjectCommand({ Bucket: getBucket(), Key: key });
   await s3.send(command);
 };
+
+export const readObjectBuffer = async (key: string): Promise<Buffer> => {
+  const command = new GetObjectCommand({ Bucket: getBucket(), Key: key });
+  const response = await s3.send(command);
+  if (!response.Body) return Buffer.alloc(0);
+
+  const bytes = await response.Body.transformToByteArray();
+  return Buffer.from(bytes);
+};

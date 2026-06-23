@@ -6,10 +6,19 @@ import { BadRequestError } from "../../common/errors/badRequest.js";
 import authMiddleware from "../../middleware/auth.middleware.js";
 import { requirePermission } from "../../middleware/authorize.middleware.js";
 import {
+  batchUploadUrlQuerySchema,
   cancelOutboundCallSchema,
+  createBatchCampaignSchema,
+  listBatchCampaignsQuerySchema,
   listOutboundCallsQuerySchema,
   quickOutboundCallSchema,
 } from "./outbound-call.schema.js";
+import {
+  createBatchCampaign,
+  createBatchUploadUrl,
+  getBatchCampaignDetail,
+  listBatchCampaigns,
+} from "./outbound-batch.service.js";
 import {
   cancelOutboundCall,
   createQuickOutboundCall,
@@ -24,6 +33,10 @@ type ListOutboundCalls = typeof listOutboundCalls;
 type GetOutboundCall = typeof getOutboundCall;
 type CancelOutboundCall = typeof cancelOutboundCall;
 type RetryOutboundCall = typeof retryOutboundCall;
+type CreateBatchCampaign = typeof createBatchCampaign;
+type CreateBatchUploadUrl = typeof createBatchUploadUrl;
+type ListBatchCampaigns = typeof listBatchCampaigns;
+type GetBatchCampaignDetail = typeof getBatchCampaignDetail;
 
 type OutboundCallRouterDeps = {
   authMiddleware?: Middleware;
@@ -35,6 +48,10 @@ type OutboundCallRouterDeps = {
   getOutboundCall?: GetOutboundCall;
   cancelOutboundCall?: CancelOutboundCall;
   retryOutboundCall?: RetryOutboundCall;
+  createBatchCampaign?: CreateBatchCampaign;
+  createBatchUploadUrl?: CreateBatchUploadUrl;
+  listBatchCampaigns?: ListBatchCampaigns;
+  getBatchCampaignDetail?: GetBatchCampaignDetail;
 };
 
 export function createOutboundCallRouter(deps: OutboundCallRouterDeps = {}) {
@@ -51,6 +68,10 @@ export function createOutboundCallRouter(deps: OutboundCallRouterDeps = {}) {
   const fetchOutboundCall = deps.getOutboundCall ?? getOutboundCall;
   const cancelOutbound = deps.cancelOutboundCall ?? cancelOutboundCall;
   const retryOutbound = deps.retryOutboundCall ?? retryOutboundCall;
+  const createBatch = deps.createBatchCampaign ?? createBatchCampaign;
+  const createUploadUrl = deps.createBatchUploadUrl ?? createBatchUploadUrl;
+  const listBatches = deps.listBatchCampaigns ?? listBatchCampaigns;
+  const getBatchDetail = deps.getBatchCampaignDetail ?? getBatchCampaignDetail;
 
   router.get(
     "/",
@@ -94,6 +115,103 @@ export function createOutboundCallRouter(deps: OutboundCallRouterDeps = {}) {
         res.status(StatusCodes.CREATED).json({
           success: true,
           message: "Outbound call dispatched successfully",
+          data,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  router.get(
+    "/batch-upload-url",
+    authenticate,
+    authorizeCreate,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { organizationId } = getRequiredAuth(req);
+        const query = batchUploadUrlQuerySchema.parse(req.query);
+        const data = await createUploadUrl({
+          ...query,
+          organizationId,
+        });
+
+        res.status(StatusCodes.OK).json({
+          success: true,
+          message: "Batch upload URL generated",
+          data,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  router.post(
+    "/batches",
+    authenticate,
+    authorizeCreate,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { organizationId, userId } = getRequiredAuth(req);
+        const input = createBatchCampaignSchema.parse(req.body);
+        const data = await createBatch({
+          ...input,
+          organizationId,
+          userId,
+        });
+
+        res.status(StatusCodes.CREATED).json({
+          success: true,
+          message: "Batch campaign created",
+          data,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  router.get(
+    "/batches",
+    authenticate,
+    authorizeRead,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { organizationId } = getRequiredAuth(req);
+        const query = listBatchCampaignsQuerySchema.parse(req.query);
+        const data = await listBatches({
+          ...query,
+          organizationId,
+        });
+
+        res.status(StatusCodes.OK).json({
+          success: true,
+          message: "Batch campaigns fetched successfully",
+          data,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  router.get(
+    "/batches/:campaignId",
+    authenticate,
+    authorizeRead,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { organizationId } = getRequiredAuth(req);
+        const campaignId = getCampaignId(req);
+        const data = await getBatchDetail({
+          organizationId,
+          campaignId,
+        });
+
+        res.status(StatusCodes.OK).json({
+          success: true,
+          message: "Batch campaign fetched successfully",
           data,
         });
       } catch (error) {
@@ -224,4 +342,12 @@ function getOutboundId(req: Request) {
     throw new BadRequestError("Outbound call id is required");
   }
   return outboundId;
+}
+
+function getCampaignId(req: Request) {
+  const campaignId = req.params.campaignId;
+  if (typeof campaignId !== "string" || campaignId.length === 0) {
+    throw new BadRequestError("Campaign id is required");
+  }
+  return campaignId;
 }

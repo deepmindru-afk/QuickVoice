@@ -18,6 +18,7 @@ import { inngestFunctions } from "./inngest/index.js";
 import apiRouter from "./router.js";
 import { getReadiness } from "./modules/system/readiness.service.js";
 import "./workers/kb.worker.js";
+import "./workers/outbound-batch.worker.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 

@@ -11,6 +11,10 @@ let listArgs: unknown[] = [];
 let getArgs: unknown[] = [];
 let cancelArgs: unknown[] = [];
 let retryArgs: unknown[] = [];
+let batchArgs: unknown[] = [];
+let uploadUrlArgs: unknown[] = [];
+let listBatchArgs: unknown[] = [];
+let batchDetailArgs: unknown[] = [];
 
 before(async () => {
   process.env.STRIPE_SECRET_KEY ||= "sk_test_placeholder";
@@ -36,7 +40,7 @@ before(async () => {
       requireCreatePermission: (_req: Request, _res: Response, next: NextFunction) => next(),
       requireReadPermission: (_req: Request, _res: Response, next: NextFunction) => next(),
       requireDeletePermission: (_req: Request, _res: Response, next: NextFunction) => next(),
-      createQuickOutboundCall: async (args) => {
+      createQuickOutboundCall: async (args: unknown) => {
         serviceArgs.push(args);
         return {
           outbound: { outboundId: "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113", status: "IN_PROGRESS" },
@@ -86,6 +90,39 @@ before(async () => {
               status: "IN_PROGRESS",
             },
           },
+        };
+      },
+      createBatchCampaign: async (args: any) => {
+        batchArgs.push(args);
+        return {
+          campaignId: "campaign_123",
+          status: "SCHEDULED",
+          name: args.name,
+        };
+      },
+      createBatchUploadUrl: async (args: unknown) => {
+        uploadUrlArgs.push(args);
+        return {
+          uploadUrl: "https://s3.example.test/upload",
+          s3Key: "outbound-batches/org_123/recipients.csv",
+        };
+      },
+      listBatchCampaigns: async (args: unknown) => {
+        listBatchArgs.push(args);
+        return [
+          {
+            campaignId: "campaign_123",
+            name: "June renewals",
+            status: "SCHEDULED",
+          },
+        ];
+      },
+      getBatchCampaignDetail: async (args: unknown) => {
+        batchDetailArgs.push(args);
+        return {
+          campaignId: "campaign_123",
+          name: "June renewals",
+          outboundCalls: [],
         };
       },
     } as any)
@@ -150,6 +187,88 @@ test("GET / returns outbound calls with count and applied filters", async () => 
     status: "FAILED",
     limit: 10,
     cursor: "out_123",
+  });
+});
+
+test("GET /batch-upload-url returns a presigned outbound batch upload target", async () => {
+  uploadUrlArgs = [];
+  const response = await fetch(
+    `${baseUrl}/api/v1/outbound-calls/batch-upload-url?fileName=recipients.csv&contentType=text/csv`
+  );
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.uploadUrl, "https://s3.example.test/upload");
+  assert.deepEqual(uploadUrlArgs[0], {
+    organizationId: "org_123",
+    fileName: "recipients.csv",
+    contentType: "text/csv",
+  });
+});
+
+test("POST /batches validates and creates a scheduled batch campaign", async () => {
+  batchArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/batches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "June renewals",
+      agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+      fromNumber: "+15551230000",
+      sourceFileKey: "outbound-batches/org_123/recipients.csv",
+      sourceFileName: "recipients.csv",
+      scheduledAt: "2026-06-21T10:05:00.000Z",
+      timezone: "UTC",
+      ringingTimeoutSeconds: 45,
+    }),
+  });
+
+  assert.equal(response.status, 201);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.campaignId, "campaign_123");
+  assert.deepEqual(batchArgs[0], {
+    organizationId: "org_123",
+    userId: "user_123",
+    name: "June renewals",
+    agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+    fromNumber: "+15551230000",
+    sourceFileKey: "outbound-batches/org_123/recipients.csv",
+    sourceFileName: "recipients.csv",
+    scheduledAt: new Date("2026-06-21T10:05:00.000Z"),
+    timezone: "UTC",
+    ringingTimeoutSeconds: 45,
+  });
+});
+
+test("GET /batches returns batch campaigns before outbound id routing", async () => {
+  listBatchArgs = [];
+  const response = await fetch(
+    `${baseUrl}/api/v1/outbound-calls/batches?agentId=8d55565f-1111-4111-8111-f95fd03f0df2`
+  );
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data[0].campaignId, "campaign_123");
+  assert.deepEqual(listBatchArgs[0], {
+    organizationId: "org_123",
+    agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+  });
+});
+
+test("GET /batches/:campaignId returns batch detail before outbound id routing", async () => {
+  batchDetailArgs = [];
+  const response = await fetch(`${baseUrl}/api/v1/outbound-calls/batches/campaign_123`);
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.campaignId, "campaign_123");
+  assert.deepEqual(batchDetailArgs[0], {
+    organizationId: "org_123",
+    campaignId: "campaign_123",
   });
 });
 

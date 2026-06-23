@@ -99,6 +99,33 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["system_prompt"], "Keep this outbound call short.")
         self.assertEqual(config["first_message"], "Default greeting.")
 
+    def test_apply_metadata_overrides_uses_batch_language_voice_and_dynamic_variables(self):
+        config = {
+            "first_message": "Hi {{city}} customer.",
+            "system_prompt": "Ask about {{other_dyn_variable}}.",
+            "agent_language": "en-US",
+            "voice": "aura-2-asteria-en",
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "direction": "outbound",
+                "language": "hi-IN",
+                "voice_id": "aura-2-athena-en",
+                "dynamic_variables": {
+                    "city": "Mumbai",
+                    "other_dyn_variable": "renewal",
+                },
+            },
+        )
+
+        self.assertEqual(result["agent_language"], "hi-IN")
+        self.assertEqual(result["voice"], "aura-2-athena-en")
+        self.assertEqual(result["first_message"], "Hi Mumbai customer.")
+        self.assertEqual(result["system_prompt"], "Ask about renewal.")
+        self.assertEqual(config["first_message"], "Hi {{city}} customer.")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -18,6 +18,7 @@ import * as outboundCallRepository from "./outbound-call.repository.js";
 
 type QuickOutboundCallRepository = {
   getDialableNumber: typeof outboundCallRepository.getDialableNumber;
+  getOutboundCallForDispatch?: typeof outboundCallRepository.getOutboundCallForDispatch;
   createQuickCall: typeof outboundCallRepository.createQuickCall;
   markInProgress: typeof outboundCallRepository.markInProgress;
   markFailed: typeof outboundCallRepository.markFailed;
@@ -170,6 +171,112 @@ export async function createQuickOutboundCall(
   }
 }
 
+export async function dispatchScheduledOutboundCall(
+  outboundId: string,
+  deps: CreateQuickOutboundCallDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const sipClient = deps.sipClient ?? livekitSipClient;
+  const dispatchClient = deps.dispatchClient ?? livekitAgentDispatchClient;
+  const outboundTrunks = deps.outboundTrunks ?? defaultOutboundTrunks;
+  const agentName = deps.agentName ?? LIVEKIT_AGENT_NAME;
+
+  if (!repository.getOutboundCallForDispatch) {
+    throw new Error("Outbound dispatch repository method is not configured");
+  }
+
+  const outbound = await repository.getOutboundCallForDispatch(outboundId);
+  if (!outbound) {
+    throw new BadRequestError("Outbound call not found or is not scheduled");
+  }
+  if (!outbound.agentId) {
+    throw new BadRequestError("Outbound call is not linked to an agent");
+  }
+
+  await enforcePlanQuota(repository, outbound.organizationId);
+
+  const dialableNumber = await repository.getDialableNumber({
+    organizationId: outbound.organizationId,
+    agentId: outbound.agentId,
+    fromNumber: outbound.fromNumber,
+  });
+
+  if (!dialableNumber) {
+    throw new BadRequestError(
+      "From number must belong to this organization and be linked to the selected agent"
+    );
+  }
+
+  const provider = dialableNumber.provider;
+  const sid = dialableNumber.sid;
+  const trunkId = outboundTrunks[provider];
+  if (!trunkId) {
+    throw new BadRequestError(`LiveKit outbound trunk is not configured for ${provider}`);
+  }
+
+  const optionalData = asRecord(outbound.optionalData);
+  const language = stringValue(optionalData.language);
+  const voiceId = stringValue(optionalData.voiceId) ?? stringValue(optionalData.voice_id);
+  const dynamicVariables = asRecord(optionalData.dynamicVariables ?? optionalData.dynamic_variables);
+  const ringingTimeoutSeconds = numberValue(optionalData.ringingTimeoutSeconds);
+
+  try {
+    const roomName = `outbound_${outbound.outboundId}`;
+    const metadata = {
+      agent_id: outbound.agentId,
+      outbound_id: outbound.outboundId,
+      campaign_id: outbound.campaignId ?? null,
+      direction: "outbound",
+      from_number: outbound.fromNumber,
+      to_number: outbound.phoneNumber,
+      provider,
+      first_message: outbound.firstMessage ?? null,
+      system_prompt: outbound.systemPrompt ?? null,
+      language,
+      voice_id: voiceId,
+      dynamic_variables: Object.keys(dynamicVariables).length > 0 ? dynamicVariables : null,
+    };
+    const metadataJson = JSON.stringify(metadata);
+    let agentDispatch: unknown;
+    try {
+      agentDispatch = await dispatchClient.createDispatch(roomName, agentName, {
+        metadata: metadataJson,
+      });
+      const livekitParticipant = await sipClient.createSipParticipant(
+        trunkId,
+        outbound.phoneNumber,
+        roomName,
+        {
+          fromNumber: outbound.fromNumber,
+          participantIdentity: `outbound-${outbound.outboundId}`,
+          participantMetadata: metadataJson,
+          waitUntilAnswered: false,
+          ...(ringingTimeoutSeconds ? { ringingTimeout: ringingTimeoutSeconds } : {}),
+        }
+      );
+
+      const updated = await repository.markInProgress(outbound.outboundId, {
+        ...optionalData,
+        provider,
+        sid,
+        livekitParticipant: toJsonValue(livekitParticipant),
+        agentDispatch: toJsonValue(agentDispatch),
+      });
+
+      return { outbound: updated, livekitParticipant, agentDispatch };
+    } catch (error) {
+      await cleanupAgentDispatch(dispatchClient, agentDispatch, roomName);
+      throw error;
+    }
+  } catch (error) {
+    await repository.markFailed(
+      outbound.outboundId,
+      error instanceof Error ? error.message : String(error)
+    );
+    throw error;
+  }
+}
+
 async function enforcePlanQuota(
   repository: QuickOutboundCallRepository,
   organizationId: string
@@ -227,6 +334,24 @@ function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) 
     system_prompt: args.systemPrompt ?? null,
     username: args.username ?? null,
   };
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function numberValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue | null {

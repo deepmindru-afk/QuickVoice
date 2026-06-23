@@ -27,6 +27,43 @@ export interface QuickOutboundCallResponse {
   agentDispatch: unknown;
 }
 
+export interface BatchUploadUrlResponse {
+  uploadUrl: string;
+  s3Key: string;
+}
+
+export interface CreateBatchCampaignInput {
+  name: string;
+  agentId: string;
+  fromNumber: string;
+  sourceFileKey: string;
+  sourceFileName: string;
+  scheduledAt?: string | null;
+  timezone: string;
+  ringingTimeoutSeconds: number;
+}
+
+export interface BatchCampaign {
+  campaignId: string;
+  name: string;
+  agentId: string | null;
+  fromNumber: string;
+  scheduledAt: string | null;
+  sourceFileKey?: string | null;
+  sourceFileName: string | null;
+  totalRecipients: number;
+  validRecipients: number;
+  invalidRecipients: number;
+  ringingTimeoutSeconds: number;
+  timezone: string;
+  status: "SCHEDULED" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "PROCESSED" | "FAILED";
+  createdAt: string;
+  updatedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  outboundCalls?: OutboundCall[];
+}
+
 export const outboundApi = {
   quickCall: async (
     input: QuickCallInput
@@ -34,6 +71,38 @@ export const outboundApi = {
     const res = await apiClient.post<ApiEnvelope<QuickOutboundCallResponse>>(
       "/outbound-calls/quick",
       input
+    );
+    return res.data.data;
+  },
+  getBatchUploadUrl: async (
+    fileName: string,
+    contentType: string
+  ): Promise<BatchUploadUrlResponse> => {
+    const res = await apiClient.get<ApiEnvelope<BatchUploadUrlResponse>>(
+      "/outbound-calls/batch-upload-url",
+      { params: { fileName, contentType } }
+    );
+    return res.data.data;
+  },
+  createBatchCampaign: async (
+    input: CreateBatchCampaignInput
+  ): Promise<BatchCampaign> => {
+    const res = await apiClient.post<ApiEnvelope<BatchCampaign>>(
+      "/outbound-calls/batches",
+      input
+    );
+    return res.data.data;
+  },
+  listBatchCampaigns: async (agentId?: string): Promise<BatchCampaign[]> => {
+    const res = await apiClient.get<ApiEnvelope<BatchCampaign[]>>(
+      "/outbound-calls/batches",
+      { params: agentId ? { agentId } : undefined }
+    );
+    return res.data.data;
+  },
+  getBatchCampaign: async (campaignId: string): Promise<BatchCampaign> => {
+    const res = await apiClient.get<ApiEnvelope<BatchCampaign>>(
+      `/outbound-calls/batches/${campaignId}`
     );
     return res.data.data;
   },

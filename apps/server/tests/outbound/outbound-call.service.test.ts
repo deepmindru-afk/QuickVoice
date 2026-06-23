@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { createQuickOutboundCall } from "../../src/modules/outbound/outbound-call.service.js";
+import {
+  createQuickOutboundCall,
+  dispatchScheduledOutboundCall,
+} from "../../src/modules/outbound/outbound-call.service.js";
 
 test("createQuickOutboundCall persists the quick call and dispatches a LiveKit SIP participant", async () => {
   const calls: unknown[] = [];
@@ -76,6 +79,7 @@ test("createQuickOutboundCall persists the quick call and dispatches a LiveKit S
   assert.equal(dispatch[1], "outbound_2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
   assert.equal(dispatch[2], "QuickVoice");
 
+  assert.equal(dispatch[1], "outbound_2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
   const dispatchMetadata = JSON.parse(dispatch[3].metadata);
   assert.equal(dispatchMetadata.outbound_id, "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
   assert.equal(dispatchMetadata.direction, "outbound");
@@ -299,4 +303,100 @@ test("createQuickOutboundCall rejects when the organization has exhausted plan m
   );
 
   assert.deepEqual(calls, []);
+});
+
+test("dispatchScheduledOutboundCall dispatches an existing campaign row with batch overrides", async () => {
+  const calls: unknown[] = [];
+  const repo = {
+    getMonthlyUsage: async () => ({
+      plan: "starter",
+      includedMinutes: 100,
+      usedSeconds: 0,
+    }),
+    getOutboundCallForDispatch: async (outboundId: string) => {
+      calls.push(["load", outboundId]);
+      return {
+        outboundId,
+        organizationId: "org_123",
+        userId: "user_123",
+        agentId: "8d55565f-1111-4111-8111-f95fd03f0df2",
+        campaignId: "campaign_123",
+        phoneNumber: "+15550001111",
+        fromNumber: "+15551230000",
+        firstMessage: "Hi {{city}} customer.",
+        systemPrompt: "Ask about {{other_dyn_variable}}.",
+        optionalData: {
+          rowNumber: 2,
+          language: "hi-IN",
+          voiceId: "aura-2-athena-en",
+          dynamicVariables: {
+            city: "Mumbai",
+            other_dyn_variable: "renewal",
+          },
+          ringingTimeoutSeconds: 45,
+        },
+      };
+    },
+    getDialableNumber: async () => ({
+      number: "+15551230000",
+      sid: "carrier-sid-123",
+      provider: "TWILIO",
+    }),
+    createQuickCall: async () => {
+      throw new Error("should not create a second outbound call");
+    },
+    markInProgress: async (outboundId: string, optionalData: unknown) => {
+      calls.push(["progress", outboundId, optionalData]);
+      return { outboundId, status: "IN_PROGRESS", optionalData };
+    },
+    markFailed: async (outboundId: string, reason: string) => {
+      calls.push(["failed", outboundId, reason]);
+      return { outboundId, status: "FAILED" };
+    },
+  };
+  const sipClient = {
+    createSipParticipant: async (...args: unknown[]) => {
+      calls.push(["sip", ...args]);
+      return { participantId: "sip-participant-123" };
+    },
+  };
+  const dispatchClient = {
+    createDispatch: async (...args: unknown[]) => {
+      calls.push(["dispatch", ...args]);
+      return { dispatchId: "agent-dispatch-123" };
+    },
+  };
+
+  const result = await dispatchScheduledOutboundCall(
+    "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113",
+    {
+      repository: repo,
+      sipClient,
+      dispatchClient,
+      outboundTrunks: { TWILIO: "twilio-trunk", TELNYX: "telnyx-trunk" },
+      agentName: "QuickVoice",
+    }
+  );
+
+  assert.equal(result.outbound.outboundId, "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
+
+  const dispatch = calls.find((call) => (call as unknown[])[0] === "dispatch") as any[];
+  const dispatchMetadata = JSON.parse(dispatch[3].metadata);
+  assert.equal(dispatchMetadata.campaign_id, "campaign_123");
+  assert.equal(dispatchMetadata.language, "hi-IN");
+  assert.equal(dispatchMetadata.voice_id, "aura-2-athena-en");
+  assert.deepEqual(dispatchMetadata.dynamic_variables, {
+    city: "Mumbai",
+    other_dyn_variable: "renewal",
+  });
+
+  const sip = calls.find((call) => (call as unknown[])[0] === "sip") as any[];
+  assert.equal(sip[3], "outbound_2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
+  assert.equal(sip[4].participantIdentity, "outbound-2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
+  assert.equal(sip[4].ringingTimeout, 45);
+  const participantMetadata = JSON.parse(sip[4].participantMetadata);
+  assert.equal(participantMetadata.language, "hi-IN");
+  assert.equal(participantMetadata.voice_id, "aura-2-athena-en");
+
+  assert.equal(calls.some((call) => (call as unknown[])[0] === "failed"), false);
 });

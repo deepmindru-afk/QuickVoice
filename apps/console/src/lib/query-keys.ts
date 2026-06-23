@@ -24,6 +24,8 @@ export const queryKeys = {
   outbound: {
     all: ["outbound"] as const,
     quick: () => [...queryKeys.outbound.all, "quick"] as const,
+    batches: (agentId?: string) =>
+      [...queryKeys.outbound.all, "batches", agentId ?? null] as const,
   },
   kb: {
     all: ["kb"] as const,

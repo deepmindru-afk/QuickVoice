@@ -1,4 +1,4 @@
-import { CallStatus, OutboundCallMode, Prisma } from "../../../prisma/generated/prisma/client.js";
+import { CallStatus, CampaignStatus, OutboundCallMode, Prisma } from "../../../prisma/generated/prisma/client.js";
 import { plans } from "../../../data/plans.js";
 import prisma from "../../config/prisma.js";
 import type { ListOutboundCallsArgs, QuickOutboundCallArgs } from "./outbound-call.schema.js";
@@ -149,6 +149,223 @@ export async function markCancelled(args: {
         },
       },
     },
+  });
+}
+
+export async function getOutboundCallForDispatch(outboundId: string) {
+  return prisma.outboundCall.findFirst({
+    where: {
+      outboundId,
+      status: CallStatus.SCHEDULED,
+    },
+    select: {
+      outboundId: true,
+      organizationId: true,
+      userId: true,
+      agentId: true,
+      campaignId: true,
+      phoneNumber: true,
+      fromNumber: true,
+      firstMessage: true,
+      systemPrompt: true,
+      optionalData: true,
+    },
+  });
+}
+
+type CreateBatchCampaignInput = {
+  organizationId: string;
+  userId: string;
+  name: string;
+  agentId: string;
+  fromNumber: string;
+  scheduledAt: Date | null;
+  sourceFileKey: string;
+  sourceFileName: string;
+  ringingTimeoutSeconds: number;
+  timezone: string;
+  status: typeof CampaignStatus.SCHEDULED;
+};
+
+export async function createBatchCampaign(input: CreateBatchCampaignInput) {
+  return prisma.campaign.create({
+    data: {
+      organizationId: input.organizationId,
+      userId: input.userId,
+      name: input.name,
+      agentId: input.agentId,
+      fromNumber: input.fromNumber,
+      scheduledAt: input.scheduledAt,
+      sourceFileKey: input.sourceFileKey,
+      sourceFileName: input.sourceFileName,
+      ringingTimeoutSeconds: input.ringingTimeoutSeconds,
+      timezone: input.timezone,
+      status: input.status,
+    },
+  });
+}
+
+export async function listBatchCampaigns(args: {
+  organizationId: string;
+  agentId?: string;
+}) {
+  return prisma.campaign.findMany({
+    where: {
+      organizationId: args.organizationId,
+      ...(args.agentId ? { agentId: args.agentId } : {}),
+    },
+    select: {
+      campaignId: true,
+      name: true,
+      agentId: true,
+      fromNumber: true,
+      scheduledAt: true,
+      sourceFileName: true,
+      totalRecipients: true,
+      validRecipients: true,
+      invalidRecipients: true,
+      ringingTimeoutSeconds: true,
+      timezone: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      startedAt: true,
+      completedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getBatchCampaignDetail(args: {
+  organizationId: string;
+  campaignId: string;
+}) {
+  return prisma.campaign.findFirst({
+    where: {
+      organizationId: args.organizationId,
+      campaignId: args.campaignId,
+    },
+    select: {
+      campaignId: true,
+      name: true,
+      agentId: true,
+      fromNumber: true,
+      scheduledAt: true,
+      sourceFileKey: true,
+      sourceFileName: true,
+      totalRecipients: true,
+      validRecipients: true,
+      invalidRecipients: true,
+      ringingTimeoutSeconds: true,
+      timezone: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      startedAt: true,
+      completedAt: true,
+      outboundCalls: {
+        select: {
+          outboundId: true,
+          phoneNumber: true,
+          firstMessage: true,
+          systemPrompt: true,
+          optionalData: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+}
+
+type CreateBatchOutboundCallInput = {
+  organizationId: string;
+  userId: string | null;
+  agentId: string | null;
+  campaignId: string;
+  scheduledAt: Date | null;
+  phoneNumber: string;
+  fromNumber: string;
+  firstMessage: string | null;
+  systemPrompt: string | null;
+  optionalData: Prisma.InputJsonObject;
+  mode: typeof OutboundCallMode.campaign;
+  status: typeof CallStatus.SCHEDULED | typeof CallStatus.FAILED;
+};
+
+export async function getCampaignForImport(campaignId: string) {
+  return prisma.campaign.findFirst({
+    where: {
+      campaignId,
+      status: CampaignStatus.SCHEDULED,
+    },
+    select: {
+      campaignId: true,
+      organizationId: true,
+      userId: true,
+      agentId: true,
+      fromNumber: true,
+      scheduledAt: true,
+      sourceFileKey: true,
+      sourceFileName: true,
+      ringingTimeoutSeconds: true,
+    },
+  });
+}
+
+export async function createBatchOutboundCalls(rows: CreateBatchOutboundCallInput[]) {
+  if (rows.length === 0) return { count: 0 };
+  return prisma.outboundCall.createMany({
+    data: rows,
+  });
+}
+
+export async function markBatchImported(
+  campaignId: string,
+  stats: { totalRecipients: number; validRecipients: number; invalidRecipients: number }
+) {
+  return prisma.campaign.update({
+    where: { campaignId },
+    data: stats,
+  });
+}
+
+export async function getCampaignForDispatch(campaignId: string) {
+  return prisma.campaign.findFirst({
+    where: {
+      campaignId,
+      status: CampaignStatus.SCHEDULED,
+      OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
+    },
+    select: { campaignId: true },
+  });
+}
+
+export async function listScheduledOutboundIdsForCampaign(campaignId: string) {
+  const rows = await prisma.outboundCall.findMany({
+    where: {
+      campaignId,
+      status: CallStatus.SCHEDULED,
+    },
+    select: { outboundId: true },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((row) => row.outboundId);
+}
+
+export async function markCampaignActive(campaignId: string) {
+  return prisma.campaign.update({
+    where: { campaignId },
+    data: { status: CampaignStatus.ACTIVE, startedAt: new Date() },
+  });
+}
+
+export async function markCampaignCompleted(campaignId: string) {
+  return prisma.campaign.update({
+    where: { campaignId },
+    data: { status: CampaignStatus.COMPLETED, completedAt: new Date() },
   });
 }
 

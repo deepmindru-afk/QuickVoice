@@ -514,7 +514,16 @@ model Campaign {
   agent          Agent?         @relation(fields: [agentId], references: [agentId], onDelete: SetNull)
   fromNumber     String
   scheduledAt    DateTime?
+  sourceFileKey  String?
+  sourceFileName String?
+  totalRecipients Int          @default(0)
+  validRecipients Int          @default(0)
+  invalidRecipients Int        @default(0)
+  ringingTimeoutSeconds Int    @default(60)
+  timezone       String        @default("UTC")
   status         CampaignStatus
+  startedAt      DateTime?
+  completedAt    DateTime?
   userId         String?
   user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   outboundCalls  OutboundCall[]

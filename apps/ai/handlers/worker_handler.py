@@ -65,11 +65,34 @@ def apply_metadata_overrides(config: dict[str, Any], metadata: dict[str, Any]) -
 
     first_message = _pick(metadata, "first_message", "firstMessage")
     system_prompt = _pick(metadata, "system_prompt", "systemPrompt")
+    language = _pick(metadata, "language", "agent_language", "agentLanguage")
+    voice_id = _pick(metadata, "voice_id", "voiceId")
+    dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
     if first_message:
         updated["first_message"] = first_message
     if system_prompt:
         updated["system_prompt"] = system_prompt
+    if language:
+        updated["agent_language"] = language
+    if voice_id:
+        updated["voice"] = voice_id
+    if isinstance(dynamic_variables, dict):
+        updated["first_message"] = render_dynamic_variables(
+            str(updated.get("first_message") or ""),
+            dynamic_variables,
+        )
+        updated["system_prompt"] = render_dynamic_variables(
+            str(updated.get("system_prompt") or ""),
+            dynamic_variables,
+        )
     return updated
+
+
+def render_dynamic_variables(template: str, variables: dict[str, Any]) -> str:
+    rendered = template
+    for key, value in variables.items():
+        rendered = rendered.replace("{{" + str(key) + "}}", str(value))
+    return rendered
 
 
 def speak_first_message(session: Any, config: dict[str, Any]):
