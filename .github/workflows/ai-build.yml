@@ -105,7 +105,7 @@ jobs:
           sbom: true
           provenance: true
           cache-from: type=gha,scope=ai
-          cache-to: type=gha,scope=ai,mode=max
+          cache-to: type=gha,scope=ai,mode=max,ignore-error=true
 
       - name: Smoke test pushed image manifest
         env:
