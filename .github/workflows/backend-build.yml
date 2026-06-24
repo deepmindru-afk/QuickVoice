@@ -1,0 +1,387 @@
+name: Backend Build and Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/server/**"
+      - "apps/ai/**"
+      - "packages/typescript-config/**"
+      - "scripts/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/backend-build.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: quickvoice-backend-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SERVER_ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+  AI_ECR_REPOSITORY: ${{ vars.AI_ECR_REPOSITORY }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+  SERVER_ECS_CONTAINER_NAME: ${{ vars.SERVER_ECS_CONTAINER_NAME || 'quickvoice-server' }}
+  AI_ECS_CONTAINER_NAME: ${{ vars.AI_ECS_CONTAINER_NAME || 'quickvoice-ai' }}
+
+jobs:
+  changes:
+    name: Detect backend changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      server: ${{ steps.detect.outputs.server }}
+      ai: ${{ steps.detect.outputs.ai }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect backend changes
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          server_changed=false
+          ai_changed=false
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            server_changed=true
+            ai_changed=true
+            changed_files="workflow_dispatch"
+          else
+            before="${{ github.event.before }}"
+            if [ -z "$before" ] || [[ "$before" =~ ^0+$ ]]; then
+              changed_files="$(git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA")"
+            else
+              changed_files="$(git diff --name-only "$before" "$GITHUB_SHA")"
+            fi
+
+            if echo "$changed_files" | grep -Eq '^(apps/server/|packages/typescript-config/|scripts/|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|\.npmrc$|\.github/workflows/ci\.yml$|\.github/workflows/backend-build\.yml$)'; then
+              server_changed=true
+            fi
+
+            if echo "$changed_files" | grep -Eq '^(apps/ai/|scripts/|\.github/workflows/ci\.yml$|\.github/workflows/backend-build\.yml$)'; then
+              ai_changed=true
+            fi
+          fi
+
+          {
+            echo "server=${server_changed}"
+            echo "ai=${ai_changed}"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Backend changes"
+            echo "- Server changed: ${server_changed}"
+            echo "- AI changed: ${ai_changed}"
+            echo ""
+            echo "Changed files:"
+            echo '```'
+            echo "$changed_files"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  quality-gate:
+    name: Required CI Signal
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  build-and-deploy:
+    name: Build, Validate, Sign, Push, and Deploy Backend Image(s)
+    needs: [quality-gate, changes]
+    if: needs.changes.outputs.server == 'true' || needs.changes.outputs.ai == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production-backend
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate deployment configuration
+        env:
+          REQUIRED_AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          REQUIRED_AWS_REGION: ${{ env.AWS_REGION }}
+          REQUIRED_SERVER_ECR_REPOSITORY: ${{ env.SERVER_ECR_REPOSITORY }}
+          REQUIRED_AI_ECR_REPOSITORY: ${{ env.AI_ECR_REPOSITORY }}
+          REQUIRED_ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+          REQUIRED_ECS_SERVICE: ${{ env.ECS_SERVICE }}
+        run: |
+          missing=0
+          if [ -z "$REQUIRED_AWS_ROLE_ARN" ]; then
+            echo "[fail] Missing GitHub repository variable: AWS_ROLE_ARN"
+            missing=1
+          fi
+          if [ -z "$REQUIRED_AWS_REGION" ]; then
+            echo "[fail] Missing GitHub repository variable: AWS_REGION"
+            missing=1
+          fi
+          if [ -z "$REQUIRED_SERVER_ECR_REPOSITORY" ]; then
+            echo "[fail] Missing GitHub repository variable: ECR_REPOSITORY"
+            missing=1
+          fi
+          if [ -z "$REQUIRED_AI_ECR_REPOSITORY" ]; then
+            echo "[fail] Missing GitHub repository variable: AI_ECR_REPOSITORY"
+            missing=1
+          fi
+          if [ -z "$REQUIRED_ECS_CLUSTER" ]; then
+            echo "[fail] Missing GitHub repository variable: ECS_CLUSTER"
+            missing=1
+          fi
+          if [ -z "$REQUIRED_ECS_SERVICE" ]; then
+            echo "[fail] Missing GitHub repository variable: ECS_SERVICE"
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            {
+              echo "## Deployment configuration"
+              echo "[fail] Missing required GitHub repository variables."
+              echo ""
+              echo "Set these GitHub repository variables before running this workflow:"
+              echo "- AWS_ROLE_ARN"
+              echo "- AWS_REGION"
+              echo "- ECR_REPOSITORY"
+              echo "- AI_ECR_REPOSITORY"
+              echo "- ECS_CLUSTER"
+              echo "- ECS_SERVICE"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          {
+            echo "## Deployment configuration"
+            echo "[ok] Required GitHub repository variables are configured."
+            echo "- AWS region: ${REQUIRED_AWS_REGION}"
+            echo "- Server ECR repository: ${REQUIRED_SERVER_ECR_REPOSITORY}"
+            echo "- AI ECR repository: ${REQUIRED_AI_ECR_REPOSITORY}"
+            echo "- ECS cluster: ${REQUIRED_ECS_CLUSTER}"
+            echo "- ECS service: ${REQUIRED_ECS_SERVICE}"
+            echo "- Server ECS container: ${SERVER_ECS_CONTAINER_NAME}"
+            echo "- AI ECS container: ${AI_ECS_CONTAINER_NAME}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push server Docker image
+        id: server_build
+        if: needs.changes.outputs.server == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/server/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}:sha-${{ github.sha }}
+          sbom: true
+          provenance: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+
+      - name: Smoke test pushed server image manifest
+        if: needs.changes.outputs.server == 'true'
+        env:
+          SERVER_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}@${{ steps.server_build.outputs.digest }}
+        run: docker buildx imagetools inspect "$SERVER_IMAGE_URI"
+
+      - name: Scan server image for vulnerabilities
+        if: needs.changes.outputs.server == 'true'
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}@${{ steps.server_build.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Build and push AI Docker image
+        id: ai_build
+        if: needs.changes.outputs.ai == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/ai
+          file: apps/ai/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}:sha-${{ github.sha }}
+          sbom: true
+          provenance: true
+          cache-from: type=gha,scope=ai
+          cache-to: type=gha,scope=ai,mode=max,ignore-error=true
+
+      - name: Smoke test pushed AI image manifest
+        if: needs.changes.outputs.ai == 'true'
+        env:
+          AI_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}@${{ steps.ai_build.outputs.digest }}
+        run: docker buildx imagetools inspect "$AI_IMAGE_URI"
+
+      - name: Scan AI image for vulnerabilities
+        if: needs.changes.outputs.ai == 'true'
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}@${{ steps.ai_build.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign server image
+        if: needs.changes.outputs.server == 'true'
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          SERVER_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}@${{ steps.server_build.outputs.digest }}
+        run: cosign sign --yes "$SERVER_IMAGE_URI"
+
+      - name: Sign AI image
+        if: needs.changes.outputs.ai == 'true'
+        env:
+          COSIGN_EXPERIMENTAL: "true"
+          AI_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}@${{ steps.ai_build.outputs.digest }}
+        run: cosign sign --yes "$AI_IMAGE_URI"
+
+      - name: Deploy image(s) to ECS
+        env:
+          SERVER_CHANGED: ${{ needs.changes.outputs.server }}
+          AI_CHANGED: ${{ needs.changes.outputs.ai }}
+          SERVER_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}@${{ steps.server_build.outputs.digest }}
+          AI_IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}@${{ steps.ai_build.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          current_task_definition_arn="$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' \
+            --output text)"
+
+          aws ecs describe-task-definition \
+            --task-definition "$current_task_definition_arn" \
+            --query taskDefinition \
+            > task-definition.json
+
+          check_container() {
+            local container="$1"
+            if ! jq -e --arg container "$container" \
+              '.containerDefinitions[] | select(.name == $container)' task-definition.json > /dev/null; then
+              echo "[fail] Container '${container}' was not found in ${current_task_definition_arn}"
+              exit 1
+            fi
+          }
+
+          if [ "$SERVER_CHANGED" = "true" ]; then
+            check_container "$SERVER_ECS_CONTAINER_NAME"
+            if [ -z "${SERVER_IMAGE_URI##*@}" ]; then
+              echo "[fail] Missing server image digest"
+              exit 1
+            fi
+          fi
+
+          if [ "$AI_CHANGED" = "true" ]; then
+            check_container "$AI_ECS_CONTAINER_NAME"
+            if [ -z "${AI_IMAGE_URI##*@}" ]; then
+              echo "[fail] Missing AI image digest"
+              exit 1
+            fi
+          fi
+
+          jq \
+            --arg server_changed "$SERVER_CHANGED" \
+            --arg server_container "$SERVER_ECS_CONTAINER_NAME" \
+            --arg server_image "$SERVER_IMAGE_URI" \
+            --arg ai_changed "$AI_CHANGED" \
+            --arg ai_container "$AI_ECS_CONTAINER_NAME" \
+            --arg ai_image "$AI_IMAGE_URI" '
+            .containerDefinitions |= map(
+              if ($server_changed == "true" and .name == $server_container) then .image = $server_image
+              elif ($ai_changed == "true" and .name == $ai_container) then .image = $ai_image
+              else . end
+            )
+            | del(
+              .taskDefinitionArn,
+              .revision,
+              .status,
+              .requiresAttributes,
+              .compatibilities,
+              .registeredAt,
+              .registeredBy
+            )
+          ' task-definition.json > new-task-definition.json
+
+          new_task_definition_arn="$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)"
+
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE" \
+            --task-definition "$new_task_definition_arn" \
+            --force-new-deployment
+
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE"
+
+          {
+            echo "## ECS deployment"
+            echo "- Cluster: ${ECS_CLUSTER}"
+            echo "- Service: ${ECS_SERVICE}"
+            echo "- Previous task definition: ${current_task_definition_arn}"
+            echo "- New task definition: ${new_task_definition_arn}"
+            if [ "$SERVER_CHANGED" = "true" ]; then
+              echo "- Server container: ${SERVER_ECS_CONTAINER_NAME}"
+              echo "- Server image: ${SERVER_IMAGE_URI}"
+            fi
+            if [ "$AI_CHANGED" = "true" ]; then
+              echo "- AI container: ${AI_ECS_CONTAINER_NAME}"
+              echo "- AI image: ${AI_IMAGE_URI}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rollback metadata
+        env:
+          SERVER_IMAGE_TAG: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}:sha-${{ github.sha }}
+          AI_IMAGE_TAG: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}:sha-${{ github.sha }}
+          SERVER_IMAGE_DIGEST: ${{ steps.server_build.outputs.digest }}
+          AI_IMAGE_DIGEST: ${{ steps.ai_build.outputs.digest }}
+          SERVER_CHANGED: ${{ needs.changes.outputs.server }}
+          AI_CHANGED: ${{ needs.changes.outputs.ai }}
+        run: |
+          {
+            echo "## Rollback metadata"
+            echo "- Source commit: ${GITHUB_SHA}"
+            if [ "$SERVER_CHANGED" = "true" ]; then
+              echo "- Server image tag: ${SERVER_IMAGE_TAG}"
+              echo "- Server image digest: ${SERVER_IMAGE_DIGEST}"
+            fi
+            if [ "$AI_CHANGED" = "true" ]; then
+              echo "- AI image tag: ${AI_IMAGE_TAG}"
+              echo "- AI image digest: ${AI_IMAGE_DIGEST}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

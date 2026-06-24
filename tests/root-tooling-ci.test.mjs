@@ -52,32 +52,28 @@ test("security audit fails on high advisories and uses explicit suppressions", a
 });
 
 test("deploy workflows are gated, immutable, scanned, signed, and environment protected", async () => {
-  for (const path of [
-    ".github/workflows/server-build.yml",
-    ".github/workflows/ai-build.yml",
-  ]) {
-    const workflow = await text(path);
+  const workflow = await text(".github/workflows/backend-build.yml");
 
-    assert.match(workflow, /concurrency:/);
-    assert.match(workflow, /quality-gate:/);
-    assert.match(workflow, /uses: \.\/\.github\/workflows\/ci\.yml/);
-    assert.match(workflow, /needs: quality-gate/);
-    assert.match(workflow, /environment:/);
-    assert.match(workflow, /Validate deployment configuration/);
-    assert.match(workflow, /REQUIRED_AWS_ROLE_ARN/);
-    assert.match(workflow, /REQUIRED_AWS_REGION/);
-    assert.match(workflow, /REQUIRED_ECR_REPOSITORY/);
-    assert.match(workflow, /GITHUB_STEP_SUMMARY/);
-    assert.match(workflow, /GitHub repository variables/);
-    assert.match(workflow, /github\.sha/);
-    assert.doesNotMatch(workflow, /:latest/);
-    assert.match(workflow, /sbom: true/);
-    assert.match(workflow, /provenance: true/);
-    assert.match(workflow, /aquasecurity\/trivy-action@/);
-    assert.match(workflow, /sigstore\/cosign-installer@/);
-    assert.match(workflow, /cosign sign/);
-    assert.match(workflow, /Rollback metadata/);
-  }
+  assert.match(workflow, /concurrency:/);
+  assert.match(workflow, /quality-gate:/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/ci\.yml/);
+  assert.match(workflow, /needs: \[quality-gate, changes\]/);
+  assert.match(workflow, /environment:/);
+  assert.match(workflow, /Validate deployment configuration/);
+  assert.match(workflow, /REQUIRED_AWS_ROLE_ARN/);
+  assert.match(workflow, /REQUIRED_AWS_REGION/);
+  assert.match(workflow, /REQUIRED_SERVER_ECR_REPOSITORY/);
+  assert.match(workflow, /REQUIRED_AI_ECR_REPOSITORY/);
+  assert.match(workflow, /GITHUB_STEP_SUMMARY/);
+  assert.match(workflow, /GitHub repository variables/);
+  assert.match(workflow, /github\.sha/);
+  assert.doesNotMatch(workflow, /:latest/);
+  assert.match(workflow, /sbom: true/);
+  assert.match(workflow, /provenance: true/);
+  assert.match(workflow, /aquasecurity\/trivy-action@/);
+  assert.match(workflow, /sigstore\/cosign-installer@/);
+  assert.match(workflow, /cosign sign/);
+  assert.match(workflow, /Rollback metadata/);
 });
 
 test("GitHub templates surface contributor workflow expectations", async () => {
