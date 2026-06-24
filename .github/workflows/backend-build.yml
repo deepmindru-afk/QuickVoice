@@ -191,7 +191,7 @@ jobs:
       - name: Build and push server Docker image
         id: server_build
         if: needs.changes.outputs.server == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: apps/server/Dockerfile
@@ -221,7 +221,7 @@ jobs:
       - name: Build and push AI Docker image
         id: ai_build
         if: needs.changes.outputs.ai == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/ai
           file: apps/ai/Dockerfile
