@@ -47,7 +47,7 @@ jobs:
           python -m pip install pytest
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Verify Docker validation script
         run: test -x scripts/ci-docker-build.sh
