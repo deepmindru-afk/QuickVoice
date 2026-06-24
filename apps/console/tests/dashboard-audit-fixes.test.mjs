@@ -36,11 +36,35 @@ test("dashboard KPI deltas use unit-aware copy and a named previous period", () 
   assert.match(source, /previousPeriodLabel/);
   assert.match(source, /summary\.period\.previousFrom/);
   assert.match(source, /summary\.period\.previousTo/);
+  assert.match(source, /formatPreviousPeriodWindow/);
+  assert.match(source, /previousPeriodWindow = formatPreviousPeriodWindow\(summary\)/);
+  assert.match(source, /comparisonTitle=\{previousPeriodWindow\}/);
+  assert.match(source, /title=\{comparisonTitle \?\? undefined\}/);
   assert.match(source, /unit="call"/);
   assert.match(source, /unit="minute"/);
-  assert.match(source, /unit="second"/);
+  assert.match(source, /unit="duration"/);
+  assert.match(source, /formatDurationDeltaCopy/);
+  assert.match(source, /formatDeltaUnitLabel/);
+  assert.match(source, /"pts"/);
   assert.match(source, /unit="percentage point"/);
   assert.match(source, /comparisonLabel=\{previousPeriodLabel\}/);
+});
+
+test("dashboard KPI cards reserve stable rows for aligned helper content", () => {
+  const kpis = read("src/components/dashboard/KpiCards.tsx");
+  const statCard = read("src/components/common/StatCard.tsx");
+
+  assert.match(kpis, /auto-rows-fr/);
+  assert.match(kpis, /items-stretch/);
+  assert.match(kpis, /sm:grid-cols-2/);
+  assert.match(kpis, /xl:grid-cols-3/);
+  assert.doesNotMatch(kpis, /xl:col-span/);
+  assert.match(kpis, /className="h-full"/);
+
+  assert.match(statCard, /flex h-full min-h-\[168px\] flex-col/);
+  assert.match(statCard, /flex min-w-0 flex-1 flex-col/);
+  assert.match(statCard, /min-h-\[2.5rem\]/);
+  assert.match(statCard, /mt-auto min-h-\[2.75rem\]/);
 });
 
 test("dashboard exception signals link to filtered calls views with range context", () => {

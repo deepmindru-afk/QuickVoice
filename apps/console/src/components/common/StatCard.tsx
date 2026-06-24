@@ -38,13 +38,13 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden border bg-card p-5 shadow-xs transition-colors hover:border-primary/35",
+        "relative flex h-full min-h-[168px] flex-col overflow-hidden border bg-card p-5 shadow-xs transition-colors hover:border-primary/35",
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <div className="space-y-1">
+      <div className="flex h-full items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="min-h-[2.5rem] space-y-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {label}
             </p>
@@ -53,17 +53,15 @@ export function StatCard({
             ) : null}
           </div>
           {loading ? (
-            <Skeleton className="h-8 w-24" />
+            <Skeleton className="mt-4 h-8 w-24" />
           ) : (
-            <p className="text-3xl font-semibold leading-none text-foreground">
+            <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
               {value}
             </p>
           )}
-          {helper ? (
-            <div className="text-xs font-medium text-muted-foreground">
-              {helper}
-            </div>
-          ) : null}
+          <div className="mt-auto min-h-[2.75rem] pt-4 text-xs font-medium leading-snug text-muted-foreground">
+            {helper}
+          </div>
         </div>
         {Icon ? (
           <div className={cn("shrink-0 border p-2.5", toneStyles[tone])}>

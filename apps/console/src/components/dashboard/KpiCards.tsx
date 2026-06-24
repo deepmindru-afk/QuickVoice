@@ -33,13 +33,15 @@ const PERIOD_BOUNDARY_FORMAT = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
-type DeltaUnit = "call" | "minute" | "second" | "percentage point";
+type DeltaUnit = "call" | "minute" | "duration" | "percentage point";
 
 function formatDuration(seconds: number) {
-  if (!seconds) return "0s";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
+  const wholeSeconds = Math.max(0, Math.round(seconds));
+  if (!wholeSeconds) return "0s";
+  const m = Math.floor(wholeSeconds / 60);
+  const s = wholeSeconds % 60;
   if (!m) return `${s}s`;
+  if (!s) return `${m}m`;
   return `${m}m ${s}s`;
 }
 
@@ -52,13 +54,17 @@ function formatPeriodBoundary(value?: string) {
 
 function formatPreviousPeriodLabel(summary?: DashboardSummary) {
   if (!summary) return "selected comparison period";
+  return PREVIOUS_PERIOD_LABELS[summary.range];
+}
 
-  const rangeLabel = PREVIOUS_PERIOD_LABELS[summary.range];
+function formatPreviousPeriodWindow(summary?: DashboardSummary) {
+  if (!summary) return null;
+
   const previousFrom = formatPeriodBoundary(summary.period.previousFrom);
   const previousTo = formatPeriodBoundary(summary.period.previousTo);
 
-  if (!previousFrom || !previousTo) return rangeLabel;
-  return `${rangeLabel}, ${previousFrom} to ${previousTo} UTC`;
+  if (!previousFrom || !previousTo) return null;
+  return `${previousFrom} to ${previousTo} UTC`;
 }
 
 function normalizeDeltaValue(value: number | undefined, unit: DeltaUnit) {
@@ -75,10 +81,26 @@ function formatDeltaAmount(value: number) {
   });
 }
 
+function formatDurationDeltaCopy(value: number | undefined) {
+  const amount = normalizeDeltaValue(value, "duration");
+  const sign = amount > 0 ? "+" : amount < 0 ? "-" : "";
+  return `${sign}${formatDuration(Math.abs(amount))}`;
+}
+
+function formatDeltaUnitLabel(
+  value: number,
+  unit: Exclude<DeltaUnit, "duration">
+) {
+  if (unit === "percentage point") return Math.abs(value) === 1 ? "pt" : "pts";
+  return Math.abs(value) === 1 ? unit : unit + "s";
+}
+
 function formatDeltaCopy(value: number | undefined, unit: DeltaUnit) {
+  if (unit === "duration") return formatDurationDeltaCopy(value);
+
   const amount = normalizeDeltaValue(value, unit);
   const sign = amount > 0 ? "+" : "";
-  const unitLabel = Math.abs(amount) === 1 ? unit : `${unit}s`;
+  const unitLabel = formatDeltaUnitLabel(amount, unit);
 
   return `${sign}${formatDeltaAmount(amount)} ${unitLabel}`;
 }
@@ -87,28 +109,37 @@ function Trend({
   value,
   unit,
   comparisonLabel,
+  comparisonTitle,
   inverse = false,
 }: {
   value?: number;
   unit: DeltaUnit;
   comparisonLabel: string;
+  comparisonTitle?: string | null;
   inverse?: boolean;
 }) {
   const n = normalizeDeltaValue(value, unit);
   const positive = n >= 0;
   const good = inverse ? n <= 0 : n >= 0;
   const Icon = positive ? TrendingUp : TrendingDown;
+  const deltaCopy = formatDeltaCopy(value, unit);
+  const trendCopy = `${deltaCopy} vs ${comparisonLabel}`;
+  const accessibleCopy = comparisonTitle
+    ? `${trendCopy} (${comparisonTitle})`
+    : trendCopy;
 
   return (
     <span
+      title={comparisonTitle ?? undefined}
+      aria-label={accessibleCopy}
       className={
         good
-          ? "inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-300"
-          : "inline-flex items-center gap-1 text-destructive"
+          ? "flex max-w-full items-start gap-1 text-emerald-600 dark:text-emerald-300"
+          : "flex max-w-full items-start gap-1 text-destructive"
       }
     >
-      <Icon className="size-3" />
-      {formatDeltaCopy(value, unit)} vs {comparisonLabel}
+      <Icon className="mt-0.5 size-3 shrink-0" />
+      <span>{trendCopy}</span>
     </span>
   );
 }
@@ -145,9 +176,10 @@ export function KpiCards({
   const totals = summary?.totals;
   const deltas = summary?.deltas;
   const previousPeriodLabel = formatPreviousPeriodLabel(summary);
+  const previousPeriodWindow = formatPreviousPeriodWindow(summary);
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12">
+    <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <StatCard
         label="Total calls"
         value={totals?.calls.toLocaleString() ?? "0"}
@@ -158,13 +190,14 @@ export function KpiCards({
               value={deltas.calls}
               unit="call"
               comparisonLabel={previousPeriodLabel}
+              comparisonTitle={previousPeriodWindow}
             />
           ) : undefined
         }
         icon={PhoneCall}
         loading={loading}
         tone="info"
-        className="xl:col-span-3"
+        className="h-full"
       />
       <StatCard
         label="Minutes used"
@@ -176,13 +209,14 @@ export function KpiCards({
               value={deltas.minutes}
               unit="minute"
               comparisonLabel={previousPeriodLabel}
+              comparisonTitle={previousPeriodWindow}
             />
           ) : undefined
         }
         icon={Clock}
         loading={loading}
         tone="neutral"
-        className="xl:col-span-2"
+        className="h-full"
       />
       <StatCard
         label="Avg duration"
@@ -192,15 +226,16 @@ export function KpiCards({
           deltas ? (
             <Trend
               value={deltas.avgDurationSeconds}
-              unit="second"
+              unit="duration"
               comparisonLabel={previousPeriodLabel}
+              comparisonTitle={previousPeriodWindow}
             />
           ) : undefined
         }
         icon={Timer}
         loading={loading}
         tone="warning"
-        className="xl:col-span-2"
+        className="h-full"
       />
       <StatCard
         label="Success rate"
@@ -212,68 +247,69 @@ export function KpiCards({
               value={deltas.successRate}
               unit="percentage point"
               comparisonLabel={previousPeriodLabel}
+              comparisonTitle={previousPeriodWindow}
             />
           ) : undefined
         }
         icon={CheckCircle2}
         loading={loading}
         tone="success"
-        className="xl:col-span-2"
+        className="h-full"
       />
-      <div className="grid grid-cols-2 gap-4 xl:col-span-3">
-        <Link
-          href={dashboardCallsHref({ range, status: "FAILED" })}
-          className={drilldownLinkClass}
-          aria-label="Review failed calls in the selected dashboard range"
-        >
-          <StatCard
-            label="Failed"
-            value={totals?.failedCalls.toLocaleString() ?? "0"}
-            helper={
+      <Link
+        href={dashboardCallsHref({ range, status: "FAILED" })}
+        className={drilldownLinkClass}
+        aria-label="Review failed calls in the selected dashboard range"
+      >
+        <StatCard
+          label="Failed"
+          value={totals?.failedCalls.toLocaleString() ?? "0"}
+          helper={
               <InvestigationHint action="Review failed calls">
                 {deltas ? (
                   <Trend
                     value={deltas.failedCalls}
                     unit="call"
                     comparisonLabel={previousPeriodLabel}
+                    comparisonTitle={previousPeriodWindow}
                     inverse
                   />
                 ) : null}
               </InvestigationHint>
             }
-            icon={AlertTriangle}
-            loading={loading}
-            tone="danger"
-            className="h-full"
-          />
-        </Link>
-        <Link
-          href={dashboardCallsHref({ range, status: "NOT_ANSWERED" })}
-          className={drilldownLinkClass}
-          aria-label="View missed calls in the selected dashboard range"
-        >
-          <StatCard
-            label="Missed"
-            value={totals?.missedCalls.toLocaleString() ?? "0"}
-            helper={
+          icon={AlertTriangle}
+          loading={loading}
+          tone="danger"
+          className="h-full"
+        />
+      </Link>
+      <Link
+        href={dashboardCallsHref({ range, status: "NOT_ANSWERED" })}
+        className={drilldownLinkClass}
+        aria-label="View missed calls in the selected dashboard range"
+      >
+        <StatCard
+          label="Missed"
+          value={totals?.missedCalls.toLocaleString() ?? "0"}
+          helper={
               <InvestigationHint action="View missed calls">
                 {deltas ? (
                   <Trend
                     value={deltas.missedCalls}
                     unit="call"
                     comparisonLabel={previousPeriodLabel}
+                    comparisonTitle={previousPeriodWindow}
                     inverse
                   />
                 ) : null}
               </InvestigationHint>
             }
-            icon={Voicemail}
-            loading={loading}
-            tone="warning"
-            className="h-full"
-          />
-        </Link>
-      </div>
+          icon={Voicemail}
+          loading={loading}
+          tone="warning"
+          className="h-full"
+        />
+      </Link>
     </div>
   );
 }
