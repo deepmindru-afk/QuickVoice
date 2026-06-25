@@ -41,6 +41,18 @@ const errorResponse = {
   },
 };
 
+const agentTemplateIdSchema = {
+  oneOf: [
+    { type: "string", enum: ["business", "medical", "blank", "support"] },
+    { type: "string", format: "uuid" },
+    { type: "null" },
+  ],
+  nullable: true,
+  description:
+    "Console template slug, legacy UUID template id, or null for no template.",
+  example: "blank",
+};
+
 export const swaggerSpec = {
   openapi: "3.0.3",
   info: {
@@ -92,12 +104,7 @@ export const swaggerSpec = {
         properties: {
           name: { type: "string", minLength: 2, example: "Reception Agent" },
           isActive: { type: "boolean", example: true },
-          templateId: {
-            type: "string",
-            format: "uuid",
-            nullable: true,
-            example: null,
-          },
+          templateId: agentTemplateIdSchema,
         },
       },
       UpdateAgentRequest: {
@@ -106,7 +113,7 @@ export const swaggerSpec = {
         properties: {
           name: { type: "string", minLength: 2 },
           isActive: { type: "boolean" },
-          templateId: { type: "string", format: "uuid", nullable: true },
+          templateId: agentTemplateIdSchema,
         },
       },
       ConfigureAgentRequest: {
@@ -262,7 +269,11 @@ export const swaggerSpec = {
         type: "object",
         required: ["provider", "phoneNumber"],
         properties: {
-          provider: { type: "string", enum: ["TWILIO", "TELNYX"] },
+          provider: {
+            type: "string",
+            enum: ["TWILIO", "TELNYX"],
+            description: "Telephony provider. Lowercase values are accepted and normalized.",
+          },
           phoneNumber: { type: "string", example: "+14155551234" },
         },
       },
@@ -772,7 +783,13 @@ export const swaggerSpec = {
         summary: "Search available phone numbers",
         security: userAuthSecurity,
         parameters: [
-          { name: "provider", in: "query", required: true, schema: { type: "string", enum: ["TWILIO", "TELNYX"] } },
+          {
+            name: "provider",
+            in: "query",
+            required: true,
+            schema: { type: "string", enum: ["TWILIO", "TELNYX"] },
+            description: "Telephony provider. Lowercase values are accepted and normalized.",
+          },
           { name: "country", in: "query", required: true, schema: { type: "string", example: "US" } },
           { name: "areaCode", in: "query", schema: { type: "integer" } },
           { name: "limit", in: "query", schema: { type: "integer", maximum: 50 } },
