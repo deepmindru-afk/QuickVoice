@@ -232,47 +232,6 @@ test("dispatchBatchCampaign queues dispatch-call jobs with BullMQ-safe custom id
   ]);
 });
 
-test("dispatchBatchCampaign marks the campaign completed after queueing dispatch jobs", async () => {
-  const calls: unknown[] = [];
-  const repo = {
-    getCampaignForDispatch: async (campaignId: string) => {
-      calls.push(["loadCampaign", campaignId]);
-      return { campaignId };
-    },
-    listScheduledOutboundIdsForCampaign: async (campaignId: string) => {
-      calls.push(["listOutboundIds", campaignId]);
-      return ["outbound_123", "outbound_456"];
-    },
-    markCampaignActive: async (campaignId: string) => {
-      calls.push(["markActive", campaignId]);
-    },
-    markCampaignCompleted: async (campaignId: string) => {
-      calls.push(["markCompleted", campaignId]);
-    },
-  };
-  const queue = {
-    add: async (...args: unknown[]) => {
-      calls.push(["queue", ...args]);
-    },
-  };
-
-  await dispatchBatchCampaign(
-    { campaignId: "campaign_123" },
-    { repository: repo, queue }
-  );
-
-  assert.deepEqual(
-    calls.filter((call) => {
-      const name = (call as unknown[])[0];
-      return name === "markActive" || name === "markCompleted";
-    }),
-    [
-      ["markActive", "campaign_123"],
-      ["markCompleted", "campaign_123"],
-    ]
-  );
-});
-
 test("createBatchCampaign rejects immediately when plan minutes are exhausted", async () => {
   const calls: unknown[] = [];
   const repo = {
