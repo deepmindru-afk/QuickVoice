@@ -262,6 +262,7 @@ export async function dispatchBatchCampaign(
       )
     )
   );
+  await repository.markCampaignCompleted(campaign.campaignId);
 }
 
 export async function dispatchBatchOutboundCall(args: { outboundId: string }) {
