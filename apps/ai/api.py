@@ -8,6 +8,9 @@ from pydantic import BaseModel
 
 from handlers.config_handler import get_config
 from handlers import kb_handler
+from handlers.voice_catalog import load_voice_catalog
+from handlers.voice_config_resolution import VoiceConfigValidationError, resolve_voice_config
+from handlers.voice_session_broker import VoiceSessionBroker, VoiceSessionBrokerError
 from utils.auth import is_explicit_dev_mode, verify_internal_headers
 
 
@@ -55,6 +58,34 @@ async def health_check():
 async def read_agent_config(agent_id: str, request: Request):
     _verify_internal(request)
     return await get_config(agent_id)
+
+
+# ── voice runtime ─────────────────────────────────────────────────────────────
+
+@app.get("/voice/catalog", tags=["Voice"])
+async def read_voice_catalog(request: Request):
+    _verify_internal(request)
+    return load_voice_catalog()
+
+
+@app.post("/voice/config/resolve", tags=["Voice"])
+async def resolve_voice_config_route(payload: dict[str, Any], request: Request):
+    _verify_internal(request)
+    try:
+        return {"config": resolve_voice_config(payload, load_voice_catalog())}
+    except VoiceConfigValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/voice/sessions", tags=["Voice"])
+async def create_voice_session(payload: dict[str, Any], request: Request):
+    _verify_internal(request)
+    try:
+        return await VoiceSessionBroker(catalog_loader=load_voice_catalog).create_session(payload)
+    except VoiceConfigValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except VoiceSessionBrokerError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 # ── KB processing ─────────────────────────────────────────────────────────────

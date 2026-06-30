@@ -23,6 +23,13 @@ router.get(
   agentController.getAgents
 );
 
+router.get(
+  "/voice/catalog",
+  authMiddleware,
+  requirePermission({ agentConfiguration: ["read"] }),
+  agentController.getVoiceCatalog
+);
+
 router.patch(
   "/:id",
   authMiddleware,

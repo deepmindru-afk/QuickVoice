@@ -27,6 +27,43 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(client.get("/health").status_code, 200)
                 self.assertEqual(client.get("/agents/agent_123/config").status_code, 401)
 
+    def test_voice_catalog_requires_internal_auth(self):
+        import api
+
+        with patch.dict(os.environ, {"INTERNAL_API_KEY": "internal-secret"}, clear=False):
+            with TestClient(api.app) as client:
+                response = client.get("/voice/catalog")
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_voice_catalog_returns_options_with_internal_auth(self):
+        import api
+
+        with patch.dict(os.environ, {"INTERNAL_API_KEY": "internal-secret"}, clear=False):
+            with TestClient(api.app) as client:
+                response = client.get(
+                    "/voice/catalog",
+                    headers={"x-internal-key": "internal-secret"},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("stt_models", response.json())
+
+    def test_voice_config_resolve_returns_resolved_config(self):
+        import api
+
+        with patch.dict(os.environ, {"INTERNAL_API_KEY": "internal-secret"}, clear=False):
+            with TestClient(api.app) as client:
+                response = client.post(
+                    "/voice/config/resolve",
+                    headers={"x-internal-key": "internal-secret"},
+                    json={"language": "hi", "tts": {"provider": "sarvam", "model": "bulbul:v3", "voice": "shubh"}},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["config"]["language"], "hi")
+        self.assertEqual(response.json()["config"]["tts"]["provider"], "sarvam")
+
     def test_kb_process_returns_accepted_job_and_status_exposes_results(self):
         import api
 

@@ -36,6 +36,15 @@ export const getAgents = authorized(async (req, res) => {
   });
 });
 
+export const getVoiceCatalog = authorized(async (_req, res) => {
+  const catalog = await agentService.getVoiceCatalog();
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Voice catalog fetched successfully",
+    data: catalog,
+  });
+});
+
 export const updateAgent = authorized(async (req, res) => {
   const agentId = req.params.id;
   if (typeof agentId !== "string" || agentId.length === 0) {

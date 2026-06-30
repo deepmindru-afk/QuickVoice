@@ -7,6 +7,7 @@ export const queryKeys = {
     list: () => [...queryKeys.agents.all, "list"] as const,
     detail: (id: string) => [...queryKeys.agents.all, "detail", id] as const,
     config: (id: string) => [...queryKeys.agents.all, "config", id] as const,
+    voiceCatalog: () => [...queryKeys.agents.all, "voiceCatalog"] as const,
   },
   numbers: {
     all: ["numbers"] as const,

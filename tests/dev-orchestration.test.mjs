@@ -4,6 +4,8 @@ import { constants } from "node:fs";
 import { relative } from "node:path";
 import { test } from "node:test";
 
+const REPO_SCAN_IGNORES = new Set([".git", ".next", "dist"]);
+
 async function text(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
 }
@@ -13,6 +15,20 @@ async function isExecutable(path) {
   await access(file, constants.X_OK);
   const info = await stat(file);
   return info.isFile();
+}
+
+async function* walkRepoFiles(url) {
+  for (const entry of await readdir(url, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      if (!REPO_SCAN_IGNORES.has(entry.name) && !entry.name.startsWith("node_modules")) {
+        yield* walkRepoFiles(new URL(`${entry.name}/`, url));
+      }
+      continue;
+    }
+    if (entry.isFile()) {
+      yield new URL(entry.name, url);
+    }
+  }
 }
 
 test("Taskfile exposes one-command dev orchestration", async () => {
@@ -154,7 +170,9 @@ test("root package exposes aggregate CI and test scripts", async () => {
 
   assert.equal(pkg.scripts.dev, "task up:dev");
   assert.equal(pkg.scripts["dev:turbo"], "turbo run dev");
-  assert.equal(pkg.scripts.test, "node --test tests/*.test.mjs && pnpm --filter server test");
+  assert.match(pkg.scripts.test, /node --test tests\/\*\.test\.mjs/);
+  assert.match(pkg.scripts.test, /node --test apps\/console\/tests\/\*\.test\.mjs/);
+  assert.match(pkg.scripts.test, /pnpm --filter server test/);
   assert.equal(pkg.scripts["ci:local"], "pnpm check:tasks && pnpm check:configs && pnpm lint && pnpm check-types && pnpm build && pnpm test && pnpm ci:python && pnpm ci:docker");
   assert.equal(pkg.scripts["check:tasks"], "node scripts/verify-turbo-tasks.mjs");
   assert.equal(pkg.scripts["audit:deps"], "node scripts/security-audit.mjs");
@@ -186,23 +204,18 @@ test("workspace packages expose expected Turborepo quality tasks", async () => {
 });
 
 test("pnpm lockfile is the only tracked package-manager lockfile", async () => {
-  const entries = await readdir(new URL("../", import.meta.url), {
-    recursive: true,
-    withFileTypes: true,
-  });
-  const root = new URL("../", import.meta.url).pathname;
-  const lockfiles = entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => {
-      const parent = entry.parentPath ?? entry.path ?? root;
-      return relative(root, `${parent}/${entry.name}`);
-    })
+  const root = new URL("../", import.meta.url);
+  const lockfiles = [];
+  for await (const file of walkRepoFiles(root)) {
+    lockfiles.push(relative(root.pathname, file.pathname));
+  }
+
+  const packageManagerLockfiles = lockfiles
     .filter((path) =>
       /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml)$/.test(path)
-    )
-    .filter((path) => !path.startsWith("node_modules/"));
+    );
 
-  assert.deepEqual(lockfiles.sort(), ["pnpm-lock.yaml"]);
+  assert.deepEqual(packageManagerLockfiles.sort(), ["pnpm-lock.yaml"]);
 });
 
 test("helper scripts are executable and wired for local dev", async () => {

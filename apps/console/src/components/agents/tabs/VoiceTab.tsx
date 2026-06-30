@@ -24,9 +24,11 @@ import {
 import {
     useAgentConfig,
     useSaveAgentConfig,
+    useVoiceCatalog,
 } from "@/src/hooks/queries/agents";
 import {
     COMMON_TIMEZONES,
+    buildVoiceOptionsFromCatalog,
     getDefaultSttModelForLanguage,
     getDefaultTtsModelForLanguage,
     getDefaultVoiceForTtsModel,
@@ -52,7 +54,15 @@ type FormValues = z.infer<typeof schema>;
 
 export function VoiceTab({ agentId }: { agentId: string }) {
     const { data: config, isLoading } = useAgentConfig(agentId);
+    const { data: voiceCatalog } = useVoiceCatalog();
     const save = useSaveAgentConfig(agentId);
+    const voiceOptions = useMemo(
+        () => (voiceCatalog ? buildVoiceOptionsFromCatalog(voiceCatalog) : null),
+        [voiceCatalog]
+    );
+    const languages = voiceOptions?.languages ?? LANGUAGES;
+    const timezones = voiceOptions?.timezones ?? COMMON_TIMEZONES;
+    const llmModels = voiceOptions?.llmModels ?? LLM_MODELS;
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -88,16 +98,16 @@ export function VoiceTab({ agentId }: { agentId: string }) {
     });
 
     const availableSttModels = useMemo(
-        () => getSttModelsForLanguage(selectedLanguage),
-        [selectedLanguage]
+        () => getSttModelsForLanguage(selectedLanguage, voiceOptions ?? undefined),
+        [selectedLanguage, voiceOptions]
     );
     const availableTtsModels = useMemo(
-        () => getTtsModelsForLanguage(selectedLanguage),
-        [selectedLanguage]
+        () => getTtsModelsForLanguage(selectedLanguage, voiceOptions ?? undefined),
+        [selectedLanguage, voiceOptions]
     );
     const availableVoices = useMemo(
-        () => getVoicesForTtsModel(selectedTtsModel, selectedLanguage),
-        [selectedLanguage, selectedTtsModel]
+        () => getVoicesForTtsModel(selectedTtsModel, selectedLanguage, voiceOptions ?? undefined),
+        [selectedLanguage, selectedTtsModel, voiceOptions]
     );
 
     useEffect(() => {
@@ -105,7 +115,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         const selectedTts = form.getValues("ttsModel");
 
         if (!availableSttModels.some((model) => model.id === selectedStt)) {
-            form.setValue("sttModel", getDefaultSttModelForLanguage(selectedLanguage), {
+            form.setValue("sttModel", getDefaultSttModelForLanguage(selectedLanguage, voiceOptions ?? undefined), {
                 shouldDirty: true,
                 shouldTouch: true,
                 shouldValidate: true,
@@ -113,13 +123,13 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         }
 
         if (!availableTtsModels.some((model) => model.id === selectedTts)) {
-            form.setValue("ttsModel", getDefaultTtsModelForLanguage(selectedLanguage), {
+            form.setValue("ttsModel", getDefaultTtsModelForLanguage(selectedLanguage, voiceOptions ?? undefined), {
                 shouldDirty: true,
                 shouldTouch: true,
                 shouldValidate: true,
             });
         }
-    }, [availableSttModels, availableTtsModels, form, selectedLanguage]);
+    }, [availableSttModels, availableTtsModels, form, selectedLanguage, voiceOptions]);
 
     useEffect(() => {
         const selectedVoice = form.getValues("voiceId");
@@ -127,14 +137,14 @@ export function VoiceTab({ agentId }: { agentId: string }) {
 
         form.setValue(
             "voiceId",
-            getDefaultVoiceForTtsModel(selectedTtsModel, selectedLanguage),
+            getDefaultVoiceForTtsModel(selectedTtsModel, selectedLanguage, voiceOptions ?? undefined),
             {
                 shouldDirty: true,
                 shouldTouch: true,
                 shouldValidate: true,
             }
         );
-    }, [availableVoices, form, selectedLanguage, selectedTtsModel]);
+    }, [availableVoices, form, selectedLanguage, selectedTtsModel, voiceOptions]);
 
     async function onSubmit(values: FormValues) {
         await save.mutateAsync(mergeConfig(config, values));
@@ -164,7 +174,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {LANGUAGES.map((language) => (
+                                            {languages.map((language) => (
                                                 <SelectItem key={language.code} value={language.code}>
                                                     {language.label}
                                                 </SelectItem>
@@ -188,7 +198,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {COMMON_TIMEZONES.map((timezone) => (
+                                            {timezones.map((timezone) => (
                                                 <SelectItem key={timezone} value={timezone}>
                                                     {timezone}
                                                 </SelectItem>
@@ -247,7 +257,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {LLM_MODELS.map((model) => (
+                                            {llmModels.map((model) => (
                                                 <SelectItem key={model.id} value={model.id}>
                                                     {model.label}
                                                 </SelectItem>

@@ -38,6 +38,14 @@ export function useAgentConfig(id: string) {
   });
 }
 
+export function useVoiceCatalog() {
+  return useQuery({
+    queryKey: queryKeys.agents.voiceCatalog(),
+    queryFn: () => agentsApi.getVoiceCatalog(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateAgent() {
   const qc = useQueryClient();
   return useMutation({

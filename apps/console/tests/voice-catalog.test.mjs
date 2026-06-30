@@ -1,0 +1,82 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+import vm from "node:vm";
+import ts from "typescript";
+
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+
+function plain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function loadVoicesModule() {
+  const source = readFileSync(join(root, "src/lib/data/voices.ts"), "utf8");
+  const compiled = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  const cjsModule = { exports: {} };
+
+  vm.runInNewContext(compiled, {
+    exports: cjsModule.exports,
+    module: cjsModule,
+  });
+
+  return cjsModule.exports;
+}
+
+test("buildVoiceOptionsFromCatalog maps AI catalog values to console dropdown options", () => {
+  const { buildVoiceOptionsFromCatalog } = loadVoicesModule();
+
+  const options = buildVoiceOptionsFromCatalog({
+    version: "2026-06-30",
+    defaults: {},
+    languages: [{ id: "en-IN", label: "English (India)", locale: "en-IN" }],
+    timezones: ["UTC", "Asia/Kolkata"],
+    stt_models: [
+      {
+        provider: "deepgram",
+        id: "nova-3",
+        label: "Deepgram Nova-3",
+        languages: ["en-IN"],
+      },
+    ],
+    llm_models: [
+      {
+        provider: "bedrock",
+        id: "us.amazon.nova-lite-v1:0",
+        label: "Amazon Nova Lite",
+      },
+    ],
+    tts_models: [
+      {
+        provider: "elevenlabs",
+        id: "eleven_flash_v2_5",
+        label: "ElevenLabs Flash v2.5",
+        languages: ["en-IN"],
+      },
+    ],
+    voices: [
+      {
+        provider: "elevenlabs",
+        id: "EXAVITQu4vr4xnSDxMaL",
+        label: "Sarah",
+        languages: ["en-IN"],
+        tts_models: ["eleven_flash_v2_5"],
+      },
+    ],
+  });
+
+  assert.deepEqual(plain(options.languages), [{ code: "en-IN", label: "English (India)" }]);
+  assert.deepEqual(plain(options.timezones), ["UTC", "Asia/Kolkata"]);
+  assert.equal(options.sttModels[0].id, "deepgram/nova-3");
+  assert.equal(options.llmModels[0].id, "bedrock/us.amazon.nova-lite-v1:0");
+  assert.equal(options.ttsModels[0].id, "elevenlabs/eleven_flash_v2_5");
+  assert.equal(options.voices[0].id, "EXAVITQu4vr4xnSDxMaL");
+  assert.deepEqual(plain(options.voices[0].ttsModels), ["elevenlabs/eleven_flash_v2_5"]);
+});

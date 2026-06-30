@@ -71,6 +71,37 @@ export interface AgentConfiguration {
   timezone: string;
 }
 
+export interface VoiceCatalog {
+  version: string;
+  defaults: Record<string, unknown>;
+  languages: Array<{ id: string; label: string; locale?: string }>;
+  timezones: string[];
+  stt_models: Array<{
+    provider: string;
+    id: string;
+    label: string;
+    languages?: string[];
+  }>;
+  llm_models: Array<{
+    provider: string;
+    id: string;
+    label: string;
+  }>;
+  tts_models: Array<{
+    provider: string;
+    id: string;
+    label: string;
+    languages?: string[];
+  }>;
+  voices: Array<{
+    provider: string;
+    id: string;
+    label: string;
+    languages?: string[];
+    tts_models?: string[];
+  }>;
+}
+
 export interface WebhookConfig {
   webhook_url: string;
   method?: "GET" | "POST";

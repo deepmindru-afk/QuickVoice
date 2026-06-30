@@ -6,9 +6,49 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
 from handlers.worker_handler import apply_metadata_overrides, build_call_context, parse_metadata, speak_first_message
+from main import attach_resolved_voice_config, build_session_provider_kwargs, provider_section
 
 
 class WorkerHandlerTests(unittest.TestCase):
+    def test_provider_section_parses_supported_provider_model_values(self):
+        self.assertEqual(provider_section("deepgram/nova-3"), {"provider": "deepgram", "model": "nova-3"})
+        self.assertEqual(provider_section("bedrock/us.amazon.nova-micro-v1:0"), {"provider": "bedrock", "model": "us.amazon.nova-micro-v1:0"})
+        self.assertIsNone(provider_section("google/gemini-2.5-flash"))
+
+    def test_attach_resolved_voice_config_preserves_existing_inference_config_when_unsupported(self):
+        config = attach_resolved_voice_config(
+            {
+                "agent_language": "en-US",
+                "stt_model": "deepgram/nova-3",
+                "llm_model": "google/gemini-2.5-flash",
+                "tts_model": "deepgram/aura-2",
+                "voice": "asteria",
+            }
+        )
+
+        self.assertNotIn("voice_config", config)
+
+    def test_build_session_provider_kwargs_uses_existing_inference_without_voice_config(self):
+        from unittest.mock import patch
+
+        with patch.dict(
+            os.environ,
+            {"LIVEKIT_API_KEY": "test-key", "LIVEKIT_API_SECRET": "test-secret"},
+            clear=False,
+        ):
+            kwargs = build_session_provider_kwargs(
+                {
+                    "agent_language": "en-US",
+                    "stt_model": "deepgram/nova-3",
+                    "llm_model": "google/gemini-2.5-flash",
+                    "llm_provider": "google",
+                    "tts_model": "deepgram/aura-2",
+                    "voice": "aura-2-asteria-en",
+                }
+            )
+
+        self.assertEqual(set(kwargs.keys()), {"stt", "llm", "tts"})
+
     def test_parse_metadata_returns_empty_dict_for_missing_or_bad_json(self):
         self.assertEqual(parse_metadata(""), {})
         self.assertEqual(parse_metadata("not-json"), {})

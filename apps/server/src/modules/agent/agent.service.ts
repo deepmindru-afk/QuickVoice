@@ -1,5 +1,6 @@
 import { Prisma } from "../../../prisma/generated/prisma/client.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
+import CustomApiError from "../../common/errors/customApiError.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
 import { generateSlug } from "../../common/utils/generateSlug.js";
 import { assertSafeRemoteUrl } from "../../lib/url-safety.js";
@@ -13,6 +14,16 @@ import {
 import * as agentRepository from "./agent.repository.js";
 import type { ConfigureAgentArgs, CreateAgentArgs, UpdateAgentInput } from "./agent.schema.js";
 
+export type VoiceCatalog = {
+  version: string;
+  defaults: Record<string, unknown>;
+  languages: Array<{ id: string; label: string; locale?: string }>;
+  timezones: string[];
+  stt_models: Array<Record<string, unknown>>;
+  llm_models: Array<Record<string, unknown>>;
+  tts_models: Array<Record<string, unknown>>;
+  voices: Array<Record<string, unknown>>;
+};
 
 export const createAgent = async (args: CreateAgentArgs) => {
 
@@ -37,6 +48,20 @@ export const createAgent = async (args: CreateAgentArgs) => {
 
 export const getAgents = async (organizationId: string) => {
   return agentRepository.getAgents(organizationId);
+};
+
+export const getVoiceCatalog = async (): Promise<VoiceCatalog> => {
+  const aiApiUrl = process.env.AI_API_URL ?? "http://localhost:5555";
+  const internalApiKey = process.env.INTERNAL_API_KEY ?? "";
+  const response = await fetch(`${aiApiUrl.replace(/\/$/, "")}/voice/catalog`, {
+    headers: { "x-internal-key": internalApiKey },
+  });
+
+  if (!response.ok) {
+    throw new CustomApiError("Voice catalog is unavailable", 503);
+  }
+
+  return (await response.json()) as VoiceCatalog;
 };
 
 export const updateAgent = async (

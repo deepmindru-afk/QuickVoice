@@ -3,6 +3,8 @@
 // provider-curated list; for now these IDs mirror the ones the LiveKit agent
 // runner accepts.
 
+import type { VoiceCatalog } from "@/src/lib/api/types";
+
 export const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "es", label: "Spanish" },
@@ -15,7 +17,7 @@ export const LANGUAGES = [
 const ALL_LANGUAGE_CODES = LANGUAGES.map((language) => language.code);
 
 export type VoiceGender = "feminine" | "masculine" | "neutral";
-export type LanguageCode = (typeof LANGUAGES)[number]["code"];
+export type LanguageCode = string;
 
 export interface ModelOption {
   id: string;
@@ -38,6 +40,15 @@ export interface Voice {
   ttsModels: string[];
   styles: string[];
   useCases: string[];
+}
+
+export interface VoiceOptions {
+  languages: Array<{ code: string; label: string }>;
+  timezones: string[];
+  sttModels: LanguageAwareModelOption[];
+  llmModels: ModelOption[];
+  ttsModels: LanguageAwareModelOption[];
+  voices: Voice[];
 }
 
 export const VOICES: Voice[] = [
@@ -276,14 +287,22 @@ function supportsLanguage(
   return option.languages.includes(normalizeLanguageCode(language));
 }
 
-export function getVoicesForTtsModel(ttsModel: string, language = "en") {
-  return VOICES.filter(
+export function getVoicesForTtsModel(
+  ttsModel: string,
+  language = "en",
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return options.voices.filter(
     (voice) => voice.ttsModels.includes(ttsModel) && supportsLanguage(voice, language)
   );
 }
 
-export function getDefaultVoiceForTtsModel(ttsModel: string, language = "en") {
-  return getVoicesForTtsModel(ttsModel, language)[0]?.id ?? VOICES[0]?.id ?? "";
+export function getDefaultVoiceForTtsModel(
+  ttsModel: string,
+  language = "en",
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return getVoicesForTtsModel(ttsModel, language, options)[0]?.id ?? options.voices[0]?.id ?? "";
 }
 
 export const LLM_MODELS: ModelOption[] = [
@@ -430,18 +449,88 @@ export const TTS_MODELS: LanguageAwareModelOption[] = [
 
 ];
 
-export function getSttModelsForLanguage(language: string) {
-  return STT_MODELS.filter((model) => supportsLanguage(model, language));
+export const STATIC_VOICE_OPTIONS: VoiceOptions = {
+  languages: [...LANGUAGES],
+  timezones: [...COMMON_TIMEZONES],
+  sttModels: [...STT_MODELS],
+  llmModels: [...LLM_MODELS],
+  ttsModels: [...TTS_MODELS],
+  voices: [...VOICES],
+};
+
+function providerModelId(provider: string, id: string) {
+  return `${provider}/${id}`;
 }
 
-export function getTtsModelsForLanguage(language: string) {
-  return TTS_MODELS.filter((model) => supportsLanguage(model, language));
+function catalogLanguages(languages: string[] | undefined) {
+  return languages?.length ? languages : ["en"];
 }
 
-export function getDefaultSttModelForLanguage(language: string) {
-  return getSttModelsForLanguage(language)[0]?.id ?? STT_MODELS[0]?.id ?? "";
+export function buildVoiceOptionsFromCatalog(catalog: VoiceCatalog): VoiceOptions {
+  return {
+    languages: catalog.languages.map((language) => ({
+      code: language.id,
+      label: language.label,
+    })),
+    timezones: catalog.timezones,
+    sttModels: catalog.stt_models.map((model) => ({
+      id: providerModelId(model.provider, model.id),
+      label: model.label,
+      provider: model.provider,
+      languages: catalogLanguages(model.languages),
+    })),
+    llmModels: catalog.llm_models.map((model) => ({
+      id: providerModelId(model.provider, model.id),
+      label: model.label,
+      provider: model.provider,
+    })),
+    ttsModels: catalog.tts_models.map((model) => ({
+      id: providerModelId(model.provider, model.id),
+      label: model.label,
+      provider: model.provider,
+      languages: catalogLanguages(model.languages),
+    })),
+    voices: catalog.voices.map((voice) => ({
+      id: voice.id,
+      name: voice.label,
+      provider: voice.provider,
+      gender: "neutral",
+      locale: voice.languages?.[0] ?? "en",
+      accent: "",
+      languages: catalogLanguages(voice.languages),
+      ttsModels: (voice.tts_models ?? []).map((model) =>
+        providerModelId(voice.provider, model)
+      ),
+      styles: [],
+      useCases: [],
+    })),
+  };
 }
 
-export function getDefaultTtsModelForLanguage(language: string) {
-  return getTtsModelsForLanguage(language)[0]?.id ?? TTS_MODELS[0]?.id ?? "";
+export function getSttModelsForLanguage(
+  language: string,
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return options.sttModels.filter((model) => supportsLanguage(model, language));
+}
+
+export function getTtsModelsForLanguage(
+  language: string,
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return options.ttsModels.filter((model) => supportsLanguage(model, language));
+}
+
+export function getDefaultSttModelForLanguage(
+  language: string,
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return getSttModelsForLanguage(language, options)[0]?.id ?? options.sttModels[0]?.id ?? "";
+}
+
+export function getDefaultTtsModelForLanguage(
+  language: string,
+  options: VoiceOptions = STATIC_VOICE_OPTIONS
+) {
+  return getTtsModelsForLanguage(language, options)[0]?.id ?? options.ttsModels[0]?.id ?? "";
 }

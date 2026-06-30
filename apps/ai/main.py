@@ -26,6 +26,10 @@ from handlers.worker_handler import (
     parse_metadata,
     speak_first_message,
 )
+from handlers.voice_catalog import load_voice_catalog
+from handlers.voice_config_resolution import resolve_voice_config
+from handlers.voice_provider_adapters import ProviderAdapterError, build_voice_provider_adapters
+from handlers.voice_worker_metadata import is_voice_session_metadata, parse_voice_session_metadata
 from utils.logger import logger
 from utils.logger import redact_sensitive
 import asyncio
@@ -62,6 +66,65 @@ def build_agent_instructions(config: dict) -> str:
         instructions += RAG_TOOL_INSTRUCTIONS
     instructions += build_mcp_tool_instructions(config.get("mcp_connections") or [])
     return instructions
+
+
+def provider_section(value: str | None):
+    if not value or "/" not in value:
+        return None
+    provider, model = value.split("/", 1)
+    if provider in {"deepgram", "sarvam", "bedrock", "elevenlabs"}:
+        return {"provider": provider, "model": model}
+    return None
+
+
+def attach_resolved_voice_config(config: dict) -> dict:
+    if isinstance(config.get("voice_config"), dict):
+        return config
+
+    tts_section = provider_section(config.get("tts_model"))
+    if tts_section is not None:
+        tts_section = {**tts_section, "voice": config.get("voice")}
+    try:
+        voice_config = resolve_voice_config(
+            {
+                "language": str(config.get("agent_language", "en-US")).split("-", 1)[0],
+                "timezone": config.get("timezone"),
+                "stt": provider_section(config.get("stt_model")),
+                "llm": provider_section(config.get("llm_model")),
+                "tts": tts_section,
+            },
+            load_voice_catalog(),
+        )
+    except Exception:
+        return config
+
+    updated = dict(config)
+    updated["voice_config"] = voice_config
+    return updated
+
+
+def build_session_provider_kwargs(config: dict) -> dict:
+    voice_config = config.get("voice_config")
+    if isinstance(voice_config, dict):
+        adapters = build_voice_provider_adapters(voice_config)
+        logger.info("Voice provider adapters: {}", redact_sensitive(adapters.summary))
+        return {"stt": adapters.stt, "llm": adapters.llm, "tts": adapters.tts}
+
+    return {
+        "stt": inference.STT(
+            model=config.get("stt_model", "deepgram/nova-3"),
+            language=LanguageCode(config.get("agent_language", "en-US")),
+        ),
+        "llm": inference.LLM(
+            model=config.get("llm_model", "google/gemini-2.5-flash"),
+            provider=config.get("llm_provider", "google"),
+        ),
+        "tts": inference.TTS(
+            model=config.get("tts_model", "deepgram/aura-2"),
+            voice=config.get("voice", "aura-2-asteria-en"),
+            language=LanguageCode(config.get("agent_language", "en-US")),
+        ),
+    }
 
 
 def run_combined_server() -> int:
@@ -226,24 +289,41 @@ async def entrypoint(ctx: JobContext):
     logger.info("Entrypoint called with room: {}", redact_sensitive(ctx.room.name))
 
     await ctx.connect()
-    metadata = parse_metadata(ctx.job.metadata or "")
-    try:
-        participant = await asyncio.wait_for(ctx.wait_for_participant(), timeout=10)
-        participant_attributes = getattr(participant, "attributes", {}) or {}
-        metadata.update(participant_attributes)
-    except asyncio.TimeoutError:
-        logger.warning("Timed out waiting for room participant before loading config")
-    except RuntimeError as error:
-        logger.warning(f"Could not read room participant before loading config: {error}")
+    raw_metadata = ctx.job.metadata or ""
+    if is_voice_session_metadata(raw_metadata):
+        voice_metadata = parse_voice_session_metadata(raw_metadata)
+        metadata = voice_metadata.client_metadata
+        call_context = build_call_context(ctx.room.name, metadata)
+        if not call_context.get("agent_id") and metadata.get("agent_id"):
+            call_context["agent_id"] = metadata["agent_id"]
+        config = await get_config(
+            call_context.get("agent_id"),
+            agent_number=call_context.get("agent_number"),
+            allow_default_config=True,
+        )
+        config = apply_metadata_overrides(config, metadata)
+        config["voice_config"] = voice_metadata.config
+        config["agent_language"] = voice_metadata.config["language"]
+    else:
+        metadata = parse_metadata(raw_metadata)
+        try:
+            participant = await asyncio.wait_for(ctx.wait_for_participant(), timeout=10)
+            participant_attributes = getattr(participant, "attributes", {}) or {}
+            metadata.update(participant_attributes)
+        except asyncio.TimeoutError:
+            logger.warning("Timed out waiting for room participant before loading config")
+        except RuntimeError as error:
+            logger.warning(f"Could not read room participant before loading config: {error}")
 
-    call_context = build_call_context(ctx.room.name, metadata)
-    logger.info("Call context: {}", redact_sensitive(call_context))
+        call_context = build_call_context(ctx.room.name, metadata)
+        logger.info("Call context: {}", redact_sensitive(call_context))
 
-    config = await get_config(
-        call_context.get("agent_id"),
-        agent_number=call_context.get("agent_number"),
-    )
-    config = apply_metadata_overrides(config, metadata)
+        config = await get_config(
+            call_context.get("agent_id"),
+            agent_number=call_context.get("agent_number"),
+        )
+        config = apply_metadata_overrides(config, metadata)
+        config = attach_resolved_voice_config(config)
     logger.info("Config loaded for agent: {}", redact_sensitive(config.get("agent_id")))
 
     try:
@@ -256,20 +336,15 @@ async def entrypoint(ctx: JobContext):
     if not call_context.get("provider") and config.get("provider"):
         call_context["provider"] = config["provider"]
 
+    try:
+        provider_kwargs = build_session_provider_kwargs(config)
+    except ProviderAdapterError as error:
+        logger.error("Voice provider adapter error: {}", redact_sensitive(str(error)))
+        ctx.shutdown(reason=f"provider adapter error: {error}")
+        return
+
     session = AgentSession(
-        stt=inference.STT(
-            model=config.get("stt_model", "deepgram/nova-3"),
-            language=LanguageCode(config.get("agent_language", "en-US")),
-        ),
-        llm=inference.LLM(
-            model=config.get("llm_model", "google/gemini-2.5-flash"),
-            provider=config.get("llm_provider", "google"),
-        ),
-        tts=inference.TTS(
-            model=config.get("tts_model", "deepgram/aura-2"),
-            voice=config.get("voice", "aura-2-asteria-en"),
-            language=LanguageCode(config.get("agent_language", "en-US")),
-        ),
+        **provider_kwargs,
         vad=silero.VAD.load(),
         turn_handling=TurnHandlingOptions(turn_detection=MultilingualModel()),
         preemptive_generation=config.get("preemptive_generation", True),

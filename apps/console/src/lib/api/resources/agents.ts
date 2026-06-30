@@ -3,6 +3,7 @@ import type {
   Agent,
   AgentConfiguration,
   ApiEnvelope,
+  VoiceCatalog,
 } from "@/src/lib/api/types";
 
 // organizationId + userId are injected server-side from the session.
@@ -90,6 +91,12 @@ export const agentsApi = {
   getConfig: async (id: string): Promise<AgentConfiguration | null> => {
     const res = await apiClient.get<ApiEnvelope<AgentConfiguration | null>>(
       `/agents/${id}/config`
+    );
+    return res.data.data;
+  },
+  getVoiceCatalog: async (): Promise<VoiceCatalog> => {
+    const res = await apiClient.get<ApiEnvelope<VoiceCatalog>>(
+      "/agents/voice/catalog"
     );
     return res.data.data;
   },

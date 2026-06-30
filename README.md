@@ -130,6 +130,50 @@ Voice agents are becoming core business infrastructure. Hosted APIs are useful w
 - `packages/eslint-config` and `packages/typescript-config` - Shared monorepo linting and TypeScript configuration.
 - `scripts`, `Taskfile.yml`, and `docker-compose.dev.yml` - Local orchestration for Node services, Python services, Prisma, Postgres, and Redis.
 
+## Voice Provider Runtime
+
+QuickVoice keeps the LiveKit voice runtime inside `apps/ai`, so a fork can bring its own provider credentials and run the agent stack without a separate voice-platform service. The AI API exposes the voice catalog and session broker behind the existing internal auth header:
+
+- `GET /voice/catalog`
+- `POST /voice/config/resolve`
+- `POST /voice/sessions`
+
+The default catalog supports Deepgram and Sarvam for STT, AWS Bedrock for LLMs, and ElevenLabs or Sarvam for TTS. Override the built-in catalog with `VOICE_CATALOG_PATH` if your fork needs different providers, model labels, languages, or voices.
+
+Add real values to `apps/ai/.env.dev` before running live voice sessions:
+
+```sh
+INTERNAL_API_KEY=change-me
+LIVEKIT_URL=wss://your-livekit-host
+LIVEKIT_API_KEY=your-livekit-key
+LIVEKIT_API_SECRET=your-livekit-secret
+AWS_ACCESS_KEY_ID=your-aws-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret
+AWS_REGION=us-east-1
+DEEPGRAM_API_KEY=your-deepgram-key
+ELEVENLABS_API_KEY=your-elevenlabs-key
+ELEVENLABS_DEFAULT_VOICE_ID=your-voice-id
+SARVAM_API_KEY=your-sarvam-key
+```
+
+Run the AI API and worker, then create a session through the embedded broker:
+
+```sh
+task ai:api
+task ai:worker
+curl -X POST http://localhost:5555/voice/sessions \
+  -H "content-type: application/json" \
+  -H "x-internal-key: $INTERNAL_API_KEY" \
+  -d '{"participant":{"identity":"local-test","name":"Local Test"}}'
+```
+
+For an end-to-end LiveKit smoke that joins the room, publishes probe audio, waits for agent audio, and cleans up the dispatch and room:
+
+```sh
+cd apps/ai
+.venv/bin/python scripts/phase2d_voice_smoke.py --env-file .env.dev
+```
+
 ## Stack
 
 - Product and marketing: Next.js, React, Tailwind CSS
