@@ -2,6 +2,7 @@ import { apiClient } from "@/src/lib/api/client";
 import type {
   Agent,
   AgentConfiguration,
+  AgentPreviewSession,
   ApiEnvelope,
   VoiceCatalog,
 } from "@/src/lib/api/types";
@@ -81,7 +82,7 @@ export const agentsApi = {
   update: async (id: string, input: UpdateAgentInput): Promise<Agent> => {
     const res = await apiClient.patch<ApiEnvelope<Agent>>(
       `/agents/${id}`,
-      input
+      input,
     );
     return res.data.data;
   },
@@ -90,23 +91,29 @@ export const agentsApi = {
   },
   getConfig: async (id: string): Promise<AgentConfiguration | null> => {
     const res = await apiClient.get<ApiEnvelope<AgentConfiguration | null>>(
-      `/agents/${id}/config`
+      `/agents/${id}/config`,
     );
     return res.data.data;
   },
   getVoiceCatalog: async (): Promise<VoiceCatalog> => {
     const res = await apiClient.get<ApiEnvelope<VoiceCatalog>>(
-      "/agents/voice/catalog"
+      "/agents/voice/catalog",
+    );
+    return res.data.data;
+  },
+  createPreviewSession: async (id: string): Promise<AgentPreviewSession> => {
+    const res = await apiClient.post<ApiEnvelope<AgentPreviewSession>>(
+      `/agents/${id}/preview-session`,
     );
     return res.data.data;
   },
   saveConfig: async (
     id: string,
-    input: ConfigureAgentInput
+    input: ConfigureAgentInput,
   ): Promise<AgentConfiguration> => {
     const res = await apiClient.post<ApiEnvelope<AgentConfiguration>>(
       `/agents/${id}/config`,
-      input
+      input,
     );
     return res.data.data;
   },

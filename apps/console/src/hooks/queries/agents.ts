@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import {
@@ -25,7 +21,8 @@ export function useAgents() {
 export function useAgent(id: string) {
   return useQuery({
     queryKey: queryKeys.agents.detail(id),
-    queryFn: () => agentsApi.list().then((all) => all.find((a) => a.agentId === id) ?? null),
+    queryFn: () =>
+      agentsApi.list().then((all) => all.find((a) => a.agentId === id) ?? null),
     enabled: !!id,
   });
 }
@@ -43,6 +40,16 @@ export function useVoiceCatalog() {
     queryKey: queryKeys.agents.voiceCatalog(),
     queryFn: () => agentsApi.getVoiceCatalog(),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateAgentPreviewSession(agentId: string) {
+  return useMutation({
+    mutationKey: queryKeys.agents.previewSession(agentId),
+    mutationFn: () => agentsApi.createPreviewSession(agentId),
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not start preview");
+    },
   });
 }
 

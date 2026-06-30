@@ -60,7 +60,9 @@ def build_call_context(room_name: str, metadata: dict[str, Any]) -> dict[str, An
 
 def apply_metadata_overrides(config: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
     updated = dict(config)
-    if _pick(metadata, "direction", "callDirection") != "outbound":
+    mode = _pick(metadata, "mode")
+    direction = _pick(metadata, "direction", "callDirection")
+    if direction != "outbound" and mode != "preview":
         return updated
 
     first_message = _pick(metadata, "first_message", "firstMessage")

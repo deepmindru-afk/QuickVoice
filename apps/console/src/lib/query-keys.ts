@@ -7,6 +7,8 @@ export const queryKeys = {
     list: () => [...queryKeys.agents.all, "list"] as const,
     detail: (id: string) => [...queryKeys.agents.all, "detail", id] as const,
     config: (id: string) => [...queryKeys.agents.all, "config", id] as const,
+    previewSession: (id: string) =>
+      [...queryKeys.agents.all, "previewSession", id] as const,
     voiceCatalog: () => [...queryKeys.agents.all, "voiceCatalog"] as const,
   },
   numbers: {
@@ -20,7 +22,8 @@ export const queryKeys = {
     list: (params: CallListParams) =>
       [...queryKeys.calls.all, "list", params] as const,
     detail: (id: string) => [...queryKeys.calls.all, "detail", id] as const,
-    transcript: (id: string) => [...queryKeys.calls.all, "transcript", id] as const,
+    transcript: (id: string) =>
+      [...queryKeys.calls.all, "transcript", id] as const,
   },
   outbound: {
     all: ["outbound"] as const,
@@ -30,7 +33,8 @@ export const queryKeys = {
   },
   kb: {
     all: ["kb"] as const,
-    list: (agentId?: string) => [...queryKeys.kb.all, "list", agentId ?? null] as const,
+    list: (agentId?: string) =>
+      [...queryKeys.kb.all, "list", agentId ?? null] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,
@@ -55,13 +59,15 @@ export const queryKeys = {
     all: ["tools"] as const,
     list: () => [...queryKeys.tools.all, "list"] as const,
     detail: (id: string) => [...queryKeys.tools.all, "detail", id] as const,
-    agentTools: (agentId: string) => [...queryKeys.tools.all, "agent", agentId] as const,
+    agentTools: (agentId: string) =>
+      [...queryKeys.tools.all, "agent", agentId] as const,
   },
   mcp: {
     all: ["mcp"] as const,
     catalog: (params?: unknown) =>
       [...queryKeys.mcp.all, "catalog", params ?? {}] as const,
     connections: () => [...queryKeys.mcp.all, "connections"] as const,
-    agentConnections: (agentId: string) => [...queryKeys.mcp.all, "agent", agentId] as const,
+    agentConnections: (agentId: string) =>
+      [...queryKeys.mcp.all, "agent", agentId] as const,
   },
 };

@@ -1,18 +1,21 @@
+import { randomUUID } from "node:crypto";
 import { Prisma } from "../../../prisma/generated/prisma/client.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import CustomApiError from "../../common/errors/customApiError.js";
 import { NotFoundError } from "../../common/errors/notFound.js";
 import { generateSlug } from "../../common/utils/generateSlug.js";
 import { assertSafeRemoteUrl } from "../../lib/url-safety.js";
-import {
-  redactSecretFields,
-} from "../../lib/secrets.js";
+import { redactSecretFields } from "../../lib/secrets.js";
 import {
   resolveSecretReferences,
   storeSecretReferences,
 } from "../secrets/secret-store.service.js";
 import * as agentRepository from "./agent.repository.js";
-import type { ConfigureAgentArgs, CreateAgentArgs, UpdateAgentInput } from "./agent.schema.js";
+import type {
+  ConfigureAgentArgs,
+  CreateAgentArgs,
+  UpdateAgentInput,
+} from "./agent.schema.js";
 
 export type VoiceCatalog = {
   version: string;
@@ -25,20 +28,70 @@ export type VoiceCatalog = {
   voices: Array<Record<string, unknown>>;
 };
 
-export const createAgent = async (args: CreateAgentArgs) => {
+export const PREVIEW_SESSION_TTL_SECONDS = 10800;
 
+type PreviewConfigSource = {
+  agentId: string;
+  organizationId: string;
+  agent_language: string;
+  timezone: string;
+  sttModel: string;
+  llmModel: string;
+  ttsModel: string;
+  voiceId: string;
+  firstMessage: string;
+  systemPrompt: string;
+};
+
+export type AgentPreviewSessionPayload = {
+  room: { name: string };
+  participant: { identity: string; name: string };
+  config: {
+    language: string;
+    timezone: string;
+    stt: { model: string };
+    llm: { model: string };
+    tts: { model: string; voice: string };
+  };
+  metadata: {
+    mode: "preview";
+    agent_id: string;
+    organization_id: string;
+    first_message: string;
+    system_prompt: string;
+    retention: "ephemeral";
+  };
+  ttl_seconds: number;
+};
+
+export type AgentPreviewSession = {
+  livekitUrl: string;
+  roomName: string;
+  participant: {
+    identity: string;
+    name: string;
+    token: string;
+    ttlSeconds: number;
+  };
+  agent: {
+    name: string;
+    dispatchId: string;
+  };
+  expiresAt: string;
+};
+
+export const createAgent = async (args: CreateAgentArgs) => {
   const agentSlug = generateSlug(args.name);
   const existing = await agentRepository.findBySlug(
     args.organizationId,
-    agentSlug
+    agentSlug,
   );
 
   if (existing) {
     throw new BadRequestError(
-      "An agent with a similar name already exists in this organization"
+      "An agent with a similar name already exists in this organization",
     );
   }
-
 
   return agentRepository.createAgent({
     ...args,
@@ -64,10 +117,120 @@ export const getVoiceCatalog = async (): Promise<VoiceCatalog> => {
   return (await response.json()) as VoiceCatalog;
 };
 
+export const createAgentPreviewSession = async (
+  organizationId: string,
+  agentId: string,
+): Promise<AgentPreviewSession> => {
+  const configuration = await getAgentConfig(organizationId, agentId);
+  return requestAgentPreviewSession(
+    buildAgentPreviewSessionPayload({
+      agentId,
+      organizationId,
+      agent_language: configuration.agent_language,
+      timezone: configuration.timezone,
+      sttModel: configuration.sttModel,
+      llmModel: configuration.llmModel,
+      ttsModel: configuration.ttsModel,
+      voiceId: configuration.voiceId,
+      firstMessage: configuration.firstMessage,
+      systemPrompt: configuration.systemPrompt,
+    }),
+  );
+};
+
+export const buildAgentPreviewSessionPayload = (
+  configuration: PreviewConfigSource,
+): AgentPreviewSessionPayload => {
+  const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
+  return {
+    room: { name: `preview-${suffix}` },
+    participant: {
+      identity: `preview-user-${suffix}`,
+      name: "Preview user",
+    },
+    config: {
+      language: configuration.agent_language,
+      timezone: configuration.timezone,
+      stt: { model: configuration.sttModel },
+      llm: { model: configuration.llmModel },
+      tts: {
+        model: configuration.ttsModel,
+        voice: configuration.voiceId,
+      },
+    },
+    metadata: {
+      mode: "preview",
+      agent_id: configuration.agentId,
+      organization_id: configuration.organizationId,
+      first_message: configuration.firstMessage,
+      system_prompt: configuration.systemPrompt,
+      retention: "ephemeral",
+    },
+    ttl_seconds: PREVIEW_SESSION_TTL_SECONDS,
+  };
+};
+
+export const requestAgentPreviewSession = async (
+  payload: AgentPreviewSessionPayload,
+): Promise<AgentPreviewSession> => {
+  const aiApiUrl = process.env.AI_API_URL ?? "http://localhost:5555";
+  const internalApiKey = process.env.INTERNAL_API_KEY ?? "";
+  const response = await fetch(
+    `${aiApiUrl.replace(/\/$/, "")}/voice/sessions`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-internal-key": internalApiKey,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new CustomApiError("Agent preview is unavailable", 503);
+  }
+
+  const body = (await response.json()) as {
+    livekit_url?: string;
+    room?: { name?: string };
+    participant?: {
+      identity?: string;
+      name?: string;
+      token?: string;
+      ttl_seconds?: number;
+    };
+    agent?: {
+      name?: string;
+      dispatch_id?: string;
+    };
+  };
+
+  const ttlSeconds = body.participant?.ttl_seconds ?? payload.ttl_seconds;
+  return {
+    livekitUrl: requireString(body.livekit_url, "livekit_url"),
+    roomName: requireString(body.room?.name, "room.name"),
+    participant: {
+      identity: requireString(
+        body.participant?.identity,
+        "participant.identity",
+      ),
+      name: requireString(body.participant?.name, "participant.name"),
+      token: requireString(body.participant?.token, "participant.token"),
+      ttlSeconds,
+    },
+    agent: {
+      name: requireString(body.agent?.name, "agent.name"),
+      dispatchId: requireString(body.agent?.dispatch_id, "agent.dispatch_id"),
+    },
+    expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+  };
+};
+
 export const updateAgent = async (
   organizationId: string,
   agentId: string,
-  input: UpdateAgentInput
+  input: UpdateAgentInput,
 ) => {
   const data: UpdateAgentInput & { agentSlug?: string } = { ...input };
 
@@ -79,7 +242,7 @@ export const updateAgent = async (
     const existing = await agentRepository.findBySlug(organizationId, newSlug);
     if (existing && existing.agentId !== agentId) {
       throw new BadRequestError(
-        "An agent with a similar name already exists in this organization"
+        "An agent with a similar name already exists in this organization",
       );
     }
     data.agentSlug = newSlug;
@@ -88,7 +251,7 @@ export const updateAgent = async (
   const updated = await agentRepository.updateAgent(
     organizationId,
     agentId,
-    data
+    data,
   );
 
   if (!updated) {
@@ -105,7 +268,7 @@ export const configureAgent = async (args: ConfigureAgentArgs) => {
   const configuration = await agentRepository.configureAgent(
     organizationId,
     agentId,
-    await protectAgentConfigSecrets(organizationId, userId, agentId, data)
+    await protectAgentConfigSecrets(organizationId, userId, agentId, data),
   );
 
   if (!configuration) {
@@ -117,11 +280,11 @@ export const configureAgent = async (args: ConfigureAgentArgs) => {
 
 export const getAgentConfig = async (
   organizationId: string,
-  agentId: string
+  agentId: string,
 ) => {
   const configuration = await agentRepository.getAgentConfig(
     organizationId,
-    agentId
+    agentId,
   );
 
   if (!configuration) {
@@ -139,7 +302,7 @@ export const getAgentConfigByNumber = async (phoneNumber: string) => {
   }
 
   const configuration = await agentRepository.getAgentConfigByNumber(
-    normalizedPhoneNumber
+    normalizedPhoneNumber,
   );
 
   if (!configuration) {
@@ -156,9 +319,8 @@ export const getAgentConfigByIdForRuntime = async (agentId: string) => {
     throw new BadRequestError("Agent id is required");
   }
 
-  const configuration = await agentRepository.getAgentConfigByIdForRuntime(
-    normalizedAgentId
-  );
+  const configuration =
+    await agentRepository.getAgentConfigByIdForRuntime(normalizedAgentId);
 
   if (!configuration) {
     throw new NotFoundError("Agent configuration not found");
@@ -180,7 +342,7 @@ async function protectAgentConfigSecrets<T extends Record<string, any>>(
   organizationId: string,
   userId: string,
   agentId: string,
-  data: T
+  data: T,
 ): Promise<T> {
   return {
     ...data,
@@ -197,7 +359,9 @@ async function protectAgentConfigSecrets<T extends Record<string, any>>(
   };
 }
 
-function redactAgentConfigSecrets<T extends Record<string, any>>(configuration: T): T {
+function redactAgentConfigSecrets<T extends Record<string, any>>(
+  configuration: T,
+): T {
   return {
     ...configuration,
     initiation_webhook: redactSecretFields(configuration.initiation_webhook),
@@ -205,22 +369,42 @@ function redactAgentConfigSecrets<T extends Record<string, any>>(configuration: 
   };
 }
 
-async function resolveRuntimeConfigSecrets<T extends Record<string, any>>(configuration: T): Promise<T> {
+async function resolveRuntimeConfigSecrets<T extends Record<string, any>>(
+  configuration: T,
+): Promise<T> {
   const organizationId = configuration.organizationId;
   return {
     ...configuration,
     initiation_webhook: organizationId
-      ? await resolveSecretReferences(configuration.initiation_webhook, organizationId)
+      ? await resolveSecretReferences(
+          configuration.initiation_webhook,
+          organizationId,
+        )
       : configuration.initiation_webhook,
     post_call_webhook: organizationId
-      ? await resolveSecretReferences(configuration.post_call_webhook, organizationId)
+      ? await resolveSecretReferences(
+          configuration.post_call_webhook,
+          organizationId,
+        )
       : configuration.post_call_webhook,
     tools: Array.isArray(configuration.tools)
       ? await Promise.all(
           configuration.tools.map((tool) =>
-            organizationId ? resolveSecretReferences(tool, organizationId) : tool
-          )
+            organizationId
+              ? resolveSecretReferences(tool, organizationId)
+              : tool,
+          ),
         )
       : configuration.tools,
   };
+}
+
+function requireString(value: unknown, fieldName: string): string {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new CustomApiError(
+      `AI preview response is missing ${fieldName}`,
+      503,
+    );
+  }
+  return value;
 }

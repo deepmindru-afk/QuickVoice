@@ -14,7 +14,14 @@ export type CallStatus =
   | "FAILED";
 
 export type KbStatus = "PROCESSING" | "ACTIVE" | "ERROR";
-export type KbSourceType = "PDF" | "TXT" | "CSV" | "DOCX" | "XLSX" | "XLS" | "URL";
+export type KbSourceType =
+  | "PDF"
+  | "TXT"
+  | "CSV"
+  | "DOCX"
+  | "XLSX"
+  | "XLS"
+  | "URL";
 
 export interface Agent {
   agentId: string;
@@ -100,6 +107,22 @@ export interface VoiceCatalog {
     languages?: string[];
     tts_models?: string[];
   }>;
+}
+
+export interface AgentPreviewSession {
+  livekitUrl: string;
+  roomName: string;
+  participant: {
+    identity: string;
+    name: string;
+    token: string;
+    ttlSeconds: number;
+  };
+  agent: {
+    name: string;
+    dispatchId: string;
+  };
+  expiresAt: string;
 }
 
 export interface WebhookConfig {

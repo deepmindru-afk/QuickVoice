@@ -10,6 +10,7 @@ from handlers.voice_config_resolution import resolve_voice_config
 
 
 SCHEMA_VERSION = "quickvoice.voice-session.v1"
+MAX_SESSION_TTL_SECONDS = 10800
 
 
 class VoiceSessionBrokerError(RuntimeError):
@@ -77,7 +78,7 @@ class VoiceSessionBroker:
         api_key = _required_env("LIVEKIT_API_KEY")
         api_secret = _required_env("LIVEKIT_API_SECRET")
         agent_name = os.getenv("LIVEKIT_AGENT_NAME", "QuickVoice")
-        ttl_seconds = _int_env("SESSION_TOKEN_TTL_SECONDS", 900)
+        ttl_seconds = _ttl_seconds(payload)
 
         catalog = self.catalog_loader()
         client_config = payload.get("config") if isinstance(payload.get("config"), dict) else {}
@@ -148,6 +149,16 @@ def _int_env(name: str, default: int) -> int:
         return int(value)
     except ValueError as exc:
         raise VoiceSessionBrokerError(f"{name} must be an integer") from exc
+
+
+def _ttl_seconds(payload: dict[str, Any]) -> int:
+    value = payload.get("ttl_seconds")
+    if value in (None, ""):
+        return min(_int_env("SESSION_TOKEN_TTL_SECONDS", 900), MAX_SESSION_TTL_SECONDS)
+    try:
+        return max(1, min(int(value), MAX_SESSION_TTL_SECONDS))
+    except (TypeError, ValueError) as exc:
+        raise VoiceSessionBrokerError("ttl_seconds must be an integer") from exc
 
 
 def _room_name(payload: dict[str, Any]) -> str:

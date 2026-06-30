@@ -139,6 +139,26 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["system_prompt"], "Keep this outbound call short.")
         self.assertEqual(config["first_message"], "Default greeting.")
 
+    def test_apply_metadata_overrides_uses_preview_prompt_and_first_message(self):
+        config = {
+            "first_message": "Default greeting.",
+            "system_prompt": "Default prompt.",
+            "provider": "TWILIO",
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "mode": "preview",
+                "first_message": "Preview hello.",
+                "system_prompt": "Use the saved agent behavior in preview.",
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Preview hello.")
+        self.assertEqual(result["system_prompt"], "Use the saved agent behavior in preview.")
+        self.assertEqual(config["first_message"], "Default greeting.")
+
     def test_apply_metadata_overrides_uses_batch_language_voice_and_dynamic_variables(self):
         config = {
             "first_message": "Hi {{city}} customer.",

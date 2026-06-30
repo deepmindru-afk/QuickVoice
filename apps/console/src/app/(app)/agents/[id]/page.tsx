@@ -8,6 +8,7 @@ import {
   BookOpen,
   Bot,
   Loader2,
+  Radio,
   Phone,
   Settings,
   Trash2,
@@ -28,6 +29,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { AgentTabs } from "@/src/components/agents/AgentTabs";
+import { AgentPreviewPanel } from "@/src/components/agents/AgentPreviewPanel";
 import { useAgent, useDeleteAgent } from "@/src/hooks/queries/agents";
 
 function HeaderSkeleton() {
@@ -54,6 +56,7 @@ export default function AgentConfigPage() {
   const router = useRouter();
   const agentId = params.id;
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { data: agent, isLoading } = useAgent(agentId);
   const deleteAgent = useDeleteAgent();
 
@@ -117,59 +120,82 @@ export default function AgentConfigPage() {
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span>
-                      {agent.isConfigured ? "Configured" : "Needs configuration"}
+                      {agent.isConfigured
+                        ? "Configured"
+                        : "Needs configuration"}
                     </span>
-                    <span className="font-mono">ID {agent.agentId.slice(0, 8)}</span>
-                    <span>Updated {new Date(agent.updatedAt).toLocaleDateString()}</span>
+                    <span className="font-mono">
+                      ID {agent.agentId.slice(0, 8)}
+                    </span>
+                    <span>
+                      Updated {new Date(agent.updatedAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 lg:items-end">
-              <Button
-                variant="outline"
-                className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive lg:w-auto"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 /> Delete agent
-              </Button>
-              <div className="grid grid-cols-2 border bg-background text-xs sm:grid-cols-4 lg:min-w-[420px]">
-                <div className="border-r px-4 py-3">
-                  <p className="font-semibold text-foreground">
-                    {agent.phoneNumbersCount}
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
-                    <Phone className="size-3" /> Numbers
-                  </p>
+                <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                  <Button
+                    variant="outline"
+                    className="w-full lg:w-auto"
+                    onClick={() => setPreviewOpen(true)}
+                  >
+                    <Radio /> Preview
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive lg:w-auto"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <Trash2 /> Delete agent
+                  </Button>
                 </div>
-                <div className="border-r px-4 py-3">
-                  <p className="font-semibold text-foreground">
-                    {agent.callLogsCount}
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
-                    <Settings className="size-3" /> Calls
-                  </p>
+                <div className="grid grid-cols-2 border bg-background text-xs sm:grid-cols-4 lg:min-w-[420px]">
+                  <div className="border-r px-4 py-3">
+                    <p className="font-semibold text-foreground">
+                      {agent.phoneNumbersCount}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
+                      <Phone className="size-3" /> Numbers
+                    </p>
+                  </div>
+                  <div className="border-r px-4 py-3">
+                    <p className="font-semibold text-foreground">
+                      {agent.callLogsCount}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
+                      <Settings className="size-3" /> Calls
+                    </p>
+                  </div>
+                  <div className="border-r px-4 py-3">
+                    <p className="font-semibold text-foreground">
+                      {agent.knowledgeSourcesCount}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
+                      <BookOpen className="size-3" /> Docs
+                    </p>
+                  </div>
+                  <div className="px-4 py-3">
+                    <p className="font-semibold text-foreground">
+                      {agent.toolsCount}
+                    </p>
+                    <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
+                      <Wrench className="size-3" /> Tools
+                    </p>
+                  </div>
                 </div>
-                <div className="border-r px-4 py-3">
-                  <p className="font-semibold text-foreground">
-                    {agent.knowledgeSourcesCount}
-                  </p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
-                    <BookOpen className="size-3" /> Docs
-                  </p>
-                </div>
-                <div className="px-4 py-3">
-                  <p className="font-semibold text-foreground">{agent.toolsCount}</p>
-                  <p className="mt-1 inline-flex items-center gap-1 text-muted-foreground">
-                    <Wrench className="size-3" /> Tools
-                  </p>
-                </div>
-              </div>
               </div>
             </div>
           </div>
 
           <AgentTabs agentId={agentId} />
+          <AgentPreviewPanel
+            agentId={agentId}
+            agentName={agent.name}
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+          />
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>

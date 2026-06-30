@@ -24,11 +24,17 @@ class VoiceSessionMetadata:
     def language(self) -> str:
         return self.config["language"]
 
+    @property
+    def mode(self) -> str:
+        value = self.client_metadata.get("mode")
+        return value.strip() if isinstance(value, str) and value.strip() else "session"
+
     def log_fields(self) -> dict[str, str]:
         return {
             "catalog_version": self.catalog_version or "",
             "room_name": self.room_name,
             "participant_identity": self.participant_identity,
+            "mode": self.mode,
             "language": self.language,
             "stt_provider": self.config["stt"]["provider"],
             "llm_model": self.config["llm"]["model"],

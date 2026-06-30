@@ -45,6 +45,24 @@ export const getVoiceCatalog = authorized(async (_req, res) => {
   });
 });
 
+export const createAgentPreviewSession = authorized(async (req, res) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || agentId.length === 0) {
+    throw new BadRequestError("Agent id is required");
+  }
+
+  const session = await agentService.createAgentPreviewSession(
+    req.auth.activeOrganizationId,
+    agentId,
+  );
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Agent preview session created successfully",
+    data: session,
+  });
+});
+
 export const updateAgent = authorized(async (req, res) => {
   const agentId = req.params.id;
   if (typeof agentId !== "string" || agentId.length === 0) {
@@ -53,7 +71,7 @@ export const updateAgent = authorized(async (req, res) => {
   const agent = await agentService.updateAgent(
     req.auth.activeOrganizationId,
     agentId,
-    req.body
+    req.body,
   );
   res.status(StatusCodes.OK).json({
     success: true,
@@ -68,7 +86,6 @@ export const updateAgent = authorized(async (req, res) => {
     resourceId: agent.agentId,
   });
 });
-
 
 export const configureAgent = authorized(async (req, res) => {
   const agentId = req.params.agentId;
@@ -105,7 +122,7 @@ export const getAgentConfig = authorized(async (req, res) => {
 
   const configuration = await agentService.getAgentConfig(
     req.auth.activeOrganizationId,
-    agentId
+    agentId,
   );
 
   res.status(StatusCodes.OK).json({
@@ -130,13 +147,17 @@ export const getAgentConfigByNumber = authorized(async (req, res) => {
   });
 });
 
-export const getAgentConfigByIdForRuntime = async (req: Request, res: Response) => {
+export const getAgentConfigByIdForRuntime = async (
+  req: Request,
+  res: Response,
+) => {
   const agentId = req.params.agentId;
   if (typeof agentId !== "string" || agentId.length === 0) {
     throw new BadRequestError("Agent id is required");
   }
 
-  const configuration = await agentService.getAgentConfigByIdForRuntime(agentId);
+  const configuration =
+    await agentService.getAgentConfigByIdForRuntime(agentId);
 
   res.status(StatusCodes.OK).json({
     success: true,
