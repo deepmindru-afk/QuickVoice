@@ -72,7 +72,9 @@ class CodexModuleTestingGuideTests(unittest.TestCase):
 
         self.assertEqual(command[:2], ["codex", "exec"])
         self.assertIn("--model", command)
-        self.assertEqual(command[command.index("--model") + 1], "codex2")
+        self.assertEqual(command[command.index("--model") + 1], "gpt-5.5")
+        self.assertIn("-c", command)
+        self.assertIn('model_reasoning_effort="xhigh"', command)
         self.assertIn("--dangerously-bypass-approvals-and-sandbox", command)
         self.assertIn("--ephemeral", command)
         self.assertIn("--json", command)
@@ -95,6 +97,7 @@ class CodexModuleTestingGuideTests(unittest.TestCase):
         )
 
         self.assertEqual(command[command.index("--model") + 1], "codex-custom")
+        self.assertIn('model_reasoning_effort="xhigh"', command)
 
     def test_build_prompt_contains_intern_testing_scope_rules_and_headings(self):
         runner = load_runner()
@@ -157,7 +160,8 @@ class CodexModuleTestingGuideTests(unittest.TestCase):
         self.assertIn("apps-web", output)
         self.assertIn(str(output_dir.resolve() / "apps-web.md"), output)
         self.assertIn(str(run_dir.resolve() / "apps-web.final.md"), output)
-        self.assertIn("--model codex2", output)
+        self.assertIn("--model gpt-5.5", output)
+        self.assertIn('model_reasoning_effort="xhigh"', output)
         self.assertIn("--dangerously-bypass-approvals-and-sandbox", output)
 
     def test_run_selected_modules_stops_after_failed_module(self):

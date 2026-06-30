@@ -35,7 +35,8 @@ from codex_module_audit import (  # noqa: E402
 )
 
 
-DEFAULT_CODEX_MODEL = "codex2"
+DEFAULT_CODEX_MODEL = "gpt-5.5"
+DEFAULT_CODEX_REASONING_EFFORT = "xhigh"
 
 REQUIRED_GUIDE_HEADINGS: tuple[str, ...] = (
     "## Intern Testing Orientation",
@@ -96,12 +97,18 @@ def build_codex_command(
     model: str | None = None,
 ) -> list[str]:
     """Build the Codex command for one intern testing guide session."""
-    return build_base_codex_command(
+    command = build_base_codex_command(
         repo_root=repo_root,
         module=module,
         output_last_message=output_last_message,
         model=model if model is not None else DEFAULT_CODEX_MODEL,
     )
+    insert_at = command.index("--model") + 2 if "--model" in command else 2
+    command[insert_at:insert_at] = [
+        "-c",
+        f'model_reasoning_effort="{DEFAULT_CODEX_REASONING_EFFORT}"',
+    ]
+    return command
 
 
 def missing_required_headings(module: AuditModule, markdown: str) -> list[str]:
