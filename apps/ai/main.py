@@ -23,6 +23,7 @@ from handlers.rag_handler import RagRetrievalError, get_rag_context
 from handlers.worker_handler import (
     apply_metadata_overrides,
     build_call_context,
+    parse_preview_user_transcript_packet,
     parse_metadata,
     speak_first_message,
 )
@@ -293,6 +294,7 @@ async def entrypoint(ctx: JobContext):
     if is_voice_session_metadata(raw_metadata):
         voice_metadata = parse_voice_session_metadata(raw_metadata)
         metadata = voice_metadata.client_metadata
+        preview_mode = voice_metadata.mode == "preview"
         call_context = build_call_context(ctx.room.name, metadata)
         if not call_context.get("agent_id") and metadata.get("agent_id"):
             call_context["agent_id"] = metadata["agent_id"]
@@ -306,6 +308,7 @@ async def entrypoint(ctx: JobContext):
         config["agent_language"] = voice_metadata.config["language"]
     else:
         metadata = parse_metadata(raw_metadata)
+        preview_mode = False
         try:
             participant = await asyncio.wait_for(ctx.wait_for_participant(), timeout=10)
             participant_attributes = getattr(participant, "attributes", {}) or {}
@@ -355,6 +358,25 @@ async def entrypoint(ctx: JobContext):
         config=config,
         call_context=call_context,
     )
+
+    @ctx.room.on("data_received")
+    def on_data_received(data_packet):
+        participant = getattr(data_packet, "participant", None)
+        text = parse_preview_user_transcript_packet(
+            getattr(data_packet, "data", b""),
+            topic=getattr(data_packet, "topic", None),
+            participant_identity=getattr(participant, "identity", None),
+            preview_mode=preview_mode,
+        )
+        if not text:
+            return
+
+        logger.info(
+            "[preview] received browser transcript from {}",
+            redact_sensitive(getattr(participant, "identity", "")),
+        )
+        session.generate_reply(user_input=text, allow_interruptions=True)
+
     await session.start(
         room=ctx.room,
         agent=agent,

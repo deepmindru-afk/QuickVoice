@@ -5,7 +5,14 @@ import unittest
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
-from handlers.worker_handler import apply_metadata_overrides, build_call_context, parse_metadata, speak_first_message
+from handlers.worker_handler import (
+    PREVIEW_TRANSCRIPT_TOPIC,
+    apply_metadata_overrides,
+    build_call_context,
+    parse_metadata,
+    parse_preview_user_transcript_packet,
+    speak_first_message,
+)
 from main import attach_resolved_voice_config, build_session_provider_kwargs, provider_section
 
 
@@ -118,6 +125,42 @@ class WorkerHandlerTests(unittest.TestCase):
 
         self.assertEqual(result, "speech-handle")
         self.assertEqual(session.calls, [("Hello caller.", {"allow_interruptions": True})])
+
+    def test_parse_preview_user_transcript_packet_accepts_preview_user_text(self):
+        text = parse_preview_user_transcript_packet(
+            b'{"type":"preview_user_transcript","text":" hello agent "}',
+            topic=PREVIEW_TRANSCRIPT_TOPIC,
+            participant_identity="preview-user-abc123",
+            preview_mode=True,
+        )
+
+        self.assertEqual(text, "hello agent")
+
+    def test_parse_preview_user_transcript_packet_rejects_non_preview_packets(self):
+        self.assertIsNone(
+            parse_preview_user_transcript_packet(
+                b'{"type":"preview_user_transcript","text":"hello"}',
+                topic=PREVIEW_TRANSCRIPT_TOPIC,
+                participant_identity="preview-user-abc123",
+                preview_mode=False,
+            )
+        )
+        self.assertIsNone(
+            parse_preview_user_transcript_packet(
+                b'{"type":"preview_user_transcript","text":"hello"}',
+                topic="chat",
+                participant_identity="preview-user-abc123",
+                preview_mode=True,
+            )
+        )
+        self.assertIsNone(
+            parse_preview_user_transcript_packet(
+                b'{"type":"preview_user_transcript","text":"hello"}',
+                topic=PREVIEW_TRANSCRIPT_TOPIC,
+                participant_identity="agent-abc123",
+                preview_mode=True,
+            )
+        )
 
     def test_apply_metadata_overrides_uses_outbound_prompt_and_first_message(self):
         config = {

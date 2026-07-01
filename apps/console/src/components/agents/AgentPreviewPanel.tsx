@@ -103,6 +103,8 @@ const statusCopy: Record<PreviewState, string> = {
   error: "Needs attention",
 };
 
+const PREVIEW_TRANSCRIPT_TOPIC = "quickvoice.preview.transcript";
+
 export function AgentPreviewPanel({
   agentId,
   agentName,
@@ -153,6 +155,34 @@ export function AgentPreviewPanel({
     [],
   );
 
+  const publishPreviewTranscript = useCallback(
+    async (text: string) => {
+      const room = roomRef.current;
+      const trimmedText = text.trim();
+      if (!room || !trimmedText) return;
+
+      const payload = new TextEncoder().encode(
+        JSON.stringify({
+          type: "preview_user_transcript",
+          text: trimmedText,
+        }),
+      );
+
+      try {
+        await room.localParticipant.publishData(payload, {
+          reliable: true,
+          topic: PREVIEW_TRANSCRIPT_TOPIC,
+        });
+      } catch {
+        addConversationMessage(
+          "system",
+          "Could not send browser transcript to the preview agent.",
+        );
+      }
+    },
+    [addConversationMessage],
+  );
+
   const stopSpeechRecognition = useCallback(() => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
@@ -197,6 +227,7 @@ export function AgentPreviewPanel({
 
       if (finalText) {
         addConversationMessage("user", finalText);
+        void publishPreviewTranscript(finalText);
       }
       setInterimTranscript(interim);
     };
@@ -213,7 +244,7 @@ export function AgentPreviewPanel({
     } catch {
       addConversationMessage("system", "Browser captions could not start.");
     }
-  }, [addConversationMessage]);
+  }, [addConversationMessage, publishPreviewTranscript]);
 
   const handleLiveKitTranscript = useCallback(
     (segments: unknown, participant?: { identity?: string }) => {

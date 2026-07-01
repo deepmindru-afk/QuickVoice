@@ -2,6 +2,9 @@ import json
 from typing import Any
 from utils.logger import logger
 
+PREVIEW_TRANSCRIPT_TOPIC = "quickvoice.preview.transcript"
+PREVIEW_TRANSCRIPT_TYPE = "preview_user_transcript"
+
 def parse_metadata(metadata: str | None) -> dict[str, Any]:
     if not metadata:
         return {}
@@ -102,6 +105,37 @@ def speak_first_message(session: Any, config: dict[str, Any]):
     if not first_message:
         return None
     return session.say(first_message, allow_interruptions=True)
+
+
+def parse_preview_user_transcript_packet(
+    data: bytes | str,
+    *,
+    topic: str | None,
+    participant_identity: str | None,
+    preview_mode: bool,
+) -> str | None:
+    if not preview_mode:
+        return None
+    if topic != PREVIEW_TRANSCRIPT_TOPIC:
+        return None
+    if not participant_identity or not participant_identity.startswith("preview-user-"):
+        return None
+
+    try:
+        raw = data.decode("utf-8") if isinstance(data, bytes) else data
+        payload = json.loads(raw)
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("type") != PREVIEW_TRANSCRIPT_TYPE:
+        return None
+
+    text = payload.get("text")
+    if not isinstance(text, str):
+        return None
+    text = text.strip()
+    return text or None
 
 
 def _numbers_from_room(room_name: str):
