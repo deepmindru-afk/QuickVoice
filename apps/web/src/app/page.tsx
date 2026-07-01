@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 
 // Above-fold: server-rendered immediately (SSR)
 import { HeroSection } from "@/components/landing/hero-section";
+import { CustomersSection } from "@/components/customers/customers";
 
 // Below-fold: lazy-loaded to reduce initial JS parse
 const FeaturesSection = dynamic(() =>
@@ -203,6 +204,7 @@ export default function Home() {
       />
       <main className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
         <HeroSection />
+        <CustomersSection />
         <FeaturesSection />
         <AboutSection />
         <TestimonialsSection />
