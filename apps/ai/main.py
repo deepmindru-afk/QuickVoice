@@ -72,14 +72,23 @@ def build_agent_instructions(config: dict) -> str:
 
 
 def build_room_options() -> room_io.RoomOptions:
+    enable_noise_cancellation = os.getenv("LIVEKIT_ENABLE_NOISE_CANCELLATION", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    noise_cancellation_selector = None
+    if enable_noise_cancellation:
+        noise_cancellation_selector = lambda params: (
+            noise_cancellation.BVCTelephony()
+            if params.participant.kind
+            == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
+            else noise_cancellation.BVC()
+        )
+
     return room_io.RoomOptions(
         audio_input=room_io.AudioInputOptions(
-            noise_cancellation=lambda params: (
-                noise_cancellation.BVCTelephony()
-                if params.participant.kind
-                == rtc.ParticipantKind.PARTICIPANT_KIND_SIP
-                else noise_cancellation.BVC()
-            ),
+            noise_cancellation=noise_cancellation_selector,
         ),
         text_output=room_io.TextOutputOptions(sync_transcription=False),
     )

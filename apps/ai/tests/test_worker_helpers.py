@@ -65,12 +65,23 @@ class WorkerHandlerTests(unittest.TestCase):
 
         self.assertEqual(set(kwargs.keys()), {"stt", "llm", "tts"})
 
-    def test_build_room_options_emits_text_before_audio_sync(self):
-        options = build_room_options()
+    def test_build_room_options_emits_text_before_audio_sync_and_keeps_noise_filter_off_by_default(self):
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {}, clear=True):
+            options = build_room_options()
 
         self.assertIsInstance(options.text_output, room_io.TextOutputOptions)
         self.assertIs(options.text_output.sync_transcription, False)
         self.assertIsInstance(options.audio_input, room_io.AudioInputOptions)
+        self.assertIsNone(options.audio_input.noise_cancellation)
+
+    def test_build_room_options_can_enable_livekit_noise_filter(self):
+        from unittest.mock import patch
+
+        with patch.dict(os.environ, {"LIVEKIT_ENABLE_NOISE_CANCELLATION": "true"}, clear=True):
+            options = build_room_options()
+
         self.assertTrue(callable(options.audio_input.noise_cancellation))
 
     def test_parse_metadata_returns_empty_dict_for_missing_or_bad_json(self):
