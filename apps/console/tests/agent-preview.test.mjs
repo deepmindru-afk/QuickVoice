@@ -47,9 +47,8 @@ test("agent preview renders a conversation view with transcript capture hooks", 
   assert.match(panel, /conversationMessages/);
   assert.match(panel, /SpeechRecognition/);
   assert.match(panel, /webkitSpeechRecognition/);
-  assert.match(panel, /quickvoice\.preview\.transcript/);
-  assert.match(panel, /publishData/);
-  assert.match(panel, /preview_user_transcript/);
+  assert.match(panel, /lk\.chat/);
+  assert.match(panel, /sendText/);
   assert.match(panel, /TranscriptionReceived/);
   assert.match(panel, /DataReceived/);
 });
