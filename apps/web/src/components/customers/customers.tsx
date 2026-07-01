@@ -46,7 +46,7 @@ function CustomerPill({
       }`}
     >
       <div
-        className={`relative flex h-28 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border ${
+        className={`relative flex h-48 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border ${
           isLower
             ? "border-primary/20 bg-white dark:bg-gray-950"
             : "border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
@@ -57,12 +57,10 @@ function CustomerPill({
           alt={customer.name}
           fill
           sizes="256px"
-          className="object-contain p-4"
+          className="object-contain "
         />
       </div>
-      <p className="w-full truncate text-center text-base font-medium tracking-tight text-gray-950 dark:text-gray-50">
-        {customer.name}
-      </p>
+    
     </li>
   );
 }
