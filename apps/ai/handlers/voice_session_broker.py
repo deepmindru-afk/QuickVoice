@@ -77,7 +77,7 @@ class VoiceSessionBroker:
         livekit_url = _required_env("LIVEKIT_URL")
         api_key = _required_env("LIVEKIT_API_KEY")
         api_secret = _required_env("LIVEKIT_API_SECRET")
-        agent_name = os.getenv("LIVEKIT_AGENT_NAME", "QuickVoice")
+        agent_name = os.getenv("LIVEKIT_AGENT_NAME", "quickvoice-voice-agent")
         ttl_seconds = _ttl_seconds(payload)
 
         catalog = self.catalog_loader()

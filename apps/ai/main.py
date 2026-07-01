@@ -482,6 +482,6 @@ if __name__ == "__main__":
     agents.cli.run_app(
         agents.WorkerOptions(
             entrypoint_fnc=entrypoint,
-            agent_name=os.getenv("LIVEKIT_AGENT_NAME", "QuickVoice"),
+            agent_name=os.getenv("LIVEKIT_AGENT_NAME", "quickvoice-voice-agent"),
         )
     )
