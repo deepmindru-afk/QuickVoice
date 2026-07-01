@@ -6,18 +6,37 @@ async function text(path) {
   return readFile(new URL(`../${path}`, import.meta.url), "utf8");
 }
 
-test("required CI workflow gates pull requests with the root quality suite", async () => {
+test("required CI workflow gates pull requests with parallel quality shards", async () => {
   const ci = await text(".github/workflows/ci.yml");
 
   assert.match(ci, /^name: CI/m);
   assert.match(ci, /pull_request:/);
   assert.match(ci, /workflow_call:/);
   assert.match(ci, /pnpm install --frozen-lockfile/);
-  assert.match(ci, /pnpm ci:local/);
+  assert.match(ci, /runs-on: self-hosted/);
+  assert.match(ci, /workspace-config:/);
+  assert.match(ci, /root-tests:/);
+  assert.match(ci, /console:/);
+  assert.match(ci, /web:/);
+  assert.match(ci, /server:/);
+  assert.match(ci, /ai-python:/);
+  assert.match(ci, /docker-server:/);
+  assert.match(ci, /docker-ai:/);
+  assert.match(ci, /quality-summary:/);
+  assert.match(ci, /pnpm check:tasks/);
+  assert.match(ci, /pnpm check:configs/);
+  assert.match(ci, /pnpm --filter console lint/);
+  assert.match(ci, /pnpm --filter web build/);
+  assert.match(ci, /pnpm --filter server test/);
+  assert.match(ci, /node --test tests\/\*\.test\.mjs/);
+  assert.match(ci, /node --test apps\/console\/tests\/\*\.test\.mjs/);
   assert.match(ci, /python -m pip install -r requirements\.txt/);
   assert.match(ci, /python -m pip install pytest/);
+  assert.match(ci, /python -m pytest tests/);
   assert.match(ci, /docker\/setup-buildx-action@v3/);
-  assert.match(ci, /scripts\/ci-docker-build\.sh/);
+  assert.match(ci, /docker\/build-push-action@v6/);
+  assert.match(ci, /PREINSTALL_CPU_TORCH=true/);
+  assert.match(ci, /SKIP_MODEL_DOWNLOAD=true/);
   assert.match(ci, /Write quality gate summary/);
   assert.match(ci, /## Quality gate/);
   assert.match(ci, /GITHUB_STEP_SUMMARY/);
@@ -55,9 +74,11 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
   const workflow = await text(".github/workflows/backend-build.yml");
 
   assert.match(workflow, /concurrency:/);
-  assert.match(workflow, /quality-gate:/);
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/ci\.yml/);
-  assert.match(workflow, /needs: \[quality-gate, changes\]/);
+  assert.match(workflow, /runs-on: self-hosted/);
+  assert.match(workflow, /build-server:/);
+  assert.match(workflow, /build-ai:/);
+  assert.match(workflow, /deploy:/);
+  assert.match(workflow, /needs: \[changes, validate-config, build-server, build-ai\]/);
   assert.match(workflow, /environment:/);
   assert.match(workflow, /Validate deployment configuration/);
   assert.match(workflow, /REQUIRED_AWS_ROLE_ARN/);
@@ -70,9 +91,12 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
   assert.doesNotMatch(workflow, /:latest/);
   assert.match(workflow, /sbom: true/);
   assert.match(workflow, /provenance: true/);
+  assert.match(workflow, /Smoke test pushed server image manifest/);
+  assert.match(workflow, /Smoke test pushed AI image manifest/);
   assert.match(workflow, /aquasecurity\/trivy-action@/);
   assert.match(workflow, /sigstore\/cosign-installer@/);
   assert.match(workflow, /cosign sign/);
+  assert.match(workflow, /continue-on-error: true/);
   assert.match(workflow, /Rollback metadata/);
 });
 

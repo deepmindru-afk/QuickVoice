@@ -16,10 +16,12 @@ function assertEcsDeploys(workflowBody, expectedContainerName) {
   assert.match(workflowBody, /REQUIRED_ECS_CLUSTER: \$\{\{ env\.ECS_CLUSTER \}\}/);
   assert.match(workflowBody, /REQUIRED_ECS_SERVICE: \$\{\{ env\.ECS_SERVICE \}\}/);
 
-  assert.match(workflowBody, /SERVER_IMAGE_URI: \$\{\{ steps\.login-ecr\.outputs\.registry \}\}\/\$\{\{ env\.SERVER_ECR_REPOSITORY \}\}@\$\{\{ steps\.server_build\.outputs\.digest \}\}/);
-  assert.match(workflowBody, /AI_IMAGE_URI: \$\{\{ steps\.login-ecr\.outputs\.registry \}\}\/\$\{\{ env\.AI_ECR_REPOSITORY \}\}@\$\{\{ steps\.ai_build\.outputs\.digest \}\}/);
+  assert.match(workflowBody, /image_uri: \$\{\{ steps\.image\.outputs\.image_uri \}\}/);
+  assert.match(workflowBody, /SERVER_IMAGE_URI: \$\{\{ needs\.build-server\.outputs\.image_uri \}\}/);
+  assert.match(workflowBody, /AI_IMAGE_URI: \$\{\{ needs\.build-ai\.outputs\.image_uri \}\}/);
   assert.match(workflowBody, /SERVER_CHANGED: \$\{\{ needs\.changes\.outputs\.server \}\}/);
   assert.match(workflowBody, /AI_CHANGED: \$\{\{ needs\.changes\.outputs\.ai \}\}/);
+  assert.match(workflowBody, /needs: \[changes, validate-config, build-server, build-ai\]/);
   assert.match(workflowBody, /aws ecs describe-services/);
   assert.match(workflowBody, /aws ecs register-task-definition/);
   assert.match(workflowBody, /aws ecs update-service/);
@@ -30,11 +32,13 @@ function assertEcsDeploys(workflowBody, expectedContainerName) {
 test("backend workflow deploys changed images to ECS once", async () => {
   const body = await workflow("backend-build.yml");
 
-  assert.match(body, /Detect backend changes/);
+  assert.match(body, /Detect Backend Changes/);
   assert.match(body, /server_changed=true/);
   assert.match(body, /ai_changed=true/);
-  assert.match(body, /Build and push server Docker image/);
-  assert.match(body, /Build and push AI Docker image/);
+  assert.match(body, /Build and Push Server Image/);
+  assert.match(body, /Build and Push AI Image/);
+  assert.match(body, /Smoke test pushed server image manifest/);
+  assert.match(body, /Smoke test pushed AI image manifest/);
   assert.match(body, /Deploy image\(s\) to ECS/);
   assertEcsDeploys(body, "SERVER");
   assertEcsDeploys(body, "AI");
