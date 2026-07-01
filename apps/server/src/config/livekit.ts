@@ -17,7 +17,8 @@ export const livekitAgentDispatchClient = new AgentDispatchClient(
   process.env.LIVEKIT_API_SECRET
 );
 
-export const LIVEKIT_AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? "QuickVoice";
+export const DEFAULT_LIVEKIT_AGENT_NAME = "quickvoice-voice-agent";
+export const LIVEKIT_AGENT_NAME = process.env.LIVEKIT_AGENT_NAME ?? DEFAULT_LIVEKIT_AGENT_NAME;
 
 // Singleton trunk IDs — provisioned manually in LiveKit and pinned in env.
 // One inbound trunk is shared by the whole app; outbound is split per provider
