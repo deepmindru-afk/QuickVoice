@@ -21,8 +21,10 @@ from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, par
 from handlers.privacy_handler import should_store_call_audio
 from handlers.rag_handler import RagRetrievalError, get_rag_context
 from handlers.worker_handler import (
+    PREVIEW_TRANSCRIPT_TOPIC,
     apply_metadata_overrides,
     build_call_context,
+    consume_preview_user_transcript_stream,
     parse_preview_user_transcript_packet,
     parse_metadata,
     speak_first_message,
@@ -390,6 +392,25 @@ async def entrypoint(ctx: JobContext):
             redact_sensitive(getattr(participant, "identity", "")),
         )
         session.generate_reply(user_input=text, allow_interruptions=True)
+
+    def on_preview_text_stream(reader, participant_identity):
+        asyncio.create_task(
+            consume_preview_user_transcript_stream(
+                reader,
+                participant_identity=participant_identity,
+                preview_mode=preview_mode,
+                generate_reply=lambda text: session.generate_reply(
+                    user_input=text,
+                    allow_interruptions=True,
+                ),
+            )
+        )
+
+    if hasattr(ctx.room, "register_text_stream_handler"):
+        ctx.room.register_text_stream_handler(
+            PREVIEW_TRANSCRIPT_TOPIC,
+            on_preview_text_stream,
+        )
 
     await session.start(
         room=ctx.room,

@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from typing import Any
 from utils.logger import logger
 
@@ -136,6 +137,28 @@ def parse_preview_user_transcript_packet(
         return None
     text = text.strip()
     return text or None
+
+
+async def consume_preview_user_transcript_stream(
+    reader: Any,
+    *,
+    participant_identity: str | None,
+    preview_mode: bool,
+    generate_reply: Callable[[str], Any],
+) -> str | None:
+    topic = getattr(getattr(reader, "info", None), "topic", PREVIEW_TRANSCRIPT_TOPIC)
+    text = parse_preview_user_transcript_packet(
+        await reader.read_all(),
+        topic=topic,
+        participant_identity=participant_identity,
+        preview_mode=preview_mode,
+    )
+    if not text:
+        return None
+
+    logger.info("[preview] received browser transcript from text stream")
+    generate_reply(text)
+    return text
 
 
 def _numbers_from_room(room_name: str):

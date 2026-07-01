@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+import asyncio
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
@@ -11,6 +12,7 @@ from handlers.worker_handler import (
     build_call_context,
     parse_metadata,
     parse_preview_user_transcript_packet,
+    consume_preview_user_transcript_stream,
     speak_first_message,
 )
 from livekit.agents import room_io
@@ -176,6 +178,24 @@ class WorkerHandlerTests(unittest.TestCase):
                 preview_mode=True,
             )
         )
+
+    def test_consume_preview_user_transcript_stream_generates_reply(self):
+        class FakeTextStreamReader:
+            async def read_all(self):
+                return '{"type":"preview_user_transcript","text":" hello from browser "}'
+
+        replies = []
+
+        asyncio.run(
+            consume_preview_user_transcript_stream(
+                FakeTextStreamReader(),
+                participant_identity="preview-user-abc123",
+                preview_mode=True,
+                generate_reply=replies.append,
+            )
+        )
+
+        self.assertEqual(replies, ["hello from browser"])
 
     def test_apply_metadata_overrides_uses_outbound_prompt_and_first_message(self):
         config = {
