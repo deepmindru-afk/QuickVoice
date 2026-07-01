@@ -13,6 +13,7 @@ import {
   Loader2,
   Mic,
   MicOff,
+  MessageCircle,
   PhoneCall,
   PhoneOff,
   Radio,
@@ -48,6 +49,44 @@ type TimelineEvent = {
   detail: string;
 };
 
+type ConversationMessage = {
+  id: string;
+  role: "agent" | "user" | "system";
+  text: string;
+  pending?: boolean;
+};
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type PreviewWindow = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+};
+
 type AgentPreviewPanelProps = {
   agentId: string;
   agentName: string;
@@ -73,12 +112,17 @@ export function AgentPreviewPanel({
   const createPreview = useCreateAgentPreviewSession(agentId);
   const roomRef = useRef<Room | null>(null);
   const localTrackRef = useRef<LocalAudioTrack | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const remoteAudioRef = useRef<HTMLDivElement | null>(null);
   const [preview, setPreview] = useState<AgentPreviewSession | null>(null);
   const [state, setState] = useState<PreviewState>("idle");
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [conversationMessages, setConversationMessages] = useState<
+    ConversationMessage[]
+  >([]);
+  const [interimTranscript, setInterimTranscript] = useState("");
 
   const addEvent = useCallback((label: string, detail: string) => {
     setEvents((current) =>
@@ -88,6 +132,142 @@ export function AgentPreviewPanel({
       ].slice(0, 8),
     );
   }, []);
+
+  const addConversationMessage = useCallback(
+    (role: ConversationMessage["role"], text: string, pending = false) => {
+      const trimmedText = text.trim();
+      if (!trimmedText) return;
+
+      setConversationMessages((current) =>
+        [
+          ...current,
+          {
+            id: `${Date.now()}-${current.length}`,
+            role,
+            text: trimmedText,
+            pending,
+          },
+        ].slice(-24),
+      );
+    },
+    [],
+  );
+
+  const stopSpeechRecognition = useCallback(() => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setInterimTranscript("");
+  }, []);
+
+  const startSpeechRecognition = useCallback(() => {
+    const SpeechRecognition =
+      (window as PreviewWindow).SpeechRecognition ??
+      (window as PreviewWindow).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      addConversationMessage(
+        "system",
+        "Live captions are not available in this browser.",
+      );
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.onresult = (event) => {
+      let interim = "";
+      let finalText = "";
+
+      for (
+        let index = event.resultIndex;
+        index < event.results.length;
+        index += 1
+      ) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript?.trim() ?? "";
+        if (!transcript) continue;
+        if (result.isFinal) {
+          finalText = `${finalText} ${transcript}`.trim();
+        } else {
+          interim = `${interim} ${transcript}`.trim();
+        }
+      }
+
+      if (finalText) {
+        addConversationMessage("user", finalText);
+      }
+      setInterimTranscript(interim);
+    };
+    recognition.onerror = () => {
+      addConversationMessage("system", "Browser captions stopped listening.");
+    };
+    recognition.onend = () => {
+      recognitionRef.current = null;
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+    } catch {
+      addConversationMessage("system", "Browser captions could not start.");
+    }
+  }, [addConversationMessage]);
+
+  const handleLiveKitTranscript = useCallback(
+    (segments: unknown, participant?: { identity?: string }) => {
+      const segmentList = Array.isArray(segments) ? segments : [segments];
+      segmentList.forEach((segment) => {
+        if (!segment || typeof segment !== "object") return;
+        const value = segment as {
+          text?: unknown;
+          final?: unknown;
+          isFinal?: unknown;
+        };
+        const text = typeof value.text === "string" ? value.text : "";
+        if (!text.trim()) return;
+        const isFinal = Boolean(value.final ?? value.isFinal);
+        const role = participant?.identity?.startsWith("agent-")
+          ? "agent"
+          : "user";
+        if (isFinal) {
+          addConversationMessage(role, text);
+        } else if (role === "user") {
+          setInterimTranscript(text);
+        }
+      });
+    },
+    [addConversationMessage],
+  );
+
+  const handleLiveKitData = useCallback(
+    (payload: Uint8Array, participant?: { identity?: string }) => {
+      try {
+        const decoded = new TextDecoder().decode(payload);
+        const parsed = JSON.parse(decoded) as {
+          type?: string;
+          role?: string;
+          speaker?: string;
+          text?: string;
+          message?: string;
+        };
+        const text = parsed.text ?? parsed.message ?? "";
+        if (!text.trim()) return;
+        const speaker = parsed.role ?? parsed.speaker;
+        const role =
+          speaker === "agent" || participant?.identity?.startsWith("agent-")
+            ? "agent"
+            : "user";
+        if (parsed.type === "transcript" || parsed.type === "message") {
+          addConversationMessage(role, text);
+        }
+      } catch {
+        // Non-transcript data packets are expected in LiveKit rooms.
+      }
+    },
+    [addConversationMessage],
+  );
 
   const attachRemoteAudio = useCallback((track: RemoteTrack) => {
     if (track.kind !== Track.Kind.Audio || !remoteAudioRef.current) return;
@@ -104,12 +284,13 @@ export function AgentPreviewPanel({
   }, []);
 
   const disconnectPreview = useCallback(() => {
+    stopSpeechRecognition();
     localTrackRef.current?.stop();
     localTrackRef.current = null;
     cleanupAudioElements();
     roomRef.current?.disconnect();
     roomRef.current = null;
-  }, [cleanupAudioElements]);
+  }, [cleanupAudioElements, stopSpeechRecognition]);
 
   const endPreview = useCallback(async () => {
     disconnectPreview();
@@ -133,6 +314,14 @@ export function AgentPreviewPanel({
 
     setError(null);
     setEvents([]);
+    setConversationMessages([
+      {
+        id: `${Date.now()}-call-started`,
+        role: "system",
+        text: "Call started",
+      },
+    ]);
+    setInterimTranscript("");
     setState("requesting");
     addEvent("Microphone", "Waiting for browser permission.");
 
@@ -171,6 +360,14 @@ export function AgentPreviewPanel({
           addEvent("Network", "Preview room reconnected.");
         });
 
+      const transcriptionEvent = (
+        RoomEvent as unknown as { TranscriptionReceived?: RoomEvent }
+      ).TranscriptionReceived;
+      if (transcriptionEvent) {
+        room.on(transcriptionEvent, handleLiveKitTranscript);
+      }
+      room.on(RoomEvent.DataReceived, handleLiveKitData);
+
       await room.connect(session.livekitUrl, session.participant.token);
       const localTrack = await createLocalAudioTrack({
         echoCancellation: true,
@@ -180,6 +377,7 @@ export function AgentPreviewPanel({
       localTrackRef.current = localTrack;
       await room.localParticipant.publishTrack(localTrack);
       setState("live");
+      startSpeechRecognition();
       addEvent("Live", "Speak naturally. The agent can hear your microphone.");
     } catch (err) {
       await endPreview();
@@ -209,6 +407,7 @@ export function AgentPreviewPanel({
   const isBusy =
     state === "requesting" || state === "connecting" || createPreview.isPending;
   const isLive = state === "live";
+  const isInConversation = Boolean(preview) || isLive;
   const expiresAt = preview?.expiresAt
     ? new Date(preview.expiresAt).toLocaleTimeString([], {
         hour: "numeric",
@@ -256,64 +455,99 @@ export function AgentPreviewPanel({
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col bg-background">
-          <div className="border-b bg-muted/20 px-5 py-5 dark:bg-muted/10">
-            <div className="relative overflow-hidden border bg-card p-5 shadow-sm">
-              <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,hsl(var(--primary)),#10b981,#f59e0b)]" />
-              <div className="flex items-center justify-between gap-4">
-                <div>
+          {!isInConversation ? (
+            <div className="border-b bg-muted/20 px-5 py-5 dark:bg-muted/10">
+              <div className="relative overflow-hidden border bg-card p-5 shadow-sm">
+                <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,hsl(var(--primary)),#10b981,#f59e0b)]" />
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Realtime voice
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-foreground">
+                      {isLive
+                        ? "Conversation active"
+                        : "Test before callers do"}
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "flex size-14 shrink-0 items-center justify-center border bg-background text-muted-foreground shadow-inner",
+                      isLive &&
+                        "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+                    )}
+                  >
+                    {isBusy ? (
+                      <Loader2 className="size-6 animate-spin" />
+                    ) : isLive ? (
+                      <PhoneCall className="size-6" />
+                    ) : (
+                      <Sparkles className="size-6" />
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className="mt-6 flex h-16 items-end gap-1.5"
+                  aria-hidden="true"
+                >
+                  {[35, 58, 42, 74, 50, 90, 46, 68, 38, 80, 52, 64].map(
+                    (height, index) => (
+                      <span
+                        key={index}
+                        className={cn(
+                          "w-full bg-muted-foreground/20 transition-colors",
+                          isLive &&
+                            "animate-pulse bg-emerald-500/50 dark:bg-emerald-300/50",
+                        )}
+                        style={{
+                          height: `${height}%`,
+                          animationDelay: `${index * 80}ms`,
+                        }}
+                      />
+                    ),
+                  )}
+                </div>
+
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {expiresAt
+                    ? `Temporary preview access expires around ${expiresAt}.`
+                    : "Starts a temporary 3-hour LiveKit preview room."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="border-b bg-muted/20 px-5 py-4 dark:bg-muted/10">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Realtime voice
+                    Conversation
                   </p>
-                  <p className="mt-1 text-lg font-semibold text-foreground">
-                    {isLive ? "Conversation active" : "Test before callers do"}
+                  <p className="mt-1 truncate text-base font-semibold text-foreground">
+                    {isLive ? "Call started" : "Preparing preview"}
                   </p>
                 </div>
                 <div
                   className={cn(
-                    "flex size-14 shrink-0 items-center justify-center border bg-background text-muted-foreground shadow-inner",
+                    "flex size-10 shrink-0 items-center justify-center border bg-background text-muted-foreground",
                     isLive &&
                       "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
                   )}
                 >
                   {isBusy ? (
-                    <Loader2 className="size-6 animate-spin" />
-                  ) : isLive ? (
-                    <PhoneCall className="size-6" />
+                    <Loader2 className="size-5 animate-spin" />
                   ) : (
-                    <Sparkles className="size-6" />
+                    <MessageCircle className="size-5" />
                   )}
                 </div>
               </div>
-
-              <div
-                className="mt-6 flex h-16 items-end gap-1.5"
-                aria-hidden="true"
-              >
-                {[35, 58, 42, 74, 50, 90, 46, 68, 38, 80, 52, 64].map(
-                  (height, index) => (
-                    <span
-                      key={index}
-                      className={cn(
-                        "w-full bg-muted-foreground/20 transition-colors",
-                        isLive &&
-                          "animate-pulse bg-emerald-500/50 dark:bg-emerald-300/50",
-                      )}
-                      style={{
-                        height: `${height}%`,
-                        animationDelay: `${index * 80}ms`,
-                      }}
-                    />
-                  ),
-                )}
-              </div>
-
-              <p className="mt-4 text-sm text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground">
                 {expiresAt
-                  ? `Temporary preview access expires around ${expiresAt}.`
-                  : "Starts a temporary 3-hour LiveKit preview room."}
+                  ? `Preview access expires around ${expiresAt}.`
+                  : "Temporary LiveKit room is starting."}
               </p>
             </div>
-          </div>
+          )}
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
             {error ? (
@@ -322,24 +556,60 @@ export function AgentPreviewPanel({
               </div>
             ) : null}
 
-            <div className="space-y-3">
-              {events.length === 0 ? (
-                <div className="border bg-muted/20 p-4 text-sm text-muted-foreground">
-                  Start a preview to open your microphone and talk with this
-                  agent in real time.
-                </div>
-              ) : (
-                events.map((event) => (
-                  <div
-                    key={event.id}
-                    className="border bg-card p-3 text-sm shadow-sm"
-                  >
-                    <p className="font-medium text-foreground">{event.label}</p>
-                    <p className="mt-1 text-muted-foreground">{event.detail}</p>
+            {!isInConversation ? (
+              <div className="space-y-3">
+                {events.length === 0 ? (
+                  <div className="border bg-muted/20 p-4 text-sm text-muted-foreground">
+                    Start a preview to open your microphone and talk with this
+                    agent in real time.
                   </div>
-                ))
-              )}
-            </div>
+                ) : (
+                  events.map((event) => (
+                    <div
+                      key={event.id}
+                      className="border bg-card p-3 text-sm shadow-sm"
+                    >
+                      <p className="font-medium text-foreground">
+                        {event.label}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        {event.detail}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="flex min-h-full flex-col justify-end gap-3">
+                {conversationMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "max-w-[85%] px-3 py-2 text-sm leading-relaxed shadow-sm",
+                      message.role === "user" &&
+                        "ml-auto rounded-2xl rounded-br-md bg-primary text-primary-foreground",
+                      message.role === "agent" &&
+                        "mr-auto rounded-2xl rounded-bl-md border bg-card text-foreground",
+                      message.role === "system" &&
+                        "mx-auto rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground",
+                    )}
+                  >
+                    {message.text}
+                  </div>
+                ))}
+                {interimTranscript ? (
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-md bg-primary/80 px-3 py-2 text-sm leading-relaxed text-primary-foreground opacity-80">
+                    {interimTranscript}
+                  </div>
+                ) : null}
+                {conversationMessages.length === 1 && !interimTranscript ? (
+                  <div className="mx-auto max-w-xs text-center text-xs text-muted-foreground">
+                    Speak naturally. Your words appear here when browser
+                    captions or LiveKit transcription are available.
+                  </div>
+                ) : null}
+              </div>
+            )}
             <div ref={remoteAudioRef} className="hidden" />
           </div>
         </div>

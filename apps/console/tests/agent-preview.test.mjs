@@ -38,3 +38,15 @@ test("agent preview panel uses LiveKit microphone flow and is available on the a
   assert.match(page, /AgentPreviewPanel/);
   assert.ok(page.includes("Preview"));
 });
+
+test("agent preview renders a conversation view with transcript capture hooks", () => {
+  const panel = read("src/components/agents/AgentPreviewPanel.tsx");
+
+  assert.match(panel, /Conversation/);
+  assert.match(panel, /Call started/);
+  assert.match(panel, /conversationMessages/);
+  assert.match(panel, /SpeechRecognition/);
+  assert.match(panel, /webkitSpeechRecognition/);
+  assert.match(panel, /TranscriptionReceived/);
+  assert.match(panel, /DataReceived/);
+});
