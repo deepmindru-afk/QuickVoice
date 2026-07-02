@@ -87,6 +87,28 @@ export const updateAgent = authorized(async (req, res) => {
   });
 });
 
+export const deleteAgent = authorized(async (req, res) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || agentId.length === 0) {
+    throw new BadRequestError("Agent id is required");
+  }
+
+  await agentService.deleteAgent(req.auth.activeOrganizationId, agentId);
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Agent deleted successfully",
+    data: null,
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "agent.deleted",
+    resourceType: "agent",
+    resourceId: agentId,
+  });
+});
+
 export const configureAgent = authorized(async (req, res) => {
   const agentId = req.params.agentId;
   if (typeof agentId !== "string" || agentId.length === 0) {

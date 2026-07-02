@@ -261,6 +261,17 @@ export const updateAgent = async (
   return updated;
 };
 
+export const deleteAgent = async (
+  organizationId: string,
+  agentId: string,
+) => {
+  const result = await agentRepository.deleteAgent(organizationId, agentId);
+
+  if (result.count === 0) {
+    throw new NotFoundError("Agent not found");
+  }
+};
+
 export const configureAgent = async (args: ConfigureAgentArgs) => {
   const { organizationId, userId, agentId, ...data } = args;
   await assertSafeWebhookUrls(data);

@@ -51,6 +51,15 @@ export const updateAgent = async (
   return prisma.agent.findUnique({ where: { agentId } });
 };
 
+export const deleteAgent = async (
+  organizationId: string,
+  agentId: string
+) => {
+  return prisma.agent.deleteMany({
+    where: { agentId, organizationId },
+  });
+};
+
 export const configureAgent = async (
   organizationId: string,
   agentId: string,

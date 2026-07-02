@@ -51,6 +51,13 @@ router.patch(
   agentController.updateAgent,
 );
 
+router.delete(
+  "/:agentId",
+  authMiddleware,
+  requirePermission({ agent: ["delete"] }),
+  agentController.deleteAgent,
+);
+
 router.post(
   "/:agentId/config",
   authMiddleware,
