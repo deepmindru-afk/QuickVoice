@@ -10,6 +10,28 @@ from handlers import rag_handler
 
 
 class RagHandlerTests(unittest.TestCase):
+    def test_embed_query_uses_pinecone_inference_query_embedding(self):
+        calls = []
+
+        class FakeInference:
+            def embed(self, **kwargs):
+                calls.append(kwargs)
+                return {"data": [{"values": [0.1, 0.2]}]}
+
+        class FakePinecone:
+            inference = FakeInference()
+
+        original_pinecone = rag_handler._pinecone
+        try:
+            rag_handler._pinecone = lambda: FakePinecone()
+            embedding = asyncio.run(rag_handler.embed_query("refund policy"))
+        finally:
+            rag_handler._pinecone = original_pinecone
+
+        self.assertEqual(embedding, [0.1, 0.2])
+        self.assertEqual(calls[0]["inputs"], ["refund policy"])
+        self.assertEqual(calls[0]["parameters"]["input_type"], "query")
+
     def test_get_rag_context_distinguishes_empty_matches_from_provider_failure(self):
         async def fake_embed_query(query):
             return [0.1, 0.2]

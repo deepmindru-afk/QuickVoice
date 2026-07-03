@@ -13,8 +13,24 @@ test("assertKbProcessingSucceeded accepts successful per-document results", () =
           { kbId: "kb_2", status: "ok" },
         ],
       },
-      ["kb_1", "kb_2"]
-    )
+      ["kb_1", "kb_2"],
+    ),
+  );
+});
+
+test("assertKbProcessingSucceeded accepts successful async job document results", () => {
+  assert.doesNotThrow(() =>
+    assertKbProcessingSucceeded(
+      {
+        jobId: "kbjob_123",
+        status: "succeeded",
+        documents: [
+          { kbId: "kb_1", status: "ok" },
+          { kbId: "kb_2", status: "ok" },
+        ],
+      },
+      ["kb_1", "kb_2"],
+    ),
   );
 });
 
@@ -26,12 +42,16 @@ test("assertKbProcessingSucceeded rejects per-document failures in a 200 respons
           success: true,
           processed: [
             { kbId: "kb_1", status: "ok" },
-            { kbId: "kb_2", status: "error", error: "PINECONE_API_KEY missing" },
+            {
+              kbId: "kb_2",
+              status: "error",
+              error: "PINECONE_API_KEY missing",
+            },
           ],
         },
-        ["kb_1", "kb_2"]
+        ["kb_1", "kb_2"],
       ),
-    /KB processing failed: kb_2: PINECONE_API_KEY missing/
+    /KB processing failed: kb_2: PINECONE_API_KEY missing/,
   );
 });
 
@@ -43,8 +63,8 @@ test("assertKbProcessingSucceeded rejects missing document results", () => {
           success: true,
           processed: [{ kbId: "kb_1", status: "ok" }],
         },
-        ["kb_1", "kb_2"]
+        ["kb_1", "kb_2"],
       ),
-    /missing results for kb_2/
+    /missing results for kb_2/,
   );
 });

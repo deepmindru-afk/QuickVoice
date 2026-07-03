@@ -8,30 +8,49 @@ import asyncio
 import time
 from utils.metrics import emit_metric
 from utils.logger import logger, redact_sensitive
+from utils.pinecone_client import pinecone_client
 
 
 class RagRetrievalError(RuntimeError):
     pass
 
 
+EMBEDDING_MODEL = os.environ.get("PINECONE_EMBEDDING_MODEL", "llama-text-embed-v2")
+EMBEDDING_TRUNCATE = os.environ.get("PINECONE_EMBEDDING_TRUNCATE", "END")
+
+
+def _pinecone():
+    return pinecone_client()
+
+
 def _index():
-    from pinecone import Pinecone  # type: ignore
-    pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
+    pc = _pinecone()
     return pc.Index(os.environ.get("PINECONE_INDEX", "quickvoice-kb"))
 
 
+def _embedding_values(response) -> list[list[float]]:
+    data = response.get("data", []) if isinstance(response, dict) else getattr(response, "data", [])
+    values: list[list[float]] = []
+    for item in data:
+        vector = item.get("values") if isinstance(item, dict) else getattr(item, "values", None)
+        if vector is None:
+            raise ValueError("Pinecone embedding response did not include values")
+        values.append(list(vector))
+    return values
+
+
 async def embed_query(query: str) -> list[float]:
-    import google.generativeai as genai  # type: ignore
-    genai.configure(api_key=os.environ.get("GOOGLE_EMBEDDING_API_KEY", os.environ.get("GOOGLE_API_KEY", "")))
+    pc = _pinecone()
     result = await asyncio.to_thread(
-        genai.embed_content,
-        model="models/text-embedding-004",
-        content=query,
-        task_type="retrieval_query",
+        pc.inference.embed,
+        model=EMBEDDING_MODEL,
+        inputs=[query],
+        parameters={"input_type": "query", "truncate": EMBEDDING_TRUNCATE},
     )
-    emb = result["embedding"]
-    # embed_content with a single string returns a flat list
-    return emb if isinstance(emb[0], float) else emb[0]
+    embeddings = _embedding_values(result)
+    if not embeddings:
+        raise ValueError("Pinecone embedding response was empty")
+    return embeddings[0]
 
 
 async def get_rag_context(agent_id: str, query: str, top_k: int = 5) -> str:
