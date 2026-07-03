@@ -50,8 +50,9 @@ async def get_config(
     allow_default_config: bool = False,
     get_json=None,
 ):
-    base_url = (server_api_url or os.getenv("SERVER_API_URL") or "").rstrip("/")
-    api_key = internal_api_key or os.getenv("INTERNAL_API_KEY")
+    raw_base_url = os.getenv("SERVER_API_URL") if server_api_url is None else server_api_url
+    base_url = (raw_base_url or "").rstrip("/")
+    api_key = os.getenv("INTERNAL_API_KEY") if internal_api_key is None else internal_api_key
 
     if base_url and api_key:
         api_base_url = base_url if base_url.endswith("/api/v1") else f"{base_url}/api/v1"

@@ -20,23 +20,19 @@ from urllib.parse import urlparse, urlunparse
 
 from utils.logger import logger, redact_sensitive
 from utils.metrics import emit_metric
+from utils.pinecone_client import pinecone_client
 
 # ── lazy imports (heavy deps loaded once) ────────────────────────────────────
 
 def _pinecone():
-    from pinecone import Pinecone  # type: ignore
-    return Pinecone(api_key=os.environ["PINECONE_API_KEY"])
+    return pinecone_client()
 
 def _index():
     pc = _pinecone()
     return pc.Index(os.environ.get("PINECONE_INDEX", "quickvoice-kb"))
 
-def _google_client():
-    import google.generativeai as genai  # type: ignore
-    genai.configure(api_key=os.environ.get("GOOGLE_EMBEDDING_API_KEY", os.environ.get("GOOGLE_API_KEY", "")))
-    return genai
-
-EMBEDDING_MODEL = "models/text-embedding-004"
+EMBEDDING_MODEL = os.environ.get("PINECONE_EMBEDDING_MODEL", "llama-text-embed-v2")
+EMBEDDING_TRUNCATE = os.environ.get("PINECONE_EMBEDDING_TRUNCATE", "END")
 CHUNK_SIZE = 500       # characters (not tokens — keeps it dependency-light)
 CHUNK_OVERLAP = 50
 MAX_DOWNLOAD_BYTES = int(os.environ.get("KB_MAX_DOWNLOAD_BYTES", str(10 * 1024 * 1024)))
@@ -508,6 +504,12 @@ def _document_error_fields(exc: Exception, *, budget: dict) -> dict:
         code = "KB_CHUNK_LIMIT_EXCEEDED"
         user_message = f"This knowledge source is too large to index. Reduce it to {max_chunks} chunks or fewer and try again."
         details = {"maxChunksPerDocument": max_chunks}
+    elif "looks like a Google API key" in message or ("Invalid API key" in message and ("401" in message or "Unauthorized" in message)):
+        code = "KB_VECTOR_STORE_API_KEY_INVALID"
+        user_message = "PINECONE_API_KEY was rejected or is not a Pinecone key. Check the AI service environment uses a valid Pinecone API key for this project."
+    elif "PINECONE_API_KEY" in message:
+        code = "KB_VECTOR_STORE_API_KEY_MISSING"
+        user_message = "Knowledge processing requires PINECONE_API_KEY in the AI service environment."
     else:
         code = "KB_PROCESSING_FAILED"
         user_message = "QuickVoice could not process this knowledge source. Try again later."
@@ -707,23 +709,34 @@ def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) 
 
 # ── embedding ─────────────────────────────────────────────────────────────────
 
-async def embed_chunks(chunks: list[str]) -> list[list[float]]:
-    """Batch-embed chunks using Google text-embedding-004."""
-    import asyncio
-    genai = _google_client()
+def _embedding_values(response) -> list[list[float]]:
+    data = response.get("data", []) if isinstance(response, dict) else getattr(response, "data", [])
+    values: list[list[float]] = []
+    for item in data:
+        vector = item.get("values") if isinstance(item, dict) else getattr(item, "values", None)
+        if vector is None:
+            raise ValueError("Pinecone embedding response did not include values")
+        values.append(list(vector))
+    return values
 
-    BATCH = 100  # Google API allows up to 100 texts per request
+
+async def embed_chunks(chunks: list[str]) -> list[list[float]]:
+    """Batch-embed chunks using Pinecone Inference."""
+    import asyncio
+    pc = _pinecone()
+
+    BATCH = 100
     all_embeddings: list[list[float]] = []
 
     for i in range(0, len(chunks), BATCH):
         batch = chunks[i : i + BATCH]
         result = await asyncio.to_thread(
-            genai.embed_content,
+            pc.inference.embed,
             model=EMBEDDING_MODEL,
-            content=batch,
-            task_type="retrieval_document",
+            inputs=batch,
+            parameters={"input_type": "passage", "truncate": EMBEDDING_TRUNCATE},
         )
-        all_embeddings.extend(result["embedding"] if isinstance(result["embedding"][0], list) else [result["embedding"]])
+        all_embeddings.extend(_embedding_values(result))
 
     return all_embeddings
 
@@ -763,7 +776,27 @@ def delete_kb_vectors(*, namespace: str, kb_id: str) -> None:
 
 
 def _delete_kb_vectors(*, index, namespace: str, kb_id: str) -> None:
-    index.delete(filter={"kbId": {"$eq": kb_id}}, namespace=namespace)
+    try:
+        index.delete(filter={"kbId": {"$eq": kb_id}}, namespace=namespace)
+    except Exception as exc:
+        if _is_pinecone_namespace_not_found(exc):
+            logger.info(
+                "[kb] pinecone namespace missing during delete; skipping {}",
+                redact_sensitive({"namespace": namespace, "kbId": kb_id}),
+            )
+            return
+        raise
+
+
+def _is_pinecone_namespace_not_found(exc: Exception) -> bool:
+    status = getattr(exc, "status", None) or getattr(exc, "status_code", None)
+    message_parts = [str(exc)]
+    body = getattr(exc, "body", None)
+    if body:
+        message_parts.append(str(body))
+    message = " ".join(message_parts)
+    has_404 = status in {404, "404"} or "(404)" in message
+    return has_404 and "Namespace not found" in message
 
 
 # ── main entry ────────────────────────────────────────────────────────────────

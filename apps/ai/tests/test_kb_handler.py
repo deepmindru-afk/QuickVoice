@@ -7,9 +7,35 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
 from handlers import kb_handler
+from utils.pinecone_client import pinecone_api_key
 
 
 class KbHandlerTests(unittest.TestCase):
+    def test_pinecone_api_key_is_trimmed_before_client_use(self):
+        original = os.environ.get("PINECONE_API_KEY")
+        try:
+            os.environ["PINECONE_API_KEY"] = '  "pcsk_test_key"  \n'
+            self.assertEqual(pinecone_api_key(), "pcsk_test_key")
+        finally:
+            if original is None:
+                os.environ.pop("PINECONE_API_KEY", None)
+            else:
+                os.environ["PINECONE_API_KEY"] = original
+
+    def test_pinecone_api_key_rejects_google_key_wired_to_pinecone_env(self):
+        original = os.environ.get("PINECONE_API_KEY")
+        try:
+            os.environ["PINECONE_API_KEY"] = "AIzaSyFakeGoogleKey"
+            with self.assertRaises(ValueError) as ctx:
+                pinecone_api_key()
+        finally:
+            if original is None:
+                os.environ.pop("PINECONE_API_KEY", None)
+            else:
+                os.environ["PINECONE_API_KEY"] = original
+
+        self.assertIn("looks like a Google API key", str(ctx.exception))
+
     def test_validate_ingest_url_rejects_private_hosts_and_bad_schemes(self):
         unsafe_urls = [
             "file:///etc/passwd",
@@ -179,6 +205,63 @@ class KbHandlerTests(unittest.TestCase):
         self.assertFalse(result[0]["retryable"])
         self.assertNotIn("Extracted text is empty", result[0]["error"])
 
+    def test_embed_chunks_uses_pinecone_inference_passage_embeddings(self):
+        calls = []
+
+        class FakeInference:
+            def embed(self, **kwargs):
+                calls.append(kwargs)
+                return {
+                    "data": [
+                        {"values": [0.1, 0.2]},
+                        {"values": [0.3, 0.4]},
+                    ]
+                }
+
+        class FakePinecone:
+            inference = FakeInference()
+
+        original_pinecone = kb_handler._pinecone
+        try:
+            kb_handler._pinecone = lambda: FakePinecone()
+            embeddings = asyncio.run(kb_handler.embed_chunks(["first", "second"]))
+        finally:
+            kb_handler._pinecone = original_pinecone
+
+        self.assertEqual(embeddings, [[0.1, 0.2], [0.3, 0.4]])
+        self.assertEqual(calls[0]["inputs"], ["first", "second"])
+        self.assertEqual(calls[0]["parameters"]["input_type"], "passage")
+
+    def test_missing_pinecone_key_returns_actionable_error(self):
+        error = kb_handler._document_error_fields(
+            KeyError("PINECONE_API_KEY"),
+            budget={},
+        )
+
+        self.assertEqual(error["code"], "KB_VECTOR_STORE_API_KEY_MISSING")
+        self.assertIn("PINECONE_API_KEY", error["userMessage"])
+        self.assertFalse(error["retryable"])
+
+    def test_invalid_pinecone_key_returns_actionable_error(self):
+        error = kb_handler._document_error_fields(
+            RuntimeError("(401) Reason: Unauthorized HTTP response body: Invalid API key"),
+            budget={},
+        )
+
+        self.assertEqual(error["code"], "KB_VECTOR_STORE_API_KEY_INVALID")
+        self.assertIn("PINECONE_API_KEY", error["userMessage"])
+        self.assertFalse(error["retryable"])
+
+    def test_google_key_in_pinecone_env_returns_actionable_error(self):
+        error = kb_handler._document_error_fields(
+            ValueError("PINECONE_API_KEY looks like a Google API key; set a Pinecone API key instead."),
+            budget={},
+        )
+
+        self.assertEqual(error["code"], "KB_VECTOR_STORE_API_KEY_INVALID")
+        self.assertIn("PINECONE_API_KEY", error["userMessage"])
+        self.assertFalse(error["retryable"])
+
     def test_kb_job_tracks_progress_and_final_document_results(self):
         async def fake_process_documents(_payload, progress=None, should_cancel=None):
             if progress:
@@ -311,6 +394,37 @@ class KbHandlerTests(unittest.TestCase):
         self.assertEqual(calls[0][0], "delete")
         self.assertEqual(calls[0][1]["namespace"], "agent_123")
         self.assertEqual(calls[0][1]["filter"], {"kbId": {"$eq": "kb_123"}})
+        self.assertEqual(calls[1][0], "upsert")
+
+    def test_upsert_continues_when_existing_namespace_is_missing(self):
+        calls = []
+
+        class MissingNamespaceError(Exception):
+            status = 404
+            body = '{"code":5,"message":"Namespace not found","details":[]}'
+
+        class FakeIndex:
+            def delete(self, **kwargs):
+                calls.append(("delete", kwargs))
+                raise MissingNamespaceError("Namespace not found")
+
+            def upsert(self, **kwargs):
+                calls.append(("upsert", kwargs))
+
+        original_index = kb_handler._index
+        try:
+            kb_handler._index = lambda: FakeIndex()
+            kb_handler.upsert_to_pinecone(
+                chunks=["new text"],
+                embeddings=[[0.1, 0.2]],
+                namespace="agent_123",
+                kb_id="kb_123",
+                doc_name="Doc",
+            )
+        finally:
+            kb_handler._index = original_index
+
+        self.assertEqual(calls[0][0], "delete")
         self.assertEqual(calls[1][0], "upsert")
 
     def test_delete_kb_vectors_removes_only_selected_document_namespace(self):
