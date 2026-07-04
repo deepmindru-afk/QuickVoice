@@ -2,7 +2,7 @@
 
 **Open-source AI phone-agent infrastructure you can run, inspect, and extend.**
 
-QuickVoice is the open-source Retell alternative for teams that want control over the voice-agent stack instead of only consuming a closed hosted API. It gives teams the full product surface in one repo: a marketing site, customer console, API server, LiveKit-powered AI worker, telephony integrations, knowledge bases, call logs, outbound campaigns, billing paths, and local development tooling.
+QuickVoice is the open-source Retell alternative for engineering-led teams that want control over the voice-agent stack instead of only consuming a closed hosted API. It gives teams the full product surface in one repo: a marketing site, customer console, API server, LiveKit-powered AI worker, telephony integrations, knowledge bases, call logs, outbound campaigns, billing paths, MCP/tool connections, privacy controls, and local development tooling.
 
 Website: [quickvoice.co](https://quickvoice.co)
 
@@ -18,6 +18,7 @@ Website: [quickvoice.co](https://quickvoice.co)
 - **Why it exists:** keep the voice-agent stack inspectable instead of outsourcing every runtime, data, cost, and telephony decision to a closed platform.
 - **What you can run locally:** the web app, console, API, AI service, Postgres, Redis, Prisma migrations, and generated dev env files.
 - **What needs real credentials:** real phone calls require LiveKit plus Twilio or Telnyx credentials; billing, OAuth, email, and storage need their provider keys.
+- **How it is positioned:** see the [core positioning framework](./docs/positioning/core-positioning-framework.md) for code-backed marketing and sales claims.
 
 ```mermaid
 flowchart LR
@@ -108,9 +109,22 @@ Voice agents are becoming core business infrastructure. Hosted APIs are useful w
 
 - **Control:** run the console, API, worker, database, and telephony bindings yourself.
 - **Self-hosting:** evaluate the local stack with `task up:dev`, then decide how and where to deploy.
-- **Privacy:** inspect storage, logs, call metadata, recordings, transcripts, and runtime configuration before production use.
-- **Cost visibility:** bring your own LiveKit, Twilio or Telnyx, Postgres, Redis, and S3-compatible storage instead of treating every dependency as an opaque bundle.
-- **Extensibility:** fork the repo, modify agents, add knowledge sources, wire new providers, or adapt permissions, billing, and campaign workflows.
+- **Privacy:** inspect storage, logs, call metadata, recordings, transcripts, secrets, retention controls, and runtime configuration before production use.
+- **Cost visibility:** bring your own LiveKit, Twilio or Telnyx, Postgres, Redis, S3-compatible storage, vector database, and model providers instead of treating every dependency as an opaque bundle.
+- **Extensibility:** fork the repo, modify agents, add knowledge sources, attach MCP tools, wire new providers, or adapt permissions, billing, and campaign workflows.
+
+## Code-Backed Differentiators
+
+- **Per-call runtime control:** the LiveKit worker loads agent configuration by phone number or agent ID at call start, then applies outbound metadata overrides for first message, prompt, language, voice, and dynamic variables.
+- **Live knowledge and tools:** agents can retrieve Pinecone-backed knowledge context during user turns and call allowlisted MCP tools through the server bridge. Side-effect tools are hidden from live-call instructions unless explicitly safe.
+- **Inspectable privacy boundaries:** call-log PII redaction is enabled by default, zero-PII retention can suppress transcripts and recordings, secrets are encrypted or referenced, remote URLs are screened for private-network targets, and retention jobs clean up old transcripts, recordings, failed KB rows, and MCP logs.
+- **Direct telephony ownership:** Twilio and Telnyx number purchase flows, provider binding, LiveKit trunk binding, rollback behavior, inbound routing, outbound quick calls, and batch campaigns are implemented in the repo.
+
+## What QuickVoice Is Not
+
+QuickVoice is not a zero-setup hosted phone-agent API from a fresh clone. Local development starts with `task up:dev`, but carrier-connected calls need LiveKit plus Twilio or Telnyx credentials, and production deployments need deliberate choices around auth, secrets, storage, retention, provider agreements, and operations.
+
+The repository makes privacy and compliance-relevant data paths inspectable, but it is not by itself a HIPAA, SOC 2, ISO 27001, PCI, GDPR, or CCPA certification claim. Those claims depend on deployment, controls, provider agreements, audits, and legal review.
 
 ## What You Can Build
 
@@ -125,8 +139,8 @@ Voice agents are becoming core business infrastructure. Hosted APIs are useful w
 
 - `apps/web` - Next.js website with product pages, use cases, industry pages, blog content, pricing, and legal pages.
 - `apps/console` - Next.js customer console for organizations, agents, numbers, calls, knowledge bases, API keys, billing, and settings.
-- `apps/server` - Express API server with auth, permissions, agent configuration, phone numbers, call logs, outbound calls, Stripe, Twilio, Telnyx, LiveKit, S3, and Inngest integrations.
-- `apps/ai` - Python AI service and LiveKit worker handlers for runtime configuration, call logging, and voice-agent execution.
+- `apps/server` - Express API server with auth, permissions, agent configuration, phone numbers, call logs, outbound calls, MCP connections, retention jobs, Stripe, Twilio, Telnyx, LiveKit, S3, Redis/BullMQ, and Inngest integrations.
+- `apps/ai` - Python AI service and LiveKit worker handlers for runtime configuration, RAG, MCP tool execution, privacy controls, call logging, recording, and voice-agent execution.
 - `packages/eslint-config` and `packages/typescript-config` - Shared monorepo linting and TypeScript configuration.
 - `scripts`, `Taskfile.yml`, and `docker-compose.dev.yml` - Local orchestration for Node services, Python services, Prisma, Postgres, and Redis.
 
@@ -134,9 +148,11 @@ Voice agents are becoming core business infrastructure. Hosted APIs are useful w
 
 - Product and marketing: Next.js, React, Tailwind CSS
 - API: Express, TypeScript, Better Auth
-- Voice runtime: LiveKit, Python workers
+- Voice runtime: LiveKit Agents, Python workers, Silero VAD, multilingual turn detection, noise cancellation
 - Telephony: Twilio and Telnyx
-- Data: Postgres, Prisma, S3-compatible object storage
+- AI providers: configurable commercial STT, LLM, and TTS model IDs through LiveKit inference; the default path is not local LLM deployment
+- Knowledge and tools: Pinecone, Google embeddings, MCP/Smithery connections, custom HTTP tools
+- Data: Postgres, Prisma, Redis/BullMQ, S3-compatible object storage
 - Billing: Stripe
 - Monorepo: pnpm and Turborepo
 
