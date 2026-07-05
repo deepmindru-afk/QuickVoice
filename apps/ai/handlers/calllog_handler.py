@@ -35,18 +35,14 @@ def build_call_log_payload(
         "direction": call_context.get("direction", "inbound"),
         "durationSeconds": max(0, int((ended_at - started_at).total_seconds())),
         "status": status,
-        "metadata": {
-            "summary": call_context.get("summary", ""),
-            "intent": call_context.get("intent", ""),
-            "outboundId": call_context.get("outbound_id"),
-        },
+        "metadata": _build_metadata(call_context),
         "recordingSid": recording_path or "",
         "transcripts": [_normalize_transcript_item(item, index) for index, item in enumerate(transcripts)],
         "toNumber": _required(call_context, "to_number"),
         "fromNumber": _required(call_context, "from_number"),
         "provider": call_context.get("provider") or config.get("provider") or "TWILIO",
-        "extractedData": config.get("data_extracted") or [],
-        "evaluatedData": config.get("data_evaluation") or [],
+        "extractedData": _as_list(config.get("data_extracted")),
+        "evaluatedData": _as_list(config.get("data_evaluated")),
     }
 
 
@@ -165,6 +161,22 @@ def _api_base_url(server_api_url: str) -> str:
     if not base_url:
         return ""
     return base_url if base_url.endswith("/api/v1") else f"{base_url}/api/v1"
+
+
+def _build_metadata(call_context: dict[str, Any]) -> dict[str, Any]:
+    metadata = dict(call_context.get("metadata")) if isinstance(call_context.get("metadata"), dict) else {}
+    metadata.update(
+        {
+            "summary": call_context.get("summary", ""),
+            "intent": call_context.get("intent", ""),
+            "outboundId": call_context.get("outbound_id"),
+        }
+    )
+    return metadata
+
+
+def _as_list(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
 
 
 def _normalize_transcript_item(item: dict[str, Any], index: int) -> dict[str, str]:

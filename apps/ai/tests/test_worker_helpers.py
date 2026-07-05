@@ -139,6 +139,25 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(context["to_number"], "+15550001111")
         self.assertEqual(context["outbound_id"], "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113")
 
+    def test_build_call_context_preserves_non_routing_metadata(self):
+        context = build_call_context(
+            room_name="outbound-room",
+            metadata={
+                "agent_id": "8d55565f-1111-4111-8111-f95fd03f0df2",
+                "direction": "outbound",
+                "from_number": "+15551230000",
+                "to_number": "+15550001111",
+                "campaign_id": "campaign_123",
+                "leadSource": "website",
+                "system_prompt": "Do not store this prompt as call metadata",
+            },
+        )
+
+        self.assertEqual(
+            context["metadata"],
+            {"campaign_id": "campaign_123", "leadSource": "website"},
+        )
+
     def test_speak_first_message_sends_configured_message_to_livekit_session(self):
         class FakeSession:
             def __init__(self):

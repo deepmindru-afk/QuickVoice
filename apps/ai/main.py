@@ -13,6 +13,7 @@ from livekit.agents import (
 )
 from livekit.plugins import noise_cancellation, silero
 from livekit.plugins.turn_detector.multilingual import MultilingualModel
+from handlers.call_metadata_collector import CallMetadataCollector, build_metadata_collection_instructions
 from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
 from handlers.finalization_handler import CallFinalizer
@@ -68,6 +69,9 @@ def build_agent_instructions(config: dict) -> str:
     instructions = config.get("system_prompt") or DEFAULT_SYSTEM_PROMPT
     if config.get("use_rag"):
         instructions += RAG_TOOL_INSTRUCTIONS
+    metadata_instructions = build_metadata_collection_instructions(config)
+    if metadata_instructions:
+        instructions += f"\n\n{metadata_instructions}"
     instructions += build_mcp_tool_instructions(config.get("mcp_connections") or [])
     return instructions
 
@@ -210,6 +214,7 @@ class Assistant(Agent):
         super().__init__(instructions=system_prompt)
         self._config = config
         self._call_context = call_context
+        self._metadata_collector = CallMetadataCollector(config)
 
     def _rag_enabled(self) -> bool:
         return bool(self._config.get("use_rag"))
@@ -264,6 +269,28 @@ class Assistant(Agent):
             ),
         )
         logger.info(f"[rag] injected context for agent={agent_id}")
+
+    @function_tool
+    async def record_call_extracted_data(self, field: str, value: str) -> str:
+        """
+        Record a configured data field collected from the caller during this call.
+
+        Args:
+            field: The configured data field id or name.
+            value: The value the caller provided for that field.
+        """
+        return self._metadata_collector.record_extracted_data(field, value)
+
+    @function_tool
+    async def record_call_evaluation(self, identifier: str, value: str) -> str:
+        """
+        Record a configured call evaluation result when the conversation provides enough evidence.
+
+        Args:
+            identifier: The configured evaluation id or name.
+            value: The evaluation result, such as true, false, yes, no, or a short label.
+        """
+        return self._metadata_collector.record_evaluation(identifier, value)
 
     @function_tool
     async def search_knowledge_base(self, query: str, top_k: int = 5) -> str:

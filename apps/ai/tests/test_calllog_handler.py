@@ -80,6 +80,52 @@ class CallLogHandlerTests(unittest.TestCase):
 
         self.assertEqual(payload["transcripts"][0]["timestamp"], "2024-01-01T00:00:00Z")
 
+    def test_build_call_log_payload_uses_collected_metadata_and_results(self):
+        payload = build_call_log_payload(
+            config={
+                "agent_id": "agent_123",
+                "organization_id": "org_123",
+                "data_extracted": [
+                    {
+                        "type": "text",
+                        "name": "Customer name",
+                        "description": "Name provided by the caller",
+                        "value": "Avery Stone",
+                    }
+                ],
+                "data_evaluation": [
+                    {
+                        "id": "qualified",
+                        "name": "Qualified lead",
+                        "criteria": "Caller wants a demo",
+                    }
+                ],
+                "data_evaluated": [
+                    {
+                        "identifier": "qualified",
+                        "description": "Caller wants a demo",
+                        "value": True,
+                    }
+                ],
+            },
+            call_context={
+                "call_id": "call_123",
+                "from_number": "+15550001111",
+                "to_number": "+15551230000",
+                "metadata": {"campaignId": "campaign_123", "leadSource": "website"},
+            },
+            started_at=datetime(2026, 5, 27, 12, 0, 0, tzinfo=timezone.utc),
+            ended_at=datetime(2026, 5, 27, 12, 1, 0, tzinfo=timezone.utc),
+            recording_path=None,
+            transcripts=[],
+        )
+
+        self.assertEqual(payload["metadata"]["campaignId"], "campaign_123")
+        self.assertEqual(payload["metadata"]["leadSource"], "website")
+        self.assertEqual(payload["extractedData"][0]["value"], "Avery Stone")
+        self.assertEqual(payload["evaluatedData"][0]["identifier"], "qualified")
+        self.assertNotIn("criteria", payload["evaluatedData"][0])
+
     def test_post_call_log_uses_internal_auth_and_posts_to_server_calls_endpoint(self):
         calls = []
 

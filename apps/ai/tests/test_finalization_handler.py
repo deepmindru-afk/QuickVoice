@@ -54,6 +54,21 @@ class FinalizationHandlerTests(unittest.TestCase):
                 "organization_id": "org_123",
                 "zero_pii_retention": True,
                 "retention_days": 3,
+                "data_extracted": [
+                    {
+                        "type": "text",
+                        "name": "Patient name",
+                        "description": "Caller name",
+                        "value": "Avery Stone",
+                    }
+                ],
+                "data_evaluated": [
+                    {
+                        "identifier": "qualified",
+                        "description": "Caller wants a demo",
+                        "value": True,
+                    }
+                ],
             },
             call_context={
                 "call_id": "call_123",
@@ -70,6 +85,8 @@ class FinalizationHandlerTests(unittest.TestCase):
 
         self.assertEqual(posts[0]["transcripts"], [])
         self.assertEqual(posts[0]["recordingSid"], "")
+        self.assertEqual(posts[0]["extractedData"], [])
+        self.assertEqual(posts[0]["evaluatedData"], [])
         self.assertTrue(posts[0]["metadata"]["zeroPiiRetention"])
         self.assertEqual(posts[0]["metadata"]["retentionDays"], 3)
 

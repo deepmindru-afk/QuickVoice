@@ -46,6 +46,8 @@ class CallFinalizer:
             )
             if zero_pii_retention:
                 payload["metadata"]["zeroPiiRetention"] = True
+                payload["extractedData"] = []
+                payload["evaluatedData"] = []
             if self._config.get("retention_days") is not None:
                 payload["metadata"]["retentionDays"] = self._config.get("retention_days")
             await self._post_call_log(payload)

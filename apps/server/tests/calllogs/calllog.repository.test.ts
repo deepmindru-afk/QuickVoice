@@ -3,7 +3,7 @@ import { test } from "node:test";
 
 import { CallStatus, TelephonyProvider } from "../../prisma/generated/prisma/client.js";
 import { buildCallLogIdentityFields } from "../../src/modules/calllogs/calllog.repository.js";
-import type { IngestCallLogArgs } from "../../src/modules/calllogs/calllog.schema.js";
+import { callLogSchema, type IngestCallLogArgs } from "../../src/modules/calllogs/calllog.schema.js";
 
 const baseInput: IngestCallLogArgs = {
   organizationId: "org_123",
@@ -37,6 +37,42 @@ test("call log identity fields keep structured phone numbers raw while redacting
   assert.equal(metadata.toNumber, "+15550001111");
   assert.equal(metadata.summary, "Caller asked to call [REDACTED_PHONE] again.");
   assert.equal(metadata.intent, "Follow up with [REDACTED_PHONE]");
+});
+
+test("call log schema preserves extra metadata keys from completed calls", () => {
+  const parsed = callLogSchema.parse({
+    ...baseInput,
+    metadata: {
+      ...baseInput.metadata,
+      campaignId: "campaign_123",
+      leadSource: "website",
+    },
+  });
+
+  assert.equal(parsed.metadata?.campaignId, "campaign_123");
+  assert.equal(parsed.metadata?.leadSource, "website");
+});
+
+test("call log identity fields preserve extra metadata while redacting free-form values", () => {
+  const { metadata } = buildCallLogIdentityFields(
+    {
+      ...baseInput,
+      metadata: {
+        ...baseInput.metadata,
+        leadSource: "website",
+        callerNote: "Email avery@example.com or call +15559990000",
+      } as IngestCallLogArgs["metadata"],
+    },
+    true
+  );
+
+  assert.equal(metadata.leadSource, "website");
+  assert.equal(
+    metadata.callerNote,
+    "Email [REDACTED_EMAIL] or call [REDACTED_PHONE]"
+  );
+  assert.equal(metadata.fromNumber, "+15551230000");
+  assert.equal(metadata.toNumber, "+15550001111");
 });
 
 test("inbound call callerId uses the external caller number", () => {

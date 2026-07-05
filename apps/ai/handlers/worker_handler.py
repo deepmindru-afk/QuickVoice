@@ -6,6 +6,45 @@ from utils.logger import logger
 PREVIEW_TRANSCRIPT_TOPIC = "quickvoice.preview.transcript"
 PREVIEW_TRANSCRIPT_TYPE = "preview_user_transcript"
 
+ROUTING_METADATA_KEYS = {
+    "agent_id",
+    "agentId",
+    "agent_number",
+    "agentNumber",
+    "agent_language",
+    "agentLanguage",
+    "call_id",
+    "callId",
+    "callDirection",
+    "direction",
+    "dynamic_variables",
+    "dynamicVariables",
+    "first_message",
+    "firstMessage",
+    "from_number",
+    "fromNumber",
+    "language",
+    "outbound_id",
+    "outboundId",
+    "phoneNumber",
+    "provider",
+    "sip.callID",
+    "sip.phoneNumber",
+    "sip.trunkPhoneNumber",
+    "sip_call_id",
+    "sip_phone_number",
+    "sip_trunk_phone_number",
+    "system_prompt",
+    "systemPrompt",
+    "to_number",
+    "toNumber",
+    "trunkPhoneNumber",
+    "user_number",
+    "userNumber",
+    "voice_id",
+    "voiceId",
+}
+
 def parse_metadata(metadata: str | None) -> dict[str, Any]:
     if not metadata:
         return {}
@@ -59,6 +98,7 @@ def build_call_context(room_name: str, metadata: dict[str, Any]) -> dict[str, An
         "to_number": to_number,
         "outbound_id": _pick(metadata, "outbound_id", "outboundId"),
         "provider": _pick(metadata, "provider"),
+        "metadata": _metadata_extras(metadata),
     }
 
 
@@ -159,6 +199,17 @@ async def consume_preview_user_transcript_stream(
     logger.info("[preview] received browser transcript from text stream")
     generate_reply(text)
     return text
+
+
+def _metadata_extras(metadata: dict[str, Any]) -> dict[str, Any]:
+    extras: dict[str, Any] = {}
+    for key, value in metadata.items():
+        if key in ROUTING_METADATA_KEYS or key.startswith("sip."):
+            continue
+        if value in (None, ""):
+            continue
+        extras[key] = value
+    return extras
 
 
 def _numbers_from_room(room_name: str):

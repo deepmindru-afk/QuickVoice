@@ -75,7 +75,11 @@ export function buildCallLogIdentityFields(input: IngestCallLogArgs, redactPii: 
   const callerId = input.direction === "inbound" ? input.fromNumber : input.toNumber;
   const summary = input.metadata?.summary ?? "";
   const intent = input.metadata?.intent ?? "";
+  const baseMetadata = (redactPii
+    ? redactJson(jsonObject(input.metadata))
+    : jsonObject(input.metadata)) as Prisma.InputJsonObject;
   const metadata = {
+    ...baseMetadata,
     summary: redactPii ? redactText(summary) : summary,
     intent: redactPii ? redactText(intent) : intent,
     fromNumber: input.fromNumber,
@@ -84,6 +88,13 @@ export function buildCallLogIdentityFields(input: IngestCallLogArgs, redactPii: 
   } satisfies Prisma.InputJsonObject;
 
   return { callerId, metadata };
+}
+
+function jsonObject(value: unknown): Prisma.InputJsonObject {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  return value as Prisma.InputJsonObject;
 }
 
 export const listByOrg = async (args: ListCallLogsArgs) => {

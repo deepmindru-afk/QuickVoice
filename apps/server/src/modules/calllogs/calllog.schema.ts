@@ -20,6 +20,14 @@ export const evaluatedDataSchema = z.object({
   value: z.any().nullable(),
 });
 
+export const callLogMetadataSchema = z
+  .object({
+    summary: z.string(),
+    intent: z.string(),
+    outboundId: z.string().uuid().nullable(),
+  })
+  .catchall(z.unknown());
+
 export const callLogSchema = z.object({
   organizationId: z.string().min(1, "Organization ID is required"),
   userId: z.string().optional(),
@@ -30,13 +38,7 @@ export const callLogSchema = z.object({
   direction: z.enum(["inbound", "outbound"]),
   durationSeconds: z.number(),
   status: z.nativeEnum(CallStatus),
-  metadata: z
-    .object({
-      summary: z.string(),
-      intent: z.string(),
-      outboundId: z.string().uuid().nullable(),
-    })
-    .optional(),
+  metadata: callLogMetadataSchema.optional(),
   recordingSid: z.string(),
   transcripts: z.array(transcriptSchema),
   toNumber: z.string(),
