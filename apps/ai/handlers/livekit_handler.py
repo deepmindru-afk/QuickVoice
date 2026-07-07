@@ -11,13 +11,10 @@ def recording_path(recording_id):
 
 def get_recording_storage_config():
     config = {
-        "access_key": os.getenv("AWS_ACCESS_KEY_ID") or os.getenv("ACCESS_KEY"),
-        "secret": os.getenv("AWS_SECRET_ACCESS_KEY") or os.getenv("SECRET_ACCESS_KEY"),
-        "session_token": os.getenv("AWS_SESSION_TOKEN"),
         "bucket": os.getenv("S3_BUCKET_NAME") or os.getenv("BUCKET") or "quickintell-rcm",
-        "region": os.getenv("AWS_REGION") or os.getenv("REGION") or "us-east-1",
+        "region": os.getenv("AWS_REGION") or os.getenv("REGION") or os.getenv("AWS_DEFAULT_REGION") or "us-east-1",
     }
-    missing = [key for key in ("access_key", "secret", "bucket", "region") if not config[key]]
+    missing = [key for key in ("bucket", "region") if not config[key]]
     if missing:
         raise RuntimeError(f"Missing recording storage env: {', '.join(missing)}")
     return config
@@ -65,9 +62,6 @@ async def start_recording(ctx: Any):
                         file_type=api.EncodedFileType.OGG,
                         filepath=recording_path(recording_id),
                         s3=api.S3Upload(
-                            # access_key=storage["access_key"],
-                            # secret=storage["secret"],
-                            # session_token=storage.get("session_token"),
                             bucket=storage["bucket"],
                             region=storage["region"],
                         ),

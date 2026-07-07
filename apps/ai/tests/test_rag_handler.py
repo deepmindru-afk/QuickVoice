@@ -101,7 +101,7 @@ class RagHandlerTests(unittest.TestCase):
         self.assertIn("score=0.87", context)
         self.assertIn("Refunds take five business days.", context)
 
-    def test_get_rag_context_filters_agent_inside_configured_namespace(self):
+    def test_get_rag_context_ignores_configured_namespace_and_uses_agent_namespace(self):
         calls = []
 
         async def fake_embed_query(query):
@@ -130,8 +130,38 @@ class RagHandlerTests(unittest.TestCase):
                 os.environ["PINECONE_NAMESPACE"] = original_namespace
 
         self.assertEqual(context, "")
-        self.assertEqual(calls[0]["namespace"], "documents")
-        self.assertEqual(calls[0]["filter"], {"agentId": {"$eq": "agent_123"}})
+        self.assertEqual(calls[0]["namespace"], "agent_123")
+        self.assertIsNone(calls[0]["filter"])
+
+    def test_index_uses_pinecone_host_not_index_name(self):
+        calls = []
+
+        class FakePinecone:
+            def Index(self, **kwargs):
+                calls.append(kwargs)
+                return object()
+
+        original_pinecone = rag_handler._pinecone
+        original_host = os.environ.get("PINECONE_HOST")
+        original_index_name = os.environ.get("PINECONE_INDEX")
+        try:
+            rag_handler._pinecone = lambda: FakePinecone()
+            os.environ["PINECONE_HOST"] = "https://quickvoice-index.svc.pinecone.io"
+            os.environ["PINECONE_INDEX"] = "legacy-index-name"
+
+            rag_handler._index()
+        finally:
+            rag_handler._pinecone = original_pinecone
+            if original_host is None:
+                os.environ.pop("PINECONE_HOST", None)
+            else:
+                os.environ["PINECONE_HOST"] = original_host
+            if original_index_name is None:
+                os.environ.pop("PINECONE_INDEX", None)
+            else:
+                os.environ["PINECONE_INDEX"] = original_index_name
+
+        self.assertEqual(calls, [{"host": "https://quickvoice-index.svc.pinecone.io"}])
 
 if __name__ == "__main__":
     unittest.main()

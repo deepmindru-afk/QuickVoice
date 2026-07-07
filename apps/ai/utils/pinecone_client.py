@@ -34,6 +34,17 @@ def pinecone_api_key() -> str:
     return key
 
 
+def pinecone_host() -> str:
+    raw = os.environ.get("PINECONE_HOST")
+    if raw is None:
+        raise KeyError("PINECONE_HOST")
+
+    host = _clean_env_value(raw)
+    if not host:
+        raise KeyError("PINECONE_HOST")
+    return host
+
+
 def pinecone_client():
     from pinecone import Pinecone  # type: ignore
 

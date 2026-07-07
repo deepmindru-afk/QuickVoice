@@ -7,7 +7,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 
 from handlers import kb_handler
-from utils.pinecone_client import pinecone_api_key
+from utils.pinecone_client import pinecone_api_key, pinecone_host
 
 
 class KbHandlerTests(unittest.TestCase):
@@ -35,6 +35,47 @@ class KbHandlerTests(unittest.TestCase):
                 os.environ["PINECONE_API_KEY"] = original
 
         self.assertIn("looks like a Google API key", str(ctx.exception))
+
+    def test_pinecone_host_is_trimmed_before_index_use(self):
+        original = os.environ.get("PINECONE_HOST")
+        try:
+            os.environ["PINECONE_HOST"] = '  "https://quickvoice-index.svc.pinecone.io"  \n'
+            self.assertEqual(pinecone_host(), "https://quickvoice-index.svc.pinecone.io")
+        finally:
+            if original is None:
+                os.environ.pop("PINECONE_HOST", None)
+            else:
+                os.environ["PINECONE_HOST"] = original
+
+    def test_index_uses_pinecone_host_not_index_name(self):
+        calls = []
+
+        class FakePinecone:
+            def Index(self, **kwargs):
+                calls.append(kwargs)
+                return object()
+
+        original_pinecone = kb_handler._pinecone
+        original_host = os.environ.get("PINECONE_HOST")
+        original_index_name = os.environ.get("PINECONE_INDEX")
+        try:
+            kb_handler._pinecone = lambda: FakePinecone()
+            os.environ["PINECONE_HOST"] = "https://quickvoice-index.svc.pinecone.io"
+            os.environ["PINECONE_INDEX"] = "legacy-index-name"
+
+            kb_handler._index()
+        finally:
+            kb_handler._pinecone = original_pinecone
+            if original_host is None:
+                os.environ.pop("PINECONE_HOST", None)
+            else:
+                os.environ["PINECONE_HOST"] = original_host
+            if original_index_name is None:
+                os.environ.pop("PINECONE_INDEX", None)
+            else:
+                os.environ["PINECONE_INDEX"] = original_index_name
+
+        self.assertEqual(calls, [{"host": "https://quickvoice-index.svc.pinecone.io"}])
 
     def test_validate_ingest_url_rejects_private_hosts_and_bad_schemes(self):
         unsafe_urls = [
@@ -242,6 +283,16 @@ class KbHandlerTests(unittest.TestCase):
         self.assertIn("PINECONE_API_KEY", error["userMessage"])
         self.assertFalse(error["retryable"])
 
+    def test_missing_pinecone_host_returns_actionable_error(self):
+        error = kb_handler._document_error_fields(
+            KeyError("PINECONE_HOST"),
+            budget={},
+        )
+
+        self.assertEqual(error["code"], "KB_VECTOR_STORE_HOST_MISSING")
+        self.assertIn("PINECONE_HOST", error["userMessage"])
+        self.assertFalse(error["retryable"])
+
     def test_invalid_pinecone_key_returns_actionable_error(self):
         error = kb_handler._document_error_fields(
             RuntimeError("(401) Reason: Unauthorized HTTP response body: Invalid API key"),
@@ -427,7 +478,7 @@ class KbHandlerTests(unittest.TestCase):
         self.assertEqual(calls[0][0], "delete")
         self.assertEqual(calls[1][0], "upsert")
 
-    def test_upsert_uses_configured_namespace_with_agent_metadata(self):
+    def test_upsert_ignores_configured_namespace_and_uses_agent_namespace(self):
         calls = []
 
         class FakeIndex:
@@ -456,12 +507,9 @@ class KbHandlerTests(unittest.TestCase):
             else:
                 os.environ["PINECONE_NAMESPACE"] = original_namespace
 
-        self.assertEqual(calls[0][1]["namespace"], "documents")
-        self.assertEqual(
-            calls[0][1]["filter"],
-            {"kbId": {"$eq": "kb_123"}, "agentId": {"$eq": "agent_123"}},
-        )
-        self.assertEqual(calls[1][1]["namespace"], "documents")
+        self.assertEqual(calls[0][1]["namespace"], "agent_123")
+        self.assertEqual(calls[0][1]["filter"], {"kbId": {"$eq": "kb_123"}})
+        self.assertEqual(calls[1][1]["namespace"], "agent_123")
         self.assertEqual(calls[1][1]["vectors"][0]["metadata"]["agentId"], "agent_123")
 
     def test_delete_kb_vectors_removes_only_selected_document_namespace(self):

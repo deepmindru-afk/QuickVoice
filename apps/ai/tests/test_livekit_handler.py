@@ -16,7 +16,7 @@ class LiveKitHandlerTests(unittest.TestCase):
             "Voice-agents/Recordings/recording-123.ogg",
         )
 
-    def test_recording_storage_config_prefers_standard_aws_env_names(self):
+    def test_recording_storage_config_prefers_standard_bucket_and_region_env_names(self):
         with patch.dict(
             os.environ,
             {
@@ -33,11 +33,28 @@ class LiveKitHandlerTests(unittest.TestCase):
         ):
             config = get_recording_storage_config()
 
-        self.assertEqual(config["access_key"], "aws-access")
-        self.assertEqual(config["secret"], "aws-secret")
-        self.assertEqual(config["session_token"], "aws-session-token")
         self.assertEqual(config["region"], "us-west-2")
         self.assertEqual(config["bucket"], "quickvoice-recordings")
+        self.assertNotIn("access_key", config)
+        self.assertNotIn("secret", config)
+        self.assertNotIn("session_token", config)
+
+    def test_recording_storage_config_allows_ecs_role_without_static_credentials(self):
+        with patch.dict(
+            os.environ,
+            {
+                "AWS_REGION": "us-west-2",
+                "S3_BUCKET_NAME": "quickvoice-recordings",
+            },
+            clear=True,
+        ):
+            config = get_recording_storage_config()
+
+        self.assertEqual(config["region"], "us-west-2")
+        self.assertEqual(config["bucket"], "quickvoice-recordings")
+        self.assertNotIn("access_key", config)
+        self.assertNotIn("secret", config)
+        self.assertNotIn("session_token", config)
 
 
 if __name__ == "__main__":

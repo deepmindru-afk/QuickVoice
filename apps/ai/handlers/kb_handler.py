@@ -20,7 +20,7 @@ from urllib.parse import urlparse, urlunparse
 
 from utils.logger import logger, redact_sensitive
 from utils.metrics import emit_metric
-from utils.pinecone_client import pinecone_client
+from utils.pinecone_client import pinecone_client, pinecone_host
 
 # ── lazy imports (heavy deps loaded once) ────────────────────────────────────
 
@@ -29,16 +29,13 @@ def _pinecone():
 
 def _index():
     pc = _pinecone()
-    return pc.Index(os.environ.get("PINECONE_INDEX", "quickvoice"))
+    return pc.Index(host=pinecone_host())
 
 def _pinecone_namespace(agent_id: str) -> str:
-    return os.environ.get("PINECONE_NAMESPACE", "").strip() or agent_id
+    return agent_id
 
 def _agent_filter(agent_id: str, base_filter: dict | None = None) -> dict:
-    active_filter = copy.deepcopy(base_filter or {})
-    if os.environ.get("PINECONE_NAMESPACE", "").strip():
-        active_filter["agentId"] = {"$eq": agent_id}
-    return active_filter
+    return copy.deepcopy(base_filter or {})
 
 EMBEDDING_MODEL = os.environ.get("PINECONE_EMBEDDING_MODEL", "llama-text-embed-v2")
 EMBEDDING_TRUNCATE = os.environ.get("PINECONE_EMBEDDING_TRUNCATE", "END")
@@ -519,6 +516,9 @@ def _document_error_fields(exc: Exception, *, budget: dict) -> dict:
     elif "PINECONE_API_KEY" in message:
         code = "KB_VECTOR_STORE_API_KEY_MISSING"
         user_message = "Knowledge processing requires PINECONE_API_KEY in the AI service environment."
+    elif "PINECONE_HOST" in message:
+        code = "KB_VECTOR_STORE_HOST_MISSING"
+        user_message = "Knowledge processing requires PINECONE_HOST in the AI service environment."
     else:
         code = "KB_PROCESSING_FAILED"
         user_message = "QuickVoice could not process this knowledge source. Try again later."

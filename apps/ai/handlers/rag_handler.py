@@ -8,7 +8,7 @@ import asyncio
 import time
 from utils.metrics import emit_metric
 from utils.logger import logger, redact_sensitive
-from utils.pinecone_client import pinecone_client
+from utils.pinecone_client import pinecone_client, pinecone_host
 
 
 class RagRetrievalError(RuntimeError):
@@ -25,17 +25,15 @@ def _pinecone():
 
 def _index():
     pc = _pinecone()
-    return pc.Index(os.environ.get("PINECONE_INDEX", "quickvoice"))
+    return pc.Index(host=pinecone_host())
 
 
 def _pinecone_namespace(agent_id: str) -> str:
-    return os.environ.get("PINECONE_NAMESPACE", "").strip() or agent_id
+    return agent_id
 
 
 def _agent_filter(agent_id: str) -> dict | None:
-    if not os.environ.get("PINECONE_NAMESPACE", "").strip():
-        return None
-    return {"agentId": {"$eq": agent_id}}
+    return None
 
 
 def _embedding_values(response) -> list[list[float]]:
