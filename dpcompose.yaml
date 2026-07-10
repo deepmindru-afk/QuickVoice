@@ -1,0 +1,318 @@
+# =============================================================================
+# QuickVoice - Docker Compose for Dokploy / production deployment
+# =============================================================================
+# Paste this file into your Dokploy project or deploy via docker compose.
+#
+# ## Required external services (bring your own):
+#   - LiveKit Server (with SIP trunk for telephony)
+#   - S3-compatible object storage (MinIO, AWS S3, etc.)
+#   - Pinecone vector database (for RAG knowledge base)
+#   - AI model provider keys (Deepgram, ElevenLabs, AWS Bedrock, etc.)
+#
+# ## Quick start:
+#   1. Copy `.env.example` to `.env` and fill in your credentials
+#   2. docker compose up -d
+#   3. Run initial DB migration:
+#      docker compose exec server sh -c "npx prisma migrate deploy"
+#   4. Console:  http://your-host:3000
+#      Web:      http://your-host:3001
+#      API:      http://your-host:5000/api/v1/health
+#      AI API:   http://your-host:5555/health
+
+name: quickvoice
+
+services:
+  # ─── Database ───────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quickvoice}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quickvoice}
+      POSTGRES_DB: ${POSTGRES_DB:-quickvoice}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - quickvoice_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quickvoice} -d ${POSTGRES_DB:-quickvoice}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - quickvoice
+
+  # ─── Cache / Queue ──────────────────────────────────────────────────────
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - quickvoice_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - quickvoice
+
+  # ─── Express API Server ─────────────────────────────────────────────────
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-5000}:8000"
+    environment:
+      NODE_ENV: production
+      API_VERSION: v1
+      PORT: 8000
+      # Internal URLs (use your deployment domain in production)
+      SERVER_URL: ${SERVER_URL:-http://localhost:5000}
+      CONSOLE_URL: ${CONSOLE_URL:-http://localhost:3000}
+      WEB_URL: ${WEB_URL:-http://localhost:3001}
+      # Database & Cache
+      DATABASE_URL: ${DATABASE_URL:-postgresql://quickvoice:quickvoice@postgres:5432/quickvoice}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Auth
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:5000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY}
+      # LiveKit
+      LIVEKIT_URL: ${LIVEKIT_URL:?Set LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Set LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Set LIVEKIT_API_SECRET}
+      LIVEKIT_AGENT_NAME: ${LIVEKIT_AGENT_NAME:-quickvoice-voice-agent}
+      LIVEKIT_SIP_INBOUND_TRUNK_ID: ${LIVEKIT_SIP_INBOUND_TRUNK_ID:-}
+      LIVEKIT_SIP_OUTBOUND_TRUNK_TWILIO_ID: ${LIVEKIT_SIP_OUTBOUND_TRUNK_TWILIO_ID:-}
+      LIVEKIT_SIP_OUTBOUND_TRUNK_TELNYX_ID: ${LIVEKIT_SIP_OUTBOUND_TRUNK_TELNYX_ID:-}
+      # Telephony
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_TRUNK_SID: ${TWILIO_TRUNK_SID:-}
+      TELNYX_API_KEY: ${TELNYX_API_KEY:-}
+      TELNYX_CONNECTION_ID: ${TELNYX_CONNECTION_ID:-}
+      # AWS / S3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-quickvoice}
+      # Stripe
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # SMTP / Email
+      SMTP_HOST: ${SMTP_HOST:-postgres}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      FROM_EMAIL: ${FROM_EMAIL:-noreply@quickvoice.local}
+      # MCP / Smithery
+      SMITHERY_NAMESPACE: ${SMITHERY_NAMESPACE:-quickvoice}
+      SMITHERY_API_KEY: ${SMITHERY_API_KEY:-}
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/api/v1/health", "||", "exit", "1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - quickvoice
+
+  # ─── Customer Console (Next.js) ─────────────────────────────────────────
+  console:
+    build:
+      context: .
+      dockerfile: apps/console/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${CONSOLE_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_SERVER_URL: ${CONSOLE_SERVER_URL:-http://localhost:5000}
+      NEXT_PUBLIC_CONSOLE_URL: ${CONSOLE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_API_VERSION: v1
+      NEXT_PUBLIC_LANDING_URL: ${CONSOLE_LANDING_URL:-http://localhost:3001}
+    depends_on:
+      server:
+        condition: service_started
+    networks:
+      - quickvoice
+
+  # ─── Marketing Site (Next.js) ───────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3001}:3001"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_CONSOLE_URL: ${WEB_CONSOLE_URL:-http://localhost:3000}
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+      NEXT_PUBLIC_GSC_VERIFICATION: ${GSC_VERIFICATION:-}
+    depends_on:
+      console:
+        condition: service_started
+    networks:
+      - quickvoice
+
+  # ─── AI API (Python / FastAPI) ──────────────────────────────────────────
+  ai-api:
+    build:
+      context: apps/ai
+      dockerfile: Dockerfile
+      args:
+        PREINSTALL_CPU_TORCH: "false"
+        SKIP_MODEL_DOWNLOAD: "false"
+    restart: unless-stopped
+    ports:
+      - "${AI_API_PORT:-5555}:5555"
+    environment:
+      AI_API_HOST: 0.0.0.0
+      AI_API_PORT: 5555
+      AI_API_RELOAD: "false"
+      # Server bridge
+      SERVER_API_URL: ${SERVER_API_URL:-http://server:8000/api/v1}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY}
+      # LiveKit
+      LIVEKIT_URL: ${LIVEKIT_URL:?Set LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Set LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Set LIVEKIT_API_SECRET}
+      LIVEKIT_AGENT_NAME: ${LIVEKIT_AGENT_NAME:-quickvoice-voice-agent}
+      LIVEKIT_TURN_DOMAIN: ${LIVEKIT_TURN_DOMAIN:-}
+      # Voice catalog / providers
+      VOICE_CATALOG_PATH: ${VOICE_CATALOG_PATH:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-bedrock_sdk}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-us.anthropic.claude-haiku-4-5-20251001-v1:0}
+      BEDROCK_FALLBACK_MODEL_ID: ${BEDROCK_FALLBACK_MODEL_ID:-us.amazon.nova-micro-v1:0}
+      BEDROCK_TIMEOUT_MS: ${BEDROCK_TIMEOUT_MS:-30000}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+      DEEPGRAM_DEFAULT_MODEL: ${DEEPGRAM_DEFAULT_MODEL:-nova-3}
+      DEEPGRAM_DEFAULT_LANGUAGE: ${DEEPGRAM_DEFAULT_LANGUAGE:-en}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_DEFAULT_MODEL: ${ELEVENLABS_DEFAULT_MODEL:-eleven_flash_v2_5}
+      ELEVENLABS_DEFAULT_VOICE_ID: ${ELEVENLABS_DEFAULT_VOICE_ID:-EXAVITQu4vr4xnSDxMaL}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_DEFAULT_STT_MODEL: ${SARVAM_DEFAULT_STT_MODEL:-saaras:v3}
+      SARVAM_DEFAULT_TTS_MODEL: ${SARVAM_DEFAULT_TTS_MODEL:-bulbul:v3}
+      SARVAM_DEFAULT_LANGUAGE: ${SARVAM_DEFAULT_LANGUAGE:-en-IN}
+      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh}
+      # Knowledge base (Pinecone)
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_HOST: ${PINECONE_HOST:-}
+      PINECONE_EMBEDDING_MODEL: ${PINECONE_EMBEDDING_MODEL:-llama-text-embed-v2}
+      PINECONE_EMBEDDING_TRUNCATE: ${PINECONE_EMBEDDING_TRUNCATE:-END}
+      # Session / interrupts
+      ENABLE_INTERRUPTS: ${ENABLE_INTERRUPTS:-true}
+      SESSION_TOKEN_TTL_SECONDS: ${SESSION_TOKEN_TTL_SECONDS:-900}
+      SESSION_ROOM_PREFIX: ${SESSION_ROOM_PREFIX:-voice-}
+      # AWS / S3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-quickvoice}
+      # Legacy aliases
+      ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-}
+      SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      REGION: ${AWS_REGION:-us-east-1}
+    depends_on:
+      server:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5555/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: ["python", "main.py", "api"]
+    networks:
+      - quickvoice
+
+  # ─── AI Worker (LiveKit Agent) ──────────────────────────────────────────
+  ai-worker:
+    build:
+      context: apps/ai
+      dockerfile: Dockerfile
+      args:
+        PREINSTALL_CPU_TORCH: "false"
+        SKIP_MODEL_DOWNLOAD: "false"
+    restart: unless-stopped
+    environment:
+      AI_API_HOST: 0.0.0.0
+      AI_API_PORT: 5555
+      AI_API_RELOAD: "false"
+      # Server bridge
+      SERVER_API_URL: ${SERVER_API_URL:-http://server:8000/api/v1}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:?Set INTERNAL_API_KEY}
+      # LiveKit
+      LIVEKIT_URL: ${LIVEKIT_URL:?Set LIVEKIT_URL}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:?Set LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:?Set LIVEKIT_API_SECRET}
+      LIVEKIT_AGENT_NAME: ${LIVEKIT_AGENT_NAME:-quickvoice-voice-agent}
+      LIVEKIT_TURN_DOMAIN: ${LIVEKIT_TURN_DOMAIN:-}
+      # Voice catalog / providers
+      VOICE_CATALOG_PATH: ${VOICE_CATALOG_PATH:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-bedrock_sdk}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-us.anthropic.claude-haiku-4-5-20251001-v1:0}
+      BEDROCK_FALLBACK_MODEL_ID: ${BEDROCK_FALLBACK_MODEL_ID:-us.amazon.nova-micro-v1:0}
+      BEDROCK_TIMEOUT_MS: ${BEDROCK_TIMEOUT_MS:-30000}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+      DEEPGRAM_DEFAULT_MODEL: ${DEEPGRAM_DEFAULT_MODEL:-nova-3}
+      DEEPGRAM_DEFAULT_LANGUAGE: ${DEEPGRAM_DEFAULT_LANGUAGE:-en}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_DEFAULT_MODEL: ${ELEVENLABS_DEFAULT_MODEL:-eleven_flash_v2_5}
+      ELEVENLABS_DEFAULT_VOICE_ID: ${ELEVENLABS_DEFAULT_VOICE_ID:-EXAVITQu4vr4xnSDxMaL}
+      SARVAM_API_KEY: ${SARVAM_API_KEY:-}
+      SARVAM_DEFAULT_STT_MODEL: ${SARVAM_DEFAULT_STT_MODEL:-saaras:v3}
+      SARVAM_DEFAULT_TTS_MODEL: ${SARVAM_DEFAULT_TTS_MODEL:-bulbul:v3}
+      SARVAM_DEFAULT_LANGUAGE: ${SARVAM_DEFAULT_LANGUAGE:-en-IN}
+      SARVAM_DEFAULT_SPEAKER: ${SARVAM_DEFAULT_SPEAKER:-shubh}
+      # Knowledge base (Pinecone)
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_HOST: ${PINECONE_HOST:-}
+      PINECONE_EMBEDDING_MODEL: ${PINECONE_EMBEDDING_MODEL:-llama-text-embed-v2}
+      PINECONE_EMBEDDING_TRUNCATE: ${PINECONE_EMBEDDING_TRUNCATE:-END}
+      # Session / interrupts
+      ENABLE_INTERRUPTS: ${ENABLE_INTERRUPTS:-true}
+      SESSION_TOKEN_TTL_SECONDS: ${SESSION_TOKEN_TTL_SECONDS:-900}
+      SESSION_ROOM_PREFIX: ${SESSION_ROOM_PREFIX:-voice-}
+      # AWS / S3
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-quickvoice}
+      # Legacy aliases
+      ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-}
+      SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      REGION: ${AWS_REGION:-us-east-1}
+    depends_on:
+      server:
+        condition: service_started
+    command: ["python", "main.py", "start"]
+    networks:
+      - quickvoice
+
+networks:
+  quickvoice:
+    driver: bridge
+
+volumes:
+  quickvoice_postgres_data:
+    driver: local
+  quickvoice_redis_data:
+    driver: local
