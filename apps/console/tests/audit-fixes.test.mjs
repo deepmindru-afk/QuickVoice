@@ -43,6 +43,17 @@ test("data loading failures render retryable error states instead of empty data"
   assert.match(read("src/app/(app)/kb/page.tsx"), /refetch/);
 });
 
+test("call metadata sheet displays reason and non-primary metadata keys", () => {
+  const source = read("src/components/calls/CallMetadataSheet.tsx");
+
+  assert.match(source, /PRIMARY_METADATA_KEYS/);
+  assert.match(source, /"reason"/);
+  assert.match(source, /Call Reason/);
+  assert.match(source, /Additional Metadata/);
+  assert.match(source, /formatMetadataLabel/);
+  assert.match(source, /Object\.entries\(meta\)\.filter/);
+});
+
 test("form validation and external setup flows block unsafe or blank input", () => {
   assert.match(read("src/components/agents/tabs/WebhooksTab.tsx"), /superRefine/);
   assert.match(read("src/components/tools/ToolSheet.tsx"), /key:\s*z\.string\(\)\.trim\(\)\.min\(1/);

@@ -101,10 +101,38 @@ function safeArray<T>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
 
+const PRIMARY_METADATA_KEYS = new Set([
+  "summary",
+  "intent",
+  "reason",
+  "outboundId",
+  "fromNumber",
+  "toNumber",
+  "provider",
+  "zeroPiiRetention",
+  "retentionDays",
+]);
+
+function isEmptyMetadataValue(value: unknown) {
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "")
+  );
+}
+
+function formatMetadataLabel(key: string) {
+  return key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function displayValue(v: unknown): string {
   if (v === null || v === undefined) return "N/A";
   if (typeof v === "boolean") return v ? "Yes" : "No";
   if (typeof v === "string" && v.trim() === "") return "N/A";
+  if (typeof v === "object") return JSON.stringify(v);
   return String(v);
 }
 
@@ -114,6 +142,9 @@ export function CallMetadataSheet({ call, onClose }: Props) {
   const meta = (call?.metadata ?? {}) as Record<string, unknown>;
   const extracted = safeArray<ExtractedItem>(call?.dataExtracted);
   const evaluation = safeArray<EvalItem>(call?.dataEvaluation);
+  const additionalMetadata = Object.entries(meta).filter(
+    ([key, value]) => !PRIMARY_METADATA_KEYS.has(key) && !isEmptyMetadataValue(value)
+  );
 
   return (
     <Sheet open={!!call} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -167,6 +198,35 @@ export function CallMetadataSheet({ call, onClose }: Props) {
             </>
           ) : null}
 
+          {/* ── Call Reason ── */}
+          {meta.reason ? (
+            <>
+              <div className="space-y-2">
+                <h3 className="text-base font-bold">Call Reason</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{String(meta.reason)}</p>
+              </div>
+              <Separator />
+            </>
+          ) : null}
+
+          {/* ── Additional metadata ── */}
+          {additionalMetadata.length > 0 ? (
+            <>
+              <div className="space-y-3">
+                <h3 className="text-base font-bold">Additional Metadata</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {additionalMetadata.map(([key, value]) => (
+                    <div key={key} className="space-y-1 rounded-lg bg-[#0d1f3c] p-4">
+                      <p className="text-xs text-muted-foreground">{formatMetadataLabel(key)}</p>
+                      <p className="break-words text-sm font-semibold">{displayValue(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Separator />
+            </>
+          ) : null}
+
           {/* ── Extracted Data ── */}
           {extracted.length > 0 ? (
             <>
@@ -211,7 +271,7 @@ export function CallMetadataSheet({ call, onClose }: Props) {
           ) : null}
 
           {/* ── Empty state ── */}
-          {!meta.intent && !meta.summary && extracted.length === 0 && evaluation.length === 0 ? (
+          {!meta.intent && !meta.summary && !meta.reason && additionalMetadata.length === 0 && extracted.length === 0 && evaluation.length === 0 ? (
             <p className="text-sm text-muted-foreground">No additional data recorded for this call.</p>
           ) : null}
 

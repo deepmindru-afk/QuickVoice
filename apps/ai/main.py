@@ -433,6 +433,16 @@ async def entrypoint(ctx: JobContext):
         return
 
     config["ivr_navigation_enabled"] = ivr_navigation_enabled(config, call_context)
+    logger.info(
+        "[IVR] navigation state: {}",
+        redact_sensitive(
+            {
+                "enabled": config["ivr_navigation_enabled"],
+                "direction": call_context.get("direction"),
+                "agent_id": call_context.get("agent_id") or config.get("agent_id"),
+            }
+        ),
+    )
     session = AgentSession(
         **provider_kwargs,
         vad=silero.VAD.load(),

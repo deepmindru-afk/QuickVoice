@@ -126,6 +126,83 @@ class CallLogHandlerTests(unittest.TestCase):
         self.assertEqual(payload["evaluatedData"][0]["identifier"], "qualified")
         self.assertNotIn("criteria", payload["evaluatedData"][0])
 
+    def test_build_call_log_payload_derives_metadata_from_transcript(self):
+        payload = build_call_log_payload(
+            config={
+                "agent_id": "agent_123",
+                "organization_id": "org_123",
+                "data_needed": [
+                    {"id": "customer_name", "name": "Customer name", "type": "text"},
+                    {"id": "reason", "name": "Call reason", "type": "text"},
+                    {"id": "intention", "name": "Intention", "type": "text"},
+                ],
+            },
+            call_context={
+                "call_id": "call_123",
+                "from_number": "+15550001111",
+                "to_number": "+15551230000",
+            },
+            started_at=datetime(2026, 5, 27, 12, 0, 0, tzinfo=timezone.utc),
+            ended_at=datetime(2026, 5, 27, 12, 1, 0, tzinfo=timezone.utc),
+            recording_path=None,
+            transcripts=[
+                {
+                    "role": "user",
+                    "content": "My name is Avery Stone. I'm calling about upgrading my plan.",
+                    "time": datetime(2026, 5, 27, 12, 0, 5, tzinfo=timezone.utc),
+                },
+                {
+                    "role": "assistant",
+                    "content": "I can help with plan upgrades.",
+                    "time": datetime(2026, 5, 27, 12, 0, 8, tzinfo=timezone.utc),
+                },
+            ],
+        )
+
+        self.assertEqual(payload["metadata"]["username"], "Avery Stone")
+        self.assertEqual(payload["metadata"]["reason"], "upgrading my plan")
+        self.assertEqual(payload["metadata"]["intent"], "upgrading my plan")
+        self.assertIn("Caller said:", payload["metadata"]["summary"])
+        self.assertEqual(
+            {item["name"]: item["value"] for item in payload["extractedData"]},
+            {
+                "Customer name": "Avery Stone",
+                "Call reason": "upgrading my plan",
+                "Intention": "upgrading my plan",
+            },
+        )
+
+    def test_build_call_log_payload_preserves_explicit_metadata_over_transcript_fallback(self):
+        payload = build_call_log_payload(
+            config={
+                "agent_id": "agent_123",
+                "organization_id": "org_123",
+            },
+            call_context={
+                "call_id": "call_123",
+                "from_number": "+15550001111",
+                "to_number": "+15551230000",
+                "summary": "Webhook-provided summary",
+                "intent": "Webhook-provided intent",
+                "metadata": {"username": "Existing User", "reason": "Existing reason"},
+            },
+            started_at=datetime(2026, 5, 27, 12, 0, 0, tzinfo=timezone.utc),
+            ended_at=datetime(2026, 5, 27, 12, 1, 0, tzinfo=timezone.utc),
+            recording_path=None,
+            transcripts=[
+                {
+                    "role": "user",
+                    "content": "My name is Avery Stone. I'm calling about upgrading my plan.",
+                    "time": datetime(2026, 5, 27, 12, 0, 5, tzinfo=timezone.utc),
+                },
+            ],
+        )
+
+        self.assertEqual(payload["metadata"]["username"], "Existing User")
+        self.assertEqual(payload["metadata"]["reason"], "Existing reason")
+        self.assertEqual(payload["metadata"]["summary"], "Webhook-provided summary")
+        self.assertEqual(payload["metadata"]["intent"], "Webhook-provided intent")
+
     def test_post_call_log_uses_internal_auth_and_posts_to_server_calls_endpoint(self):
         calls = []
 
