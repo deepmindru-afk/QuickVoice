@@ -77,7 +77,10 @@ export function BehaviorTab({ agentId }: { agentId: string }) {
         () => normalizeAgentVariables(config?.variables),
         [config?.variables]
     );
-    const savedPlaceholderValues = savedVariables.placeholders ?? {};
+    const savedPlaceholderValues = useMemo(
+        () => savedVariables.placeholders ?? {},
+        [savedVariables.placeholders]
+    );
     const savedPlaceholderSource = useMemo(
         () => JSON.stringify(savedPlaceholderValues),
         [savedPlaceholderValues]

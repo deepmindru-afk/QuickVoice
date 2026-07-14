@@ -268,7 +268,7 @@ export function OutboundCallsPanel() {
     [mode, status]
   );
   const { data, isLoading, isError, isFetching, refetch } = useOutboundCalls(params);
-  const calls = data?.items ?? [];
+  const calls = useMemo(() => data?.items ?? [], [data?.items]);
 
   const agentNames = useMemo(
     () => new Map(agents.map((agent) => [agent.agentId, agent.name])),
