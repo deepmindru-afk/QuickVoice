@@ -100,7 +100,7 @@ export function AnalysisTab({ agentId }: { agentId: string }) {
     });
   }
 
-  const { dataNeeded, evaluations } =
+  const currentAnalysisState =
     analysisState.source === savedSnapshot
       ? analysisState
       : {
@@ -108,6 +108,7 @@ export function AnalysisTab({ agentId }: { agentId: string }) {
           dataNeeded: savedDataNeeded,
           evaluations: savedEvaluations,
         };
+  const { dataNeeded, evaluations } = currentAnalysisState;
   const setDataNeeded = (updater: (items: DataItem[]) => DataItem[]) =>
     setAnalysisState((state) => ({
       ...state,

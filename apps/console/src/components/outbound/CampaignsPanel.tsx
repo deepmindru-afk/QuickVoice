@@ -375,7 +375,7 @@ export function CampaignsPanel() {
         <Button
           variant="outline"
           onClick={() => {
-            downloadCampaignCsv(filteredCampaigns, agentName);
+            downloadCampaignCsv(filteredCampaigns, (id) => agentNames.get(id ?? "") ?? "-");
             toast.success("Campaign export downloaded");
           }}
           disabled={!filteredCampaigns.length}

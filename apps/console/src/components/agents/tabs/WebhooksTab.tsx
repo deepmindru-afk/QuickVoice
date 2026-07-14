@@ -181,15 +181,16 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
         });
     }
 
+    const currentWebhookRowsState =
+        webhookRowsState.source === savedWebhookRowsSource
+            ? webhookRowsState
+            : { source: savedWebhookRowsSource, ...savedWebhookRows };
     const {
         initiationVariableRows,
         initiationHeaderRows,
         initiationBodyRows,
         postHeaderRows,
-    } =
-        webhookRowsState.source === savedWebhookRowsSource
-            ? webhookRowsState
-            : { source: savedWebhookRowsSource, ...savedWebhookRows };
+    } = currentWebhookRowsState;
     const setInitiationVariableRows = (
         rows: WebhookVariableRow[] | ((currentRows: WebhookVariableRow[]) => WebhookVariableRow[])
     ) =>

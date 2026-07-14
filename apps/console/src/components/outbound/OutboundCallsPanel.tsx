@@ -363,7 +363,7 @@ export function OutboundCallsPanel() {
         <Button
           variant="outline"
           onClick={() => {
-            downloadOutboundCsv(filteredCalls, agentName);
+            downloadOutboundCsv(filteredCalls, (id) => agentNames.get(id ?? "") ?? "-");
             toast.success("Outbound export downloaded");
           }}
           disabled={!filteredCalls.length}
