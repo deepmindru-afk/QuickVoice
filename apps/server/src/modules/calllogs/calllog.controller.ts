@@ -6,6 +6,7 @@ import { authorized } from "../../middleware/authorize.middleware.js";
 import { recordAuditEvent } from "../audit/audit-log.service.js";
 import * as calllogService from "./calllog.service.js";
 import {
+  endLiveCallSchema,
   listCallLogsQuerySchema,
   listTranscriptsQuerySchema,
 } from "./calllog.schema.js";
@@ -42,6 +43,33 @@ export const listCallLogs = authorized(async (req, res) => {
     message: "Call logs fetched successfully",
     data: items,
     nextCursor,
+  });
+});
+
+export const listLiveCalls = authorized(async (req, res) => {
+  const liveCalls = await calllogService.listLiveCalls(req.auth.activeOrganizationId);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Live calls fetched successfully",
+    data: liveCalls,
+  });
+});
+
+export const endLiveCall = authorized(async (req, res) => {
+  const { roomName } = endLiveCallSchema.parse(req.body);
+  const result = await calllogService.endLiveCall(req.auth.activeOrganizationId, roomName);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "Live call ended successfully",
+    data: result,
+  });
+  void recordAuditEvent({
+    organizationId: req.auth.activeOrganizationId,
+    userId: req.auth.userId,
+    action: "call_log.live_call_ended",
+    resourceType: "live_call",
+    resourceId: roomName,
+    metadata: { roomName },
   });
 });
 

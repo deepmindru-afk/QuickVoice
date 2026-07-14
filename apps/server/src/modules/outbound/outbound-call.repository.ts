@@ -374,6 +374,17 @@ export async function markCampaignCompleted(campaignId: string) {
   });
 }
 
+export async function markCampaignCancelled(args: {
+  organizationId: string;
+  campaignId: string;
+}) {
+  await prisma.campaign.update({
+    where: { campaignId: args.campaignId },
+    data: { status: CampaignStatus.CANCELLED, completedAt: new Date() },
+  });
+  return getBatchCampaignDetail(args);
+}
+
 export async function getMonthlyUsage(organizationId: string, now = new Date()) {
   const [organization, usage] = await prisma.$transaction([
     prisma.organization.findUnique({

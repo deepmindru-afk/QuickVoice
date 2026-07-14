@@ -7,6 +7,7 @@ import {
   Bot,
   Gauge,
   Settings,
+  ClipboardCheck,
   Webhook,
   Wrench,
 } from "lucide-react";
@@ -17,11 +18,13 @@ import { WebhooksTab } from "@/src/components/agents/tabs/WebhooksTab";
 import { ToolsTab } from "@/src/components/agents/tabs/ToolsTab";
 import { KnowledgeTab } from "@/src/components/agents/tabs/KnowledgeTab";
 import { AdvancedTab } from "@/src/components/agents/tabs/AdvancedTab";
+import { AnalysisTab } from "@/src/components/agents/tabs/AnalysisTab";
 import { LimitsTab } from "@/src/components/agents/tabs/LimitsTab";
 
 const TABS = [
   { id: "behavior", label: "Behavior", icon: Bot },
   { id: "voice", label: "Models & Voices", icon: AudioLines },
+  { id: "analysis", label: "Analysis", icon: ClipboardCheck },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
@@ -50,7 +53,7 @@ export function AgentTabs({ agentId }: { agentId: string }) {
   return (
     <Tabs value={current} onValueChange={onChange} className="w-full min-w-0">
       <div className="border bg-card">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto border-b bg-transparent p-0">
+        <TabsList className="h-auto w-full justify-start overflow-x-auto overflow-y-hidden border-b bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tab) => (
             <TabsTrigger
               key={tab.id}
@@ -69,6 +72,9 @@ export function AgentTabs({ agentId }: { agentId: string }) {
       </TabsContent>
       <TabsContent value="voice" className="mt-6 min-w-0">
         <VoiceTab agentId={agentId} />
+      </TabsContent>
+      <TabsContent value="analysis" className="mt-6 min-w-0">
+        <AnalysisTab agentId={agentId} />
       </TabsContent>
       <TabsContent value="webhooks" className="mt-6 min-w-0">
         <WebhooksTab agentId={agentId} />

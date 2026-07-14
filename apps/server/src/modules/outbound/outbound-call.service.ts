@@ -103,6 +103,9 @@ export async function createQuickOutboundCall(
   const provider = args.provider ?? dialableNumber.provider;
   const sid = args.sid ?? dialableNumber.sid;
   const trunkId = outboundTrunks[provider];
+  const dynamicVariables = normalizeDynamicVariables(args.dynamicVariables);
+  const dynamicVariableData =
+    Object.keys(dynamicVariables).length > 0 ? { dynamicVariables } : {};
 
   if (!trunkId) {
     throw new BadRequestError(`LiveKit outbound trunk is not configured for ${provider}`);
@@ -118,6 +121,7 @@ export async function createQuickOutboundCall(
       username: args.username ?? null,
       provider,
       sid,
+      ...dynamicVariableData,
     },
   });
 
@@ -152,6 +156,7 @@ export async function createQuickOutboundCall(
           username: args.username ?? null,
           provider,
           sid,
+          ...dynamicVariableData,
           livekitParticipant: toJsonValue(livekitParticipant),
           agentDispatch: toJsonValue(agentDispatch),
         }
@@ -324,8 +329,11 @@ function getDispatchId(agentDispatch: unknown) {
 }
 
 function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) {
+  const dynamicVariables = normalizeDynamicVariables(args.dynamicVariables);
+
   return {
     agent_id: args.agentId,
+    organization_id: args.organizationId,
     outbound_id: outboundId,
     direction: "outbound",
     from_number: args.fromNumber,
@@ -334,7 +342,23 @@ function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) 
     first_message: args.firstMessage ?? null,
     system_prompt: args.systemPrompt ?? null,
     username: args.username ?? null,
+    dynamic_variables: Object.keys(dynamicVariables).length > 0 ? dynamicVariables : null,
   };
+}
+
+function normalizeDynamicVariables(value: unknown): Record<string, string> {
+  const record = asRecord(value);
+  const dynamicVariables: Record<string, string> = {};
+
+  for (const [key, entry] of Object.entries(record)) {
+    const name = key.trim();
+    if (!name || typeof entry !== "string") continue;
+
+    const variableValue = entry.trim();
+    if (variableValue) dynamicVariables[name] = variableValue;
+  }
+
+  return dynamicVariables;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

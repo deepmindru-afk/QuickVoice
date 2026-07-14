@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { VoiceProfilePanel } from "@/src/components/agents/VoiceProfilePanel";
 import {
     Form,
     FormControl,
@@ -96,6 +97,10 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         control: form.control,
         name: "ttsModel",
     });
+    const selectedVoiceId = useWatch({
+        control: form.control,
+        name: "voiceId",
+    });
 
     const availableSttModels = useMemo(
         () => getSttModelsForLanguage(selectedLanguage, voiceOptions ?? undefined),
@@ -109,6 +114,14 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         () => getVoicesForTtsModel(selectedTtsModel, selectedLanguage, voiceOptions ?? undefined),
         [selectedLanguage, selectedTtsModel, voiceOptions]
     );
+    const selectedVoice = useMemo(
+        () => availableVoices.find((voice) => voice.id === selectedVoiceId),
+        [availableVoices, selectedVoiceId]
+    );
+    const selectedLanguageLabel =
+        languages.find((language) => language.code === selectedLanguage)?.label ?? selectedLanguage;
+    const selectedTtsModelLabel =
+        availableTtsModels.find((model) => model.id === selectedTtsModel)?.label ?? selectedTtsModel;
 
     useEffect(() => {
         const selectedStt = form.getValues("sttModel");
@@ -326,6 +339,13 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                     <FormMessage />
                                 </FormItem>
                             )}
+                        />
+                    </div>
+                    <div className="mt-5">
+                        <VoiceProfilePanel
+                            voice={selectedVoice}
+                            languageLabel={selectedLanguageLabel}
+                            ttsModelLabel={selectedTtsModelLabel}
                         />
                     </div>
                 </section>

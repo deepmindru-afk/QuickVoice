@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Loader2, PhoneOutgoing, RefreshCw } from "lucide-react";
 
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { DynamicVariableInputs } from "@/src/components/agents/DynamicVariableInputs";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -16,11 +17,16 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
-import { useAgents } from "@/src/hooks/queries/agents";
+import { useAgentConfig, useAgents } from "@/src/hooks/queries/agents";
 import { useNumbers } from "@/src/hooks/queries/numbers";
 import { useQuickOutboundCall } from "@/src/hooks/queries/outbound";
 import { quickCallSchema } from "@/src/models/outbound/quickCall";
 import type { Agent, PhoneNumber } from "@/src/lib/api/types";
+import {
+  dynamicVariablePayload,
+  normalizeAgentVariables,
+  uniqueDynamicVariableNames,
+} from "@/src/lib/agents/dynamic-variables";
 
 type DialableAgent = Agent & {
   numbers: PhoneNumber[];
@@ -59,6 +65,7 @@ export function QuickCallForm() {
   const [username, setUsername] = useState("");
   const [firstMessage, setFirstMessage] = useState("");
   const [systemPrompt, setSystemPrompt] = useState("");
+  const [dynamicVariableValues, setDynamicVariableValues] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [startedCall, setStartedCall] = useState<StartedCall | null>(null);
 
@@ -74,6 +81,20 @@ export function QuickCallForm() {
   const selectedNumber = selectedAgent?.numbers.find(
     (number) => number.number === fromNumber
   );
+  const { data: selectedAgentConfig, isLoading: selectedAgentConfigLoading } = useAgentConfig(agentId);
+  const selectedAgentVariables = useMemo(
+    () => normalizeAgentVariables(selectedAgentConfig?.variables),
+    [selectedAgentConfig?.variables]
+  );
+  const dynamicVariableNames = useMemo(
+    () => uniqueDynamicVariableNames(selectedAgentVariables),
+    [selectedAgentVariables]
+  );
+  useEffect(() => {
+    setDynamicVariableValues(
+      Object.fromEntries(dynamicVariableNames.map((name) => [name, ""]))
+    );
+  }, [agentId, dynamicVariableNames]);
 
   const isLoading = agentsLoading || numbersLoading;
   const canSubmit =
@@ -99,6 +120,10 @@ export function QuickCallForm() {
       username: username.trim() || undefined,
       firstMessage: firstMessage.trim() || undefined,
       systemPrompt: systemPrompt.trim() || undefined,
+      dynamicVariables: dynamicVariablePayload(
+        selectedAgentVariables,
+        dynamicVariableValues
+      ),
     });
 
     if (!parsed.success) {
@@ -119,6 +144,7 @@ export function QuickCallForm() {
 
   function selectAgent(nextAgentId: string) {
     setRequestedAgentId(nextAgentId);
+    setDynamicVariableValues({});
     const nextAgent = dialableAgents.find((agent) => agent.agentId === nextAgentId);
     setRequestedFromNumber(nextAgent?.numbers[0]?.number ?? "");
   }
@@ -237,6 +263,23 @@ export function QuickCallForm() {
               onChange={(event) => setSystemPrompt(event.target.value)}
             />
           </div>
+
+          {selectedAgentConfigLoading ? (
+            <div className="border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+              Loading agent variables...
+            </div>
+          ) : dynamicVariableNames.length > 0 ? (
+            <DynamicVariableInputs
+              idPrefix="quick-call-variable"
+              title="Call variables"
+              description="Values sent only for this outbound call."
+              variableNames={dynamicVariableNames}
+              values={dynamicVariableValues}
+              placeholders={selectedAgentVariables.placeholders}
+              disabled={quickCall.isPending}
+              onValuesChange={setDynamicVariableValues}
+            />
+          ) : null}
 
           {formError ? (
             <p className="text-sm text-destructive">{formError}</p>

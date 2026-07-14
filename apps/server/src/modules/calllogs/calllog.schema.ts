@@ -71,6 +71,11 @@ export const listTranscriptsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(50),
   cursor: z.string().optional(),
 });
+export const endLiveCallSchema = z.object({
+  roomName: z.string().trim().min(1).max(256),
+});
+export type EndLiveCallInput = z.infer<typeof endLiveCallSchema>;
+
 export type ListTranscriptsQuery = z.infer<typeof listTranscriptsQuerySchema>;
 export type ListTranscriptsArgs = ListTranscriptsQuery & {
   organizationId: string;

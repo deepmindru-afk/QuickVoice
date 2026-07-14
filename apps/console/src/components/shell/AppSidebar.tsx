@@ -10,6 +10,7 @@ import {
   BookOpen,
   Settings2,
   Wrench,
+  KeyRound,
   Moon,
   Sun,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const primaryNav: NavItem[] = [
   { title: "Call logs", href: "/calls", icon: PhoneCall },
   { title: "Knowledge base", href: "/kb", icon: BookOpen },
   { title: "Tools", href: "/tools", icon: Wrench },
+  { title: "Secrets", href: "/secrets", icon: KeyRound },
 ];
 
 const settingsNav: NavItem[] = [

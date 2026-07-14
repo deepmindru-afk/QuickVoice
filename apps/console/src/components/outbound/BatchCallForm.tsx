@@ -2,10 +2,12 @@
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
+  Braces,
   CalendarClock,
   CheckCircle2,
   Clock,
   Copy,
+  Download,
   FileSpreadsheet,
   Loader2,
   RefreshCw,
@@ -25,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { useAgents } from "@/src/hooks/queries/agents";
+import { useAgentConfig, useAgents } from "@/src/hooks/queries/agents";
 import { useNumbers } from "@/src/hooks/queries/numbers";
 import {
   useBatchCampaigns,
@@ -34,9 +36,14 @@ import {
 import { outboundApi } from "@/src/lib/api/resources/outbound";
 import type { Agent, PhoneNumber } from "@/src/lib/api/types";
 import {
-  BATCH_TEMPLATE_HEADER,
   batchCampaignSchema,
+  buildBatchTemplateCsv,
+  buildBatchTemplateHeader,
 } from "@/src/models/outbound/campaign";
+import {
+  normalizeAgentVariables,
+  uniqueDynamicVariableNames,
+} from "@/src/lib/agents/dynamic-variables";
 
 const ACCEPT_STRING = ".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -57,6 +64,14 @@ function contentTypeFor(file: File) {
     return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   }
   return "application/octet-stream";
+}
+
+function templateFileName(agentName: string | undefined) {
+  const base = (agentName ?? "quickvoice")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${base || "quickvoice"}-recipients-template.csv`;
 }
 
 function formatDate(value: string | null) {
@@ -97,6 +112,23 @@ export function BatchCallForm() {
   )
     ? requestedFromNumber
     : selectedAgent?.numbers[0]?.number ?? "";
+  const { data: selectedAgentConfig } = useAgentConfig(agentId);
+  const selectedAgentVariables = useMemo(
+    () => normalizeAgentVariables(selectedAgentConfig?.variables),
+    [selectedAgentConfig?.variables]
+  );
+  const dynamicVariableNames = useMemo(
+    () => uniqueDynamicVariableNames(selectedAgentVariables),
+    [selectedAgentVariables]
+  );
+  const templateHeader = useMemo(
+    () => buildBatchTemplateHeader(dynamicVariableNames),
+    [dynamicVariableNames]
+  );
+  const templateCsv = useMemo(
+    () => buildBatchTemplateCsv(dynamicVariableNames),
+    [dynamicVariableNames]
+  );
 
   const isLoading = agentsLoading || numbersLoading;
   const isBusy = createBatch.isPending;
@@ -124,8 +156,18 @@ export function BatchCallForm() {
   }
 
   async function copyHeader() {
-    await navigator.clipboard.writeText(BATCH_TEMPLATE_HEADER);
+    await navigator.clipboard.writeText(templateHeader);
     toast.success("Template header copied");
+  }
+
+  function downloadTemplate() {
+    const blob = new Blob([templateCsv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = templateFileName(selectedAgent?.name);
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -217,7 +259,7 @@ export function BatchCallForm() {
       <form onSubmit={onSubmit} className="border bg-card">
         <div className="flex flex-col gap-2 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-base font-semibold text-foreground">Batch calls</h2>
-          <Badge variant="outline">CSV, XLS, XLSX</Badge>
+          <Badge variant="outline">CSV, XLSX</Badge>
         </div>
 
         <div className="grid gap-5 p-5">
@@ -280,11 +322,16 @@ export function BatchCallForm() {
           </div>
 
           <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Label>Recipient file</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={copyHeader}>
-                <Copy /> Copy header
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={copyHeader}>
+                  <Copy /> Copy header
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={downloadTemplate}>
+                  <Download /> Download CSV
+                </Button>
+              </div>
             </div>
             <button
               type="button"
@@ -296,12 +343,28 @@ export function BatchCallForm() {
                 {file ? file.name : "Select recipient file"}
               </span>
               <span className="max-w-full break-all font-mono text-xs text-muted-foreground">
-                {BATCH_TEMPLATE_HEADER}
+                {templateHeader}
               </span>
               <span className="text-xs text-muted-foreground">
                 language and voice_id can be blank to use the agent defaults
               </span>
             </button>
+            {dynamicVariableNames.length > 0 ? (
+              <div className="border border-dashed bg-muted/20 p-4">
+                <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                  <Braces className="size-4 text-muted-foreground" />
+                  Template variables
+                  <Badge variant="outline">{dynamicVariableNames.length}</Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {dynamicVariableNames.map((name) => (
+                    <Badge key={name} variant="secondary">
+                      {`{{${name}}}`}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <input
               ref={fileRef}
               type="file"

@@ -5,11 +5,56 @@ import type { CreateAgentArgs, UpdateAgentInput, ConfigureAgentInput } from "./a
 type CreateAgentInput = CreateAgentArgs & { agentSlug: string };
 type UpdateAgentRepoInput = UpdateAgentInput & { agentSlug?: string };
 
+const agentConfigCreateDefaults = {
+  concurrent_calls_limit: 5,
+  daily_calls_limit: 20,
+  max_conversation_duration_seconds: 600,
+  silence_end_call_timeout_seconds: 30,
+  turn_timeout_seconds: 30,
+  user_input_audio_format: "mp3",
+  store_call_audio: true,
+  zero_pii_retention: false,
+  conversation_retention_days: 30,
+  enable_auth_for_agent_api: false,
+  voice_similarity_boost: 0.5,
+  voice_speed: 1.0,
+  voice_stability: 0.5,
+};
+
+function toPrismaConfigData(data: ConfigureAgentInput) {
+  return {
+    ...data,
+    initiation_webhook: data.initiation_webhook ?? Prisma.JsonNull,
+    post_call_webhook: data.post_call_webhook ?? Prisma.JsonNull,
+  };
+}
+
 export const createAgent = async (agent: CreateAgentInput) => {
   const newAgent = await prisma.agent.create({
     data: agent,
   });
   return newAgent;
+};
+
+export const createAgentWithConfiguration = async (
+  agent: CreateAgentInput,
+  configuration: ConfigureAgentInput
+) => {
+  return prisma.$transaction(async (tx) => {
+    const newAgent = await tx.agent.create({
+      data: { ...agent, isConfigured: true },
+    });
+
+    await tx.agentConfiguration.create({
+      data: {
+        agentId: newAgent.agentId,
+        ...toPrismaConfigData(configuration),
+        ...agentConfigCreateDefaults,
+      },
+    });
+
+    return newAgent;
+  });
 };
 
 export const findBySlug = async (
@@ -75,11 +120,7 @@ export const configureAgent = async (
   });
   if (!agent ) return null;
 
-  const prismaConfigData = {
-    ...data,
-    initiation_webhook: data.initiation_webhook ?? Prisma.JsonNull,
-    post_call_webhook: data.post_call_webhook ?? Prisma.JsonNull,
-  };
+  const prismaConfigData = toPrismaConfigData(data);
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.agentConfiguration.findUnique({
@@ -101,19 +142,7 @@ export const configureAgent = async (
         data: {
           agentId,
           ...prismaConfigData,
-          concurrent_calls_limit: 5,
-          daily_calls_limit: 20,
-          max_conversation_duration_seconds: 600,
-          silence_end_call_timeout_seconds: 30,
-          turn_timeout_seconds: 30,
-          user_input_audio_format: "mp3",
-          store_call_audio: true,
-          zero_pii_retention: false,
-          conversation_retention_days: 30,
-          enable_auth_for_agent_api: false,
-          voice_similarity_boost: 0.5,
-          voice_speed: 1.0,
-          voice_stability: 0.5,
+          ...agentConfigCreateDefaults,
         },
       }),
       tx.agent.update({

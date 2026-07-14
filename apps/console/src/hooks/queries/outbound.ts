@@ -4,9 +4,58 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { outboundApi } from "@/src/lib/api/resources/outbound";
-import type { CreateBatchCampaignInput } from "@/src/lib/api/resources/outbound";
+import type {
+  CreateBatchCampaignInput,
+  OutboundCallListParams,
+} from "@/src/lib/api/resources/outbound";
 import type { QuickCallInput } from "@/src/models/outbound/quickCall";
 import { queryKeys } from "@/src/lib/query-keys";
+
+export function useOutboundCalls(params: OutboundCallListParams = {}) {
+  return useQuery({
+    queryKey: [...queryKeys.outbound.all, "calls", params] as const,
+    queryFn: () => outboundApi.listOutboundCalls(params),
+  });
+}
+
+export function useOutboundCall(outboundId?: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.outbound.all, "call", outboundId ?? null] as const,
+    queryFn: () => outboundApi.getOutboundCall(outboundId as string),
+    enabled: Boolean(outboundId),
+  });
+}
+
+export function useCancelOutboundCall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (outboundId: string) => outboundApi.cancelOutboundCall(outboundId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.outbound.all });
+      qc.invalidateQueries({ queryKey: queryKeys.calls.all });
+      toast.success("Outbound call cancelled");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not cancel outbound call");
+    },
+  });
+}
+
+export function useRetryOutboundCall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (outboundId: string) => outboundApi.retryOutboundCall(outboundId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.outbound.all });
+      qc.invalidateQueries({ queryKey: queryKeys.calls.all });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      toast.success("Outbound call retry started");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not retry outbound call");
+    },
+  });
+}
 
 export function useQuickOutboundCall() {
   const qc = useQueryClient();
@@ -31,6 +80,14 @@ export function useBatchCampaigns(agentId?: string) {
   });
 }
 
+export function useBatchCampaign(campaignId?: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.outbound.all, "batch", campaignId ?? null] as const,
+    queryFn: () => outboundApi.getBatchCampaign(campaignId as string),
+    enabled: Boolean(campaignId),
+  });
+}
+
 export function useCreateBatchCampaign() {
   const qc = useQueryClient();
   return useMutation({
@@ -42,6 +99,20 @@ export function useCreateBatchCampaign() {
     },
     onError: (err: Error) => {
       toast.error(err.message || "Could not queue batch campaign");
+    },
+  });
+}
+
+export function useCancelBatchCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (campaignId: string) => outboundApi.cancelBatchCampaign(campaignId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.outbound.all });
+      toast.success("Campaign cancelled");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not cancel campaign");
     },
   });
 }

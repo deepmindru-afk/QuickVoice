@@ -50,6 +50,10 @@ test("createQuickOutboundCall persists the quick call and dispatches a LiveKit S
       firstMessage: "Hello from outbound.",
       systemPrompt: "Outbound prompt.",
       username: "Ada",
+      dynamicVariables: {
+        first_name: "Ada",
+        plan: "Starter",
+      },
     },
     {
       repository: repo,
@@ -72,6 +76,10 @@ test("createQuickOutboundCall persists the quick call and dispatches a LiveKit S
     username: "Ada",
     provider: "TWILIO",
     sid: "carrier-sid-123",
+    dynamicVariables: {
+      first_name: "Ada",
+      plan: "Starter",
+    },
   });
 
   const dispatch = calls[1] as any[];
@@ -83,6 +91,10 @@ test("createQuickOutboundCall persists the quick call and dispatches a LiveKit S
   const dispatchMetadata = JSON.parse(dispatch[3].metadata);
   assert.equal(dispatchMetadata.outbound_id, "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113");
   assert.equal(dispatchMetadata.direction, "outbound");
+  assert.deepEqual(dispatchMetadata.dynamic_variables, {
+    first_name: "Ada",
+    plan: "Starter",
+  });
 
   const sip = calls[2] as any[];
   assert.equal(sip[0], "sip");
@@ -104,9 +116,13 @@ test("createQuickOutboundCall persists the quick call and dispatches a LiveKit S
     first_message: "Hello from outbound.",
     system_prompt: "Outbound prompt.",
     username: "Ada",
+    dynamic_variables: {
+      first_name: "Ada",
+      plan: "Starter",
+    },
   });
 
-  assert.deepEqual(calls[3], ["progress", "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113", { username: "Ada", provider: "TWILIO", sid: "carrier-sid-123", livekitParticipant: { participantId: "sip-participant-123" }, agentDispatch: { dispatchId: "agent-dispatch-123" } }]);
+  assert.deepEqual(calls[3], ["progress", "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113", { username: "Ada", provider: "TWILIO", sid: "carrier-sid-123", dynamicVariables: { first_name: "Ada", plan: "Starter" }, livekitParticipant: { participantId: "sip-participant-123" }, agentDispatch: { dispatchId: "agent-dispatch-123" } }]);
 });
 
 test("createQuickOutboundCall marks the outbound row failed when LiveKit dispatch fails", async () => {

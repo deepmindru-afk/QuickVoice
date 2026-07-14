@@ -19,12 +19,14 @@ from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
 from handlers.finalization_handler import CallFinalizer
 from handlers.livekit_handler import recording_path as build_recording_path, start_recording
+from handlers.http_tool_handler import build_http_tool_instructions, call_http_tool, parse_http_tool_arguments
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
 from handlers.privacy_handler import should_store_call_audio
 from handlers.rag_handler import RagRetrievalError, get_rag_context
 from handlers.transcript_collector import TranscriptCollector
 from handlers.worker_handler import (
     PREVIEW_TRANSCRIPT_TOPIC,
+    apply_initiation_webhook_metadata,
     apply_metadata_overrides,
     build_call_context,
     consume_preview_user_transcript_stream,
@@ -102,6 +104,7 @@ def build_agent_instructions(config: dict) -> str:
     metadata_instructions = build_metadata_collection_instructions(config)
     if metadata_instructions:
         instructions += f"\n\n{metadata_instructions}"
+    instructions += build_http_tool_instructions(config.get("tools") or [])
     instructions += build_mcp_tool_instructions(config.get("mcp_connections") or [])
     return instructions
 
@@ -352,6 +355,24 @@ class Assistant(Agent):
         return context or "No matching knowledge base context found."
 
     @function_tool
+    async def call_http_tool(self, tool_name: str, arguments_json: str = "{}") -> str:
+        """
+        Call an attached HTTP tool configured for this agent.
+
+        Args:
+            tool_name: The exact HTTP tool name from the attached HTTP tools list.
+            arguments_json: A JSON object string containing the tool arguments.
+        """
+        arguments = parse_http_tool_arguments(arguments_json)
+        result = await call_http_tool(
+            tool_name=tool_name,
+            arguments=arguments,
+            config=self._config,
+            call_context=self._call_context,
+        )
+        return json.dumps(result.get("data", result), ensure_ascii=False)
+
+    @function_tool
     async def call_mcp_tool(self, connection_id: str, tool_name: str, arguments_json: str = "{}") -> str:
         """
         Call an attached MCP tool using a connected MCP connection.
@@ -379,7 +400,7 @@ async def entrypoint(ctx: JobContext):
     raw_metadata = ctx.job.metadata or ""
     if is_voice_session_metadata(raw_metadata):
         voice_metadata = parse_voice_session_metadata(raw_metadata)
-        metadata = voice_metadata.client_metadata
+        metadata = {**voice_metadata.client_metadata, "mode": voice_metadata.mode}
         preview_mode = voice_metadata.mode == "preview"
         call_context = build_call_context(ctx.room.name, metadata)
         if not call_context.get("agent_id") and metadata.get("agent_id"):
@@ -389,6 +410,7 @@ async def entrypoint(ctx: JobContext):
             agent_number=call_context.get("agent_number"),
             allow_default_config=True,
         )
+        metadata = await apply_initiation_webhook_metadata(config, metadata, call_context)
         config = apply_metadata_overrides(config, metadata)
         config["voice_config"] = voice_metadata.config
         config["agent_language"] = voice_metadata.config["language"]
@@ -411,6 +433,7 @@ async def entrypoint(ctx: JobContext):
             call_context.get("agent_id"),
             agent_number=call_context.get("agent_number"),
         )
+        metadata = await apply_initiation_webhook_metadata(config, metadata, call_context)
         config = apply_metadata_overrides(config, metadata)
         config = attach_resolved_voice_config(config)
     logger.info("Config loaded for agent: {}", redact_sensitive(config.get("agent_id")))

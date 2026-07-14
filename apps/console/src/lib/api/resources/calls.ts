@@ -22,7 +22,22 @@ export interface TranscriptParams {
   cursor?: string;
 }
 
+export interface LiveCallRoom {
+  roomName: string;
+  callId: string;
+  direction: "inbound" | "outbound" | "unknown";
+  participantCount: number;
+  startedAt: string | null;
+}
+
 export const callsApi = {
+  live: async (): Promise<LiveCallRoom[]> => {
+    const res = await apiClient.get<ApiEnvelope<LiveCallRoom[]>>("/calls/live");
+    return res.data.data;
+  },
+  endLive: async (roomName: string): Promise<void> => {
+    await apiClient.post("/calls/live/end", { roomName });
+  },
   list: async (params: CallListParams = {}): Promise<CursorPage<CallLog>> => {
     const res = await apiClient.get<ApiEnvelope<CallLog[]>>("/calls", { params });
     return { data: res.data.data, nextCursor: res.data.nextCursor ?? null };

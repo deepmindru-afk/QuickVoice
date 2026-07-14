@@ -204,13 +204,16 @@ export interface KnowledgeSource {
 
 export interface KVPair {
   key: string;
-  value: string;
+  value: string | null;
+  type?: "Value" | "Secret";
+  redacted?: boolean;
 }
 
 export interface ToolParam {
   name: string;
   type: "String" | "Number" | "Boolean";
   valueType: "LLM Prompt" | "Static Value" | "Dynamic Variable";
+  value?: string | number | boolean | null;
   description: string;
   allowedValues: string[];
   required: boolean;
@@ -234,6 +237,16 @@ export interface Tool {
   createdAt: string;
   updatedAt: string;
   agent: { agentId: string; name: string }[];
+}
+
+export interface Secret {
+  secretId: string;
+  organizationId: string;
+  userId: string | null;
+  name: string;
+  reference: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type McpConnectionStatus =
