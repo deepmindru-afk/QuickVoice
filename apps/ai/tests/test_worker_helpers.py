@@ -14,7 +14,10 @@ from handlers.worker_handler import (
     parse_metadata,
     parse_preview_user_transcript_packet,
     consume_preview_user_transcript_stream,
+    resolve_webhook_dynamic_variables,
     speak_first_message,
+    value_at_json_path,
+    webhook_body_values,
 )
 from livekit.agents import room_io
 
@@ -328,15 +331,21 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["voice"], "aura-2-athena-en")
         self.assertEqual(result["first_message"], "Hi Mumbai customer.")
         self.assertEqual(result["system_prompt"], "Ask about renewal.")
+        self.assertEqual(
+            result["dynamic_variables"],
+            {
+                "city": "Mumbai",
+                "other_dyn_variable": "renewal",
+            },
+        )
         self.assertEqual(config["first_message"], "Hi {{city}} customer.")
 
-    def test_apply_initiation_webhook_metadata_merges_before_call_values(self):
+    def test_apply_initiation_webhook_metadata_resolves_mapped_paths_before_call_values(self):
         async def fake_fetch(webhook, metadata, call_context):
             return {
-                "dynamic_variables": {
-                    "city": "Webhook City",
-                    "plan": "Webhook Plan",
-                }
+                "customer": {"city": "Webhook City"},
+                "account": {"tier": "Gold"},
+                "dynamic_variables": {"plan": "Webhook Plan"},
             }
 
         result = asyncio.run(
@@ -346,8 +355,9 @@ class WorkerHandlerTests(unittest.TestCase):
                         "webhook_url": "https://example.com/init",
                         "method": "POST",
                         "dynamic_variables": {
-                            "city": "Static City",
-                            "tier": "Static Tier",
+                            "city": "customer.city",
+                            "tier": "account.tier",
+                            "missing": "account.missing",
                         },
                     }
                 },
@@ -366,9 +376,43 @@ class WorkerHandlerTests(unittest.TestCase):
             result["dynamic_variables"],
             {
                 "city": "Call City",
-                "tier": "Static Tier",
-                "plan": "Webhook Plan",
+                "tier": "Gold",
             },
+        )
+
+    def test_resolve_webhook_dynamic_variables_supports_json_paths(self):
+        payload = {
+            "customer": {"name": "Avery"},
+            "items": [{"total": 125.4}],
+            "account.balance_due": "legacy-flat-key",
+        }
+
+        self.assertEqual(value_at_json_path(payload, "customer.name"), "Avery")
+        self.assertEqual(value_at_json_path(payload, "$.items[0].total"), 125.4)
+        self.assertEqual(value_at_json_path(payload, "account.balance_due"), "legacy-flat-key")
+        self.assertEqual(
+            resolve_webhook_dynamic_variables(
+                payload,
+                {
+                    "customer_name": "customer.name",
+                    "balance_due": "$.items[0].total",
+                    "missing": "items[1].total",
+                },
+            ),
+            {
+                "customer_name": "Avery",
+                "balance_due": 125.4,
+            },
+        )
+        self.assertEqual(
+            webhook_body_values(
+                {
+                    "tenant": {"value": "acme", "type": "Value"},
+                    "empty": {"value": "", "type": "Value"},
+                    "plain": "kept",
+                }
+            ),
+            {"tenant": "acme", "plain": "kept"},
         )
 
     def test_apply_metadata_overrides_uses_placeholders_as_dynamic_variable_fallbacks(self):
@@ -399,6 +443,33 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["first_message"], "Hi Austin Ada.")
         self.assertEqual(result["system_prompt"], "Plan Starter for {{missing}}.")
 
+    def test_apply_metadata_overrides_renders_inbound_dynamic_variables(self):
+        config = {
+            "first_message": "Hi {{name}}.",
+            "system_prompt": "Use {{plan}}.",
+            "variables": {
+                "firstMessage": ["name"],
+                "systemPrompt": ["plan"],
+                "placeholders": {
+                    "name": "Fallback Name",
+                    "plan": "Starter",
+                },
+            },
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "direction": "inbound",
+                "first_message": "Override {{name}}.",
+                "dynamic_variables": {
+                    "name": "Inbound Ada",
+                },
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Hi Inbound Ada.")
+        self.assertEqual(result["system_prompt"], "Use Starter.")
 
 
 if __name__ == "__main__":

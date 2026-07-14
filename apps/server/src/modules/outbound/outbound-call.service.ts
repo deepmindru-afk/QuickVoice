@@ -333,6 +333,7 @@ function buildOutboundMetadata(args: QuickOutboundCallArgs, outboundId: string) 
 
   return {
     agent_id: args.agentId,
+    organization_id: args.organizationId,
     outbound_id: outboundId,
     direction: "outbound",
     from_number: args.fromNumber,

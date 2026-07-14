@@ -111,27 +111,27 @@ def apply_metadata_overrides(config: dict[str, Any], metadata: dict[str, Any]) -
     updated = dict(config)
     mode = _pick(metadata, "mode")
     direction = _pick(metadata, "direction", "callDirection")
-    if direction != "outbound" and mode != "preview":
-        return updated
-
     first_message = _pick(metadata, "first_message", "firstMessage")
     system_prompt = _pick(metadata, "system_prompt", "systemPrompt")
     language = _pick(metadata, "language", "agent_language", "agentLanguage")
     voice_id = _pick(metadata, "voice_id", "voiceId")
     metadata_dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
-    if first_message:
-        updated["first_message"] = first_message
-    if system_prompt:
-        updated["system_prompt"] = system_prompt
-    if language:
-        updated["agent_language"] = language
-    if voice_id:
-        updated["voice"] = voice_id
+    should_apply_metadata_overrides = direction == "outbound" or mode == "preview"
+    if should_apply_metadata_overrides:
+        if first_message:
+            updated["first_message"] = first_message
+        if system_prompt:
+            updated["system_prompt"] = system_prompt
+        if language:
+            updated["agent_language"] = language
+        if voice_id:
+            updated["voice"] = voice_id
     dynamic_variables = merge_dynamic_variables(
         dynamic_variable_placeholders(updated.get("variables")),
         metadata_dynamic_variables,
     )
     if dynamic_variables:
+        updated["dynamic_variables"] = dynamic_variables
         updated["first_message"] = render_dynamic_variables(
             str(updated.get("first_message") or ""),
             dynamic_variables,
@@ -167,9 +167,18 @@ async def apply_initiation_webhook_metadata(
         response = {}
 
     existing_dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
+    webhook_mappings = webhook.get("dynamic_variables")
+    mapped_dynamic_variables = resolve_webhook_dynamic_variables(
+        response,
+        webhook_mappings,
+    )
+    webhook_dynamic_variables = (
+        mapped_dynamic_variables
+        if isinstance(webhook_mappings, dict)
+        else extract_webhook_dynamic_variables(response)
+    )
     dynamic_variables = merge_dynamic_variables(
-        webhook.get("dynamic_variables"),
-        extract_webhook_dynamic_variables(response),
+        webhook_dynamic_variables,
         existing_dynamic_variables,
     )
 
@@ -201,7 +210,10 @@ def _fetch_initiation_webhook_json(
     body = None
     if method == "POST":
         headers.setdefault("Content-Type", "application/json")
-        body = json.dumps({"call": call_context, "metadata": metadata}).encode("utf-8")
+        request_body = webhook_body_values(webhook.get("body"))
+        request_body.setdefault("call", call_context)
+        request_body.setdefault("metadata", metadata)
+        body = json.dumps(request_body).encode("utf-8")
 
     request = Request(
         str(webhook["webhook_url"]),
@@ -241,6 +253,24 @@ def webhook_header_values(headers: Any) -> dict[str, str]:
     return resolved
 
 
+def webhook_body_values(body: Any) -> dict[str, Any]:
+    if not isinstance(body, dict):
+        return {}
+
+    resolved: dict[str, Any] = {}
+    for key, entry in body.items():
+        if not key:
+            continue
+        if isinstance(entry, dict):
+            value = entry.get("value")
+        else:
+            value = entry
+        if value in (None, ""):
+            continue
+        resolved[str(key)] = value
+    return resolved
+
+
 def extract_webhook_dynamic_variables(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return {}
@@ -250,6 +280,90 @@ def extract_webhook_dynamic_variables(payload: Any) -> dict[str, Any]:
         if isinstance(variables, dict):
             return normalize_dynamic_variables(variables)
     return normalize_dynamic_variables(payload)
+
+
+def resolve_webhook_dynamic_variables(
+    payload: Any,
+    mappings: Any,
+) -> dict[str, Any]:
+    if not isinstance(mappings, dict):
+        return {}
+
+    resolved: dict[str, Any] = {}
+    for name, path in mappings.items():
+        variable_name = str(name).strip()
+        if not variable_name or not isinstance(path, str) or not path.strip():
+            continue
+
+        value = value_at_json_path(payload, path)
+        if value in (None, ""):
+            continue
+        resolved[variable_name] = value
+    return resolved
+
+
+def value_at_json_path(payload: Any, path: str) -> Any:
+    if payload is None:
+        return None
+
+    normalized_path = path.strip()
+    if not normalized_path:
+        return None
+    if normalized_path.startswith("$."):
+        normalized_path = normalized_path[2:]
+    elif normalized_path == "$":
+        return payload
+
+    if isinstance(payload, dict) and normalized_path in payload:
+        return payload[normalized_path]
+
+    tokens = json_path_tokens(normalized_path)
+    if not tokens:
+        return None
+
+    current = payload
+    for token in tokens:
+        if isinstance(token, int):
+            if not isinstance(current, list) or token < 0 or token >= len(current):
+                return None
+            current = current[token]
+            continue
+
+        if not isinstance(current, dict) or token not in current:
+            return None
+        current = current[token]
+    return current
+
+
+def json_path_tokens(path: str) -> list[str | int]:
+    tokens: list[str | int] = []
+    for part in path.split("."):
+        if not part:
+            return []
+
+        cursor = 0
+        name_chars: list[str] = []
+        while cursor < len(part):
+            char = part[cursor]
+            if char == "[":
+                if name_chars:
+                    tokens.append("".join(name_chars))
+                    name_chars = []
+                end = part.find("]", cursor + 1)
+                if end == -1:
+                    return []
+                index_text = part[cursor + 1 : end]
+                if not index_text.isdigit():
+                    return []
+                tokens.append(int(index_text))
+                cursor = end + 1
+                continue
+            name_chars.append(char)
+            cursor += 1
+
+        if name_chars:
+            tokens.append("".join(name_chars))
+    return tokens
 
 
 def dynamic_variable_placeholders(variables: Any) -> dict[str, Any]:

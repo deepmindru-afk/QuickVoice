@@ -6,6 +6,7 @@ import {
 } from "@/src/components/ui/sidebar";
 import { AppSidebar } from "@/src/components/shell/AppSidebar";
 import { Topbar } from "@/src/components/shell/Topbar";
+import { LiveCallsDock } from "@/src/components/calls/LiveCallsDock";
 import { PageActionsProvider } from "@/src/components/shell/PageActionsSlot";
 import { requireSession } from "@/src/lib/server-session";
 
@@ -34,6 +35,7 @@ export default async function AppLayout({
         <PageActionsProvider>
           <Topbar />
           <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">{children}</div>
+          <LiveCallsDock />
         </PageActionsProvider>
       </SidebarInset>
     </SidebarProvider>

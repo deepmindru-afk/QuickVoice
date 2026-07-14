@@ -17,6 +17,28 @@ import { queryKeys } from "@/src/lib/query-keys";
 
 const PAGE_SIZE = 20;
 
+export function useLiveCalls() {
+  return useQuery({
+    queryKey: queryKeys.calls.live(),
+    queryFn: () => callsApi.live(),
+    refetchInterval: 5000,
+  });
+}
+
+export function useEndLiveCall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (roomName: string) => callsApi.endLive(roomName),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.calls.live() });
+      toast.success("Live call ended");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not end live call");
+    },
+  });
+}
+
 export function useCalls(
   params: Omit<CallListParams, "cursor" | "limit">,
   limit: number = PAGE_SIZE

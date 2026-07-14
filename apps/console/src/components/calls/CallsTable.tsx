@@ -10,6 +10,7 @@ import {
   Info,
   Trash2,
   Columns3,
+  Download,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -57,6 +58,7 @@ import { useAgents } from "@/src/hooks/queries/agents";
 import { useCalls, useDeleteCall } from "@/src/hooks/queries/calls";
 import type { CallListParams } from "@/src/lib/api/resources/calls";
 import type { CallLog, CallStatus } from "@/src/lib/api/types";
+import { downloadRowsAsCsv } from "@/src/lib/export-csv";
 
 // ── formatters ────────────────────────────────────────────────────────────────
 
@@ -200,6 +202,18 @@ export function CallsTable({
   const agentName = (id: string | null) =>
     agents?.find((a) => a.agentId === id)?.name ?? "—";
 
+  function exportCalls() {
+    downloadRowsAsCsv("quickvoice-call-history.csv", calls, [
+      { header: "Start time", value: (call) => call.startTime ?? "" },
+      { header: "Number", value: (call) => call.callerId ?? "" },
+      { header: "Agent", value: (call) => agentName(call.agentId) },
+      { header: "Duration seconds", value: (call) => call.durationSeconds ?? "" },
+      { header: "Direction", value: (call) => call.direction ?? "" },
+      { header: "Status", value: (call) => call.status },
+      { header: "Call ID", value: (call) => call.callId },
+    ]);
+  }
+
   const toggleCol = (key: ColKey) =>
     setVisibleCols((prev) => {
       const next = new Set(prev);
@@ -273,7 +287,17 @@ export function CallsTable({
     <>
       <div className="space-y-3">
         {/* ── toolbar ── */}
-        <div className="flex items-center justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={exportCalls}
+            disabled={calls.length === 0}
+          >
+            <Download className="size-4" />
+            Export CSV
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">

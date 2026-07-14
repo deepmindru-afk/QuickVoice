@@ -11,6 +11,7 @@ import {
   storeSecretReferences,
 } from "../secrets/secret-store.service.js";
 import * as agentRepository from "./agent.repository.js";
+import { templateConfigFor } from "./agent.templates.js";
 import type {
   ConfigureAgentArgs,
   CreateAgentArgs,
@@ -93,10 +94,20 @@ export const createAgent = async (args: CreateAgentArgs) => {
     );
   }
 
-  return agentRepository.createAgent({
+  const createInput = {
     ...args,
     agentSlug,
-  });
+  };
+  const templateConfig = templateConfigFor(args.templateId);
+
+  if (templateConfig) {
+    return agentRepository.createAgentWithConfiguration(
+      createInput,
+      templateConfig
+    );
+  }
+
+  return agentRepository.createAgent(createInput);
 };
 
 export const getAgents = async (organizationId: string) => {

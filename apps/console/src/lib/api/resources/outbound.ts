@@ -17,8 +17,32 @@ export interface OutboundCall {
   optionalData: Record<string, unknown> | null;
   mode: "quick" | "campaign";
   status: CallStatus;
+  failureReason?: string | null;
+  cancellationReason?: string | null;
+  callLog?: {
+    callId: string;
+    status: CallStatus;
+    startTime: string | null;
+    endTime: string | null;
+    durationSeconds: number | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface OutboundCallListParams {
+  agentId?: string;
+  status?: CallStatus;
+  mode?: "quick" | "campaign";
+  limit?: number;
+  cursor?: string;
+}
+
+export interface OutboundCallPage {
+  items: OutboundCall[];
+  count: number;
+  filters: Record<string, unknown>;
+  nextCursor: string | null;
 }
 
 export interface QuickOutboundCallResponse {
@@ -65,6 +89,35 @@ export interface BatchCampaign {
 }
 
 export const outboundApi = {
+  listOutboundCalls: async (
+    params: OutboundCallListParams = {}
+  ): Promise<OutboundCallPage> => {
+    const res = await apiClient.get<ApiEnvelope<OutboundCallPage>>(
+      "/outbound-calls",
+      { params }
+    );
+    return res.data.data;
+  },
+  getOutboundCall: async (outboundId: string): Promise<OutboundCall> => {
+    const res = await apiClient.get<ApiEnvelope<OutboundCall>>(
+      `/outbound-calls/${outboundId}`
+    );
+    return res.data.data;
+  },
+  cancelOutboundCall: async (outboundId: string): Promise<OutboundCall> => {
+    const res = await apiClient.post<ApiEnvelope<OutboundCall>>(
+      `/outbound-calls/${outboundId}/cancel`,
+      {}
+    );
+    return res.data.data;
+  },
+  retryOutboundCall: async (outboundId: string): Promise<unknown> => {
+    const res = await apiClient.post<ApiEnvelope<unknown>>(
+      `/outbound-calls/${outboundId}/retry`,
+      {}
+    );
+    return res.data.data;
+  },
   quickCall: async (
     input: QuickCallInput
   ): Promise<QuickOutboundCallResponse> => {
@@ -103,6 +156,13 @@ export const outboundApi = {
   getBatchCampaign: async (campaignId: string): Promise<BatchCampaign> => {
     const res = await apiClient.get<ApiEnvelope<BatchCampaign>>(
       `/outbound-calls/batches/${campaignId}`
+    );
+    return res.data.data;
+  },
+  cancelBatchCampaign: async (campaignId: string): Promise<BatchCampaign> => {
+    const res = await apiClient.post<ApiEnvelope<BatchCampaign>>(
+      `/outbound-calls/batches/${campaignId}/cancel`,
+      {}
     );
     return res.data.data;
   },

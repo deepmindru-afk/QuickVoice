@@ -1,4 +1,4 @@
-import { AgentDispatchClient, SipClient } from "livekit-server-sdk";
+import { AgentDispatchClient, RoomServiceClient, SipClient } from "livekit-server-sdk";
 
 // SipClient expects an https:// host. LIVEKIT_URL is typically wss:// for the
 // realtime SDK — normalize it here so callers can use the same env var.
@@ -12,6 +12,12 @@ export const livekitSipClient = new SipClient(
 );
 
 export const livekitAgentDispatchClient = new AgentDispatchClient(
+  httpHost,
+  process.env.LIVEKIT_API_KEY,
+  process.env.LIVEKIT_API_SECRET
+);
+
+export const livekitRoomServiceClient = new RoomServiceClient(
   httpHost,
   process.env.LIVEKIT_API_KEY,
   process.env.LIVEKIT_API_SECRET

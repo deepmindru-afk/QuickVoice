@@ -24,6 +24,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.calls.all, "detail", id] as const,
     transcript: (id: string) =>
       [...queryKeys.calls.all, "transcript", id] as const,
+    live: () => [...queryKeys.calls.all, "live"] as const,
   },
   outbound: {
     all: ["outbound"] as const,
@@ -61,6 +62,10 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.tools.all, "detail", id] as const,
     agentTools: (agentId: string) =>
       [...queryKeys.tools.all, "agent", agentId] as const,
+  },
+  secrets: {
+    all: ["secrets"] as const,
+    list: () => [...queryKeys.secrets.all, "list"] as const,
   },
   mcp: {
     all: ["mcp"] as const,

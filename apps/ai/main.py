@@ -19,6 +19,7 @@ from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
 from handlers.finalization_handler import CallFinalizer
 from handlers.livekit_handler import recording_path as build_recording_path, start_recording
+from handlers.http_tool_handler import build_http_tool_instructions, call_http_tool, parse_http_tool_arguments
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
 from handlers.privacy_handler import should_store_call_audio
 from handlers.rag_handler import RagRetrievalError, get_rag_context
@@ -103,6 +104,7 @@ def build_agent_instructions(config: dict) -> str:
     metadata_instructions = build_metadata_collection_instructions(config)
     if metadata_instructions:
         instructions += f"\n\n{metadata_instructions}"
+    instructions += build_http_tool_instructions(config.get("tools") or [])
     instructions += build_mcp_tool_instructions(config.get("mcp_connections") or [])
     return instructions
 
@@ -351,6 +353,24 @@ class Assistant(Agent):
         except RagRetrievalError:
             return "Knowledge base search is temporarily unavailable. Please try again later."
         return context or "No matching knowledge base context found."
+
+    @function_tool
+    async def call_http_tool(self, tool_name: str, arguments_json: str = "{}") -> str:
+        """
+        Call an attached HTTP tool configured for this agent.
+
+        Args:
+            tool_name: The exact HTTP tool name from the attached HTTP tools list.
+            arguments_json: A JSON object string containing the tool arguments.
+        """
+        arguments = parse_http_tool_arguments(arguments_json)
+        result = await call_http_tool(
+            tool_name=tool_name,
+            arguments=arguments,
+            config=self._config,
+            call_context=self._call_context,
+        )
+        return json.dumps(result.get("data", result), ensure_ascii=False)
 
     @function_tool
     async def call_mcp_tool(self, connection_id: str, tool_name: str, arguments_json: str = "{}") -> str:

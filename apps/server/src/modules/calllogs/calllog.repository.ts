@@ -161,6 +161,25 @@ export const getTranscriptsByCallId = async (args: ListTranscriptsArgs) => {
   });
 };
 
+export const liveRoomBelongsToOrg = async (
+  organizationId: string,
+  roomName: string
+) => {
+  if (roomName.startsWith("outbound_")) {
+    const outboundId = roomName.slice("outbound_".length);
+    const count = await prisma.outboundCall.count({
+      where: { outboundId, organizationId },
+    });
+    return count > 0;
+  }
+
+  const numbers = await prisma.phoneNumber.findMany({
+    where: { organizationId },
+    select: { number: true },
+  });
+  return numbers.some((number) => roomName.includes(number.number));
+};
+
 export const deleteCallLog = async (callId: string, organizationId: string) => {
   // Soft delete: flip `deleted=true`. Idempotent — a row already deleted
   // yields count: 0, which the service surfaces as NotFoundError.

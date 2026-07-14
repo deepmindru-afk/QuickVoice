@@ -3,12 +3,14 @@ import { z } from "zod";
 const kvPair = z.object({
   key: z.string(),
   value: z.string(),
+  type: z.enum(["Value", "Secret"]).optional(),
 });
 
 const toolParam = z.object({
   name: z.string(),
   type: z.enum(["String", "Number", "Boolean"]),
   valueType: z.enum(["LLM Prompt", "Static Value", "Dynamic Variable"]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional().nullable(),
   description: z.string(),
   allowedValues: z.array(z.string()).default([]),
   required: z.boolean().default(false),

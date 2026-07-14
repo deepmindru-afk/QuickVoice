@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { Braces, Loader2, Save } from "lucide-react";
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
@@ -30,8 +31,17 @@ import {
     useSaveAgentConfig,
 } from "@/src/hooks/queries/agents";
 import { mergeConfig } from "@/src/lib/agents/config-defaults";
-
-const webhookVariableNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+import {
+    normalizeAgentVariables,
+    uniqueDynamicVariableNames,
+} from "@/src/lib/agents/dynamic-variables";
+import {
+    WebhookSecretFieldEditor,
+    rowsForSecretFields,
+    secretFieldRecordsEqual,
+    secretFieldsFromRows,
+    type SecretFieldRow,
+} from "@/src/components/agents/WebhookSecretFieldEditor";
 
 const schema = z.object({
     initiation_enabled: z.boolean(),
@@ -65,20 +75,31 @@ type WebhookVariableRow = {
     value: string;
 };
 
-function createVariableRow(key = "", value = ""): WebhookVariableRow {
-    return {
-        id: globalThis.crypto?.randomUUID?.() ?? String(Date.now()) + "-" + String(Math.random()),
-        key,
-        value,
-    };
+function variableToken(name: string) {
+    return `{{${name}}}`;
 }
 
-function rowsFromRecord(value: unknown): WebhookVariableRow[] {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+function recordFromUnknown(value: unknown): Record<string, string> {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
-    return Object.entries(value as Record<string, unknown>).map(([key, entry]) =>
-        createVariableRow(key, typeof entry === "string" ? entry : String(entry ?? ""))
-    );
+    const record: Record<string, string> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+        if (!key.trim()) continue;
+        record[key] = typeof entry === "string" ? entry : String(entry ?? "");
+    }
+    return record;
+}
+
+function rowsForVariables(
+    variableNames: string[],
+    value: unknown
+): WebhookVariableRow[] {
+    const record = recordFromUnknown(value);
+    return variableNames.map((key) => ({
+        id: key,
+        key,
+        value: record[key] ?? "",
+    }));
 }
 
 function recordFromRows(rows: WebhookVariableRow[]) {
@@ -86,27 +107,10 @@ function recordFromRows(rows: WebhookVariableRow[]) {
     for (const row of rows) {
         const key = row.key.trim();
         const value = row.value.trim();
-        if (!key && !value) continue;
         if (!key || !value) continue;
         record[key] = value;
     }
     return record;
-}
-
-function validateRows(rows: WebhookVariableRow[]) {
-    const seen = new Set<string>();
-    for (const row of rows) {
-        const key = row.key.trim();
-        const value = row.value.trim();
-        if (!key && !value) continue;
-        if (!key || !value) return "Complete or remove empty variable rows.";
-        if (!webhookVariableNamePattern.test(key)) {
-            return "Variable names must start with a letter or underscore and use only letters, numbers, and underscores.";
-        }
-        if (seen.has(key)) return "Variable " + key + " is duplicated.";
-        seen.add(key);
-    }
-    return null;
 }
 
 function recordsEqual(a: Record<string, string>, b: Record<string, string>) {
@@ -120,7 +124,9 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
     const { data: config, isLoading } = useAgentConfig(agentId);
     const save = useSaveAgentConfig(agentId);
     const [initiationVariableRows, setInitiationVariableRows] = useState<WebhookVariableRow[]>([]);
-    const [webhookError, setWebhookError] = useState<string | null>(null);
+    const [initiationHeaderRows, setInitiationHeaderRows] = useState<SecretFieldRow[]>([]);
+    const [initiationBodyRows, setInitiationBodyRows] = useState<SecretFieldRow[]>([]);
+    const [postHeaderRows, setPostHeaderRows] = useState<SecretFieldRow[]>([]);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -135,6 +141,15 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
         },
     });
 
+    const agentVariables = useMemo(
+        () => normalizeAgentVariables(config?.variables),
+        [config?.variables]
+    );
+    const detectedVariableNames = useMemo(
+        () => uniqueDynamicVariableNames(agentVariables),
+        [agentVariables]
+    );
+
     useEffect(() => {
         if (!config) return;
         const init = config.initiation_webhook;
@@ -148,13 +163,22 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
             post_transcript: post?.transcript ?? true,
             post_audio: post?.audio_url ?? false,
         });
-        setInitiationVariableRows(rowsFromRecord(init?.dynamic_variables));
-        setWebhookError(null);
-    }, [config, form]);
+        setInitiationVariableRows(
+            rowsForVariables(detectedVariableNames, init?.dynamic_variables)
+        );
+        setInitiationHeaderRows(rowsForSecretFields(init?.headers));
+        setInitiationBodyRows(rowsForSecretFields(init?.body));
+        setPostHeaderRows(rowsForSecretFields(post?.headers));
+    }, [config, detectedVariableNames, form]);
 
     const savedInitiationVariables = useMemo(
-        () => recordFromRows(rowsFromRecord(config?.initiation_webhook?.dynamic_variables)),
-        [config?.initiation_webhook?.dynamic_variables]
+        () => recordFromRows(
+            rowsForVariables(
+                detectedVariableNames,
+                config?.initiation_webhook?.dynamic_variables
+            )
+        ),
+        [config?.initiation_webhook?.dynamic_variables, detectedVariableNames]
     );
     const currentInitiationVariables = useMemo(
         () => recordFromRows(initiationVariableRows),
@@ -164,20 +188,51 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
         currentInitiationVariables,
         savedInitiationVariables
     );
+    const savedInitiationHeaders = useMemo(
+        () => secretFieldsFromRows(rowsForSecretFields(config?.initiation_webhook?.headers)),
+        [config?.initiation_webhook?.headers]
+    );
+    const currentInitiationHeaders = useMemo(
+        () => secretFieldsFromRows(initiationHeaderRows),
+        [initiationHeaderRows]
+    );
+    const savedInitiationBody = useMemo(
+        () => secretFieldsFromRows(rowsForSecretFields(config?.initiation_webhook?.body)),
+        [config?.initiation_webhook?.body]
+    );
+    const currentInitiationBody = useMemo(
+        () => secretFieldsFromRows(initiationBodyRows),
+        [initiationBodyRows]
+    );
+    const savedPostHeaders = useMemo(
+        () => secretFieldsFromRows(rowsForSecretFields(config?.post_call_webhook?.headers)),
+        [config?.post_call_webhook?.headers]
+    );
+    const currentPostHeaders = useMemo(
+        () => secretFieldsFromRows(postHeaderRows),
+        [postHeaderRows]
+    );
+    const webhookFieldsChanged =
+        !secretFieldRecordsEqual(currentInitiationHeaders, savedInitiationHeaders) ||
+        !secretFieldRecordsEqual(currentInitiationBody, savedInitiationBody) ||
+        !secretFieldRecordsEqual(currentPostHeaders, savedPostHeaders);
 
     async function onSubmit(v: FormValues) {
-        setWebhookError(null);
-        const rowError = validateRows(initiationVariableRows);
-        if (rowError) {
-            setWebhookError(rowError);
-            return;
-        }
-
         const dynamic_variables = recordFromRows(initiationVariableRows);
+        const initiationHeaders = secretFieldsFromRows(initiationHeaderRows);
+        const initiationBody = secretFieldsFromRows(initiationBodyRows);
+        const postHeaders = secretFieldsFromRows(postHeaderRows);
+        const shouldSendInitiationBody = v.initiation_method === "POST";
         const initiation_webhook = v.initiation_enabled
             ? {
                 webhook_url: v.initiation_url,
                 method: v.initiation_method,
+                ...(Object.keys(initiationHeaders).length > 0
+                    ? { headers: initiationHeaders }
+                    : {}),
+                ...(shouldSendInitiationBody && Object.keys(initiationBody).length > 0
+                    ? { body: initiationBody }
+                    : {}),
                 ...(Object.keys(dynamic_variables).length > 0 ? { dynamic_variables } : {}),
             }
             : null;
@@ -185,6 +240,7 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
             ? {
                 webhook_url: v.post_url,
                 method: "POST" as const,
+                ...(Object.keys(postHeaders).length > 0 ? { headers: postHeaders } : {}),
                 transcript: v.post_transcript,
                 audio_url: v.post_audio,
             }
@@ -193,7 +249,12 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
             mergeConfig(config, { initiation_webhook, post_call_webhook })
         );
         form.reset(v);
-        setInitiationVariableRows(rowsFromRecord(dynamic_variables));
+        setInitiationVariableRows(
+            rowsForVariables(detectedVariableNames, dynamic_variables)
+        );
+        setInitiationHeaderRows(rowsForSecretFields(initiationHeaders));
+        setInitiationBodyRows(rowsForSecretFields(initiationBody));
+        setPostHeaderRows(rowsForSecretFields(postHeaders));
     }
 
     const initiationOn = useWatch({
@@ -204,20 +265,17 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
         control: form.control,
         name: "post_enabled",
     });
-    const canSave = form.formState.isDirty || initiationVariablesChanged;
+    const initiationMethod = useWatch({
+        control: form.control,
+        name: "initiation_method",
+    });
+    const canSave =
+        form.formState.isDirty || initiationVariablesChanged || webhookFieldsChanged;
 
-    function addVariableRow() {
-        setInitiationVariableRows((rows) => [...rows, createVariableRow()]);
-    }
-
-    function updateVariableRow(id: string, patch: Partial<WebhookVariableRow>) {
+    function updateVariableRow(id: string, value: string) {
         setInitiationVariableRows((rows) =>
-            rows.map((row) => (row.id === id ? { ...row, ...patch } : row))
+            rows.map((row) => (row.id === id ? { ...row, value } : row))
         );
-    }
-
-    function removeVariableRow(id: string) {
-        setInitiationVariableRows((rows) => rows.filter((row) => row.id !== id));
     }
 
     return (
@@ -292,65 +350,68 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                         />
                     </div>
 
+                    <div className="mt-5 grid gap-4 xl:grid-cols-2">
+                        <WebhookSecretFieldEditor
+                            label="Headers"
+                            description="Sent with the initiation webhook request."
+                            rows={initiationHeaderRows}
+                            onChange={setInitiationHeaderRows}
+                            disabled={!initiationOn || save.isPending}
+                            keyPlaceholder="Header"
+                        />
+                        <WebhookSecretFieldEditor
+                            label="Body fields"
+                            description="Sent in the initiation webhook body for POST requests."
+                            rows={initiationBodyRows}
+                            onChange={setInitiationBodyRows}
+                            disabled={!initiationOn || initiationMethod === "GET" || save.isPending}
+                            keyPlaceholder="Field"
+                        />
+                    </div>
+
                     <div className="mt-5 border border-dashed bg-muted/20 p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="space-y-1">
-                                <p className="text-sm font-medium">Static variables</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Braces className="size-4 text-muted-foreground" />
+                                    <p className="text-sm font-medium">Response mapping</p>
+                                    <Badge variant="outline">
+                                        {detectedVariableNames.length} variable{detectedVariableNames.length === 1 ? "" : "s"}
+                                    </Badge>
+                                </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Values saved here can be returned as initiation context.
+                                    Map webhook response JSON paths to variables detected in the agent prompts.
                                 </p>
                             </div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={addVariableRow}
-                                disabled={!initiationOn}
-                            >
-                                <Plus /> Add variable
-                            </Button>
                         </div>
 
                         {initiationVariableRows.length > 0 ? (
                             <div className="mt-4 space-y-3">
                                 {initiationVariableRows.map((row) => (
-                                    <div key={row.id} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                                    <div
+                                        key={row.id}
+                                        className="grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]"
+                                    >
+                                        <div className="flex min-h-9 items-center border bg-background px-2.5 py-1 font-mono text-sm">
+                                            {variableToken(row.key)}
+                                        </div>
                                         <Input
-                                            aria-label="Variable name"
-                                            placeholder="customer_name"
-                                            value={row.key}
-                                            disabled={!initiationOn}
-                                            onChange={(event) =>
-                                                updateVariableRow(row.id, { key: event.target.value })
-                                            }
-                                        />
-                                        <Input
-                                            aria-label="Variable value"
-                                            placeholder="Saved value"
+                                            aria-label={`${variableToken(row.key)} JSON path`}
+                                            placeholder="customer.name"
                                             value={row.value}
                                             disabled={!initiationOn}
                                             onChange={(event) =>
-                                                updateVariableRow(row.id, { value: event.target.value })
+                                                updateVariableRow(row.id, event.target.value)
                                             }
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            disabled={!initiationOn}
-                                            onClick={() => removeVariableRow(row.id)}
-                                        >
-                                            <Trash2 />
-                                            <span className="sr-only">Remove variable</span>
-                                        </Button>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="mt-4 text-sm text-muted-foreground">No static variables.</p>
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                Add dynamic variables in the behavior prompt to map webhook response fields.
+                            </p>
                         )}
-                        {webhookError ? (
-                            <p className="mt-3 text-sm text-destructive">{webhookError}</p>
-                        ) : null}
                     </div>
                 </section>
 
@@ -396,6 +457,14 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                                     <FormMessage />
                                 </FormItem>
                             )}
+                        />
+                        <WebhookSecretFieldEditor
+                            label="Headers"
+                            description="Sent with the post-call webhook request."
+                            rows={postHeaderRows}
+                            onChange={setPostHeaderRows}
+                            disabled={!postOn || save.isPending}
+                            keyPlaceholder="Header"
                         />
                         <div className="grid gap-3 sm:grid-cols-2">
                             <FormField

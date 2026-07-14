@@ -40,13 +40,16 @@ import type { Tool, KVPair, ToolParam } from "@/src/lib/api/types";
 
 const kvPair = z.object({
   key: z.string().trim().min(1, "Key is required"),
-  value: z.string(),
+  value: z.string().nullable(),
+  type: z.enum(["Value", "Secret"]).optional(),
+  redacted: z.boolean().optional(),
 });
 
 const toolParam = z.object({
   name: z.string().trim().min(1, "Name is required"),
   type: z.enum(["String", "Number", "Boolean"]),
   valueType: z.enum(["LLM Prompt", "Static Value", "Dynamic Variable"]),
+  value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional().nullable(),
   description: z.string(),
   allowedValues: z.array(z.string()),
   required: z.boolean(),
@@ -77,6 +80,7 @@ const EMPTY_PARAM: ToolParam = {
   description: "",
   allowedValues: [],
   required: false,
+  value: null,
 };
 
 const DEFAULT_VALUES: FormInput = {
@@ -187,6 +191,17 @@ function LinkedAgentsSection({
   );
 }
 
+function cleanKvPairs(pairs: KVPair[]) {
+  return pairs
+    .map((pair) => ({
+      ...pair,
+      key: pair.key.trim(),
+      value: pair.value == null ? "" : String(pair.value).trim(),
+      type: pair.type ?? "Value",
+    }))
+    .filter((pair) => pair.key && pair.value);
+}
+
 interface ToolSheetProps {
   mode: "create" | "edit";
   tool?: Tool;
@@ -234,14 +249,16 @@ export function ToolSheet({ mode, tool, open, onOpenChange }: ToolSheetProps) {
   const isPending = createTool.isPending || updateTool.isPending;
 
   const onSubmit = async (values: FormValues) => {
+    const apiHeaders = cleanKvPairs(values.api_headers as KVPair[]);
+    const dynamicVariables = cleanKvPairs(values.dynamic_variables as KVPair[]);
     const payload = {
       ...values,
       response_timeout_secs: values.response_timeout_secs === "" ? null : Number(values.response_timeout_secs),
-      api_headers: values.api_headers.length ? values.api_headers : null,
+      api_headers: apiHeaders.length ? apiHeaders : null,
       api_query_params: values.api_query_params.length ? values.api_query_params : null,
       api_path_params: values.api_path_params.length ? values.api_path_params : null,
       api_body: values.api_body.length ? values.api_body : null,
-      dynamic_variables: values.dynamic_variables.length ? values.dynamic_variables : null,
+      dynamic_variables: dynamicVariables.length ? dynamicVariables : null,
     };
 
     if (mode === "create") {
@@ -329,6 +346,7 @@ export function ToolSheet({ mode, tool, open, onOpenChange }: ToolSheetProps) {
                     value={field.value as KVPair[]}
                     onChange={field.onChange}
                     disabled={isPending}
+                    secretValues
                   />
                 )}
               />
