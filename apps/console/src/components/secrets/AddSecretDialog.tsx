@@ -55,14 +55,18 @@ export function AddSecretDialog({
   });
 
   async function onSubmit(values: FormValues) {
-    await createSecret.mutateAsync(values, {
-      onSuccess: () => {
-        toast.success("Secret saved");
-        reset();
-        setShowValue(false);
-        onOpenChange(false);
-      },
-    });
+    try {
+      await createSecret.mutateAsync(values, {
+        onSuccess: () => {
+          toast.success("Secret saved");
+          reset();
+          setShowValue(false);
+          onOpenChange(false);
+        },
+      });
+    } catch {
+      // The mutation hook shows the user-facing error toast.
+    }
   }
 
   function handleOpenChange(nextOpen: boolean) {
