@@ -75,6 +75,8 @@ type WebhookVariableRow = {
     value: string;
 };
 
+const webhookVariableNamePattern = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 function variableToken(name: string) {
     return `{{${name}}}`;
 }
@@ -95,11 +97,13 @@ function rowsForVariables(
     value: unknown
 ): WebhookVariableRow[] {
     const record = recordFromUnknown(value);
-    return variableNames.map((key) => ({
-        id: key,
-        key,
-        value: record[key] ?? "",
-    }));
+    return variableNames
+        .filter((key) => webhookVariableNamePattern.test(key))
+        .map((key) => ({
+            id: key,
+            key,
+            value: record[key] ?? "",
+        }));
 }
 
 function recordFromRows(rows: WebhookVariableRow[]) {
@@ -424,13 +428,13 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                             <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Braces className="size-4 text-muted-foreground" />
-                                    <p className="text-sm font-medium">Response mapping</p>
+                                    <p className="text-sm font-medium">Static variables</p>
                                     <Badge variant="outline">
                                         {detectedVariableNames.length} variable{detectedVariableNames.length === 1 ? "" : "s"}
                                     </Badge>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Map webhook response JSON paths to variables detected in the agent prompts.
+                                    Map static webhook response fields to variables detected in the agent prompts.
                                 </p>
                             </div>
                         </div>

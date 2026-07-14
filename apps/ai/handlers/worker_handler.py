@@ -166,7 +166,6 @@ async def apply_initiation_webhook_metadata(
         logger.warning("[webhook:initiation] request failed: {}", str(error))
         response = {}
 
-    existing_dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
     webhook_mappings = webhook.get("dynamic_variables")
     mapped_dynamic_variables = resolve_webhook_dynamic_variables(
         response,
@@ -177,6 +176,7 @@ async def apply_initiation_webhook_metadata(
         if isinstance(webhook_mappings, dict)
         else extract_webhook_dynamic_variables(response)
     )
+    existing_dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
     dynamic_variables = merge_dynamic_variables(
         webhook_dynamic_variables,
         existing_dynamic_variables,

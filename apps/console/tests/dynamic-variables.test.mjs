@@ -89,7 +89,9 @@ test("AI runtime merges initiation webhook variables before rendering prompts", 
   const aiMain = await text("apps/ai/main.py");
 
   assert.match(workerHandler, /async def apply_initiation_webhook_metadata/);
-  assert.match(workerHandler, /webhook\.get\("dynamic_variables"\),[\s\S]*extract_webhook_dynamic_variables\(response\),[\s\S]*existing_dynamic_variables/);
+  assert.match(workerHandler, /webhook_mappings = webhook\.get\("dynamic_variables"\)/);
+  assert.match(workerHandler, /mapped_dynamic_variables = resolve_webhook_dynamic_variables\([\s\S]*response,[\s\S]*webhook_mappings,[\s\S]*\)/);
+  assert.match(workerHandler, /extract_webhook_dynamic_variables\(response\)[\s\S]*existing_dynamic_variables/);
   assert.match(workerHandler, /DYNAMIC_VARIABLE_TOKEN_RE = re\.compile/);
   assert.match(aiMain, /metadata = \{\*\*voice_metadata\.client_metadata, "mode": voice_metadata\.mode\}/);
   assert.match(aiMain, /metadata = await apply_initiation_webhook_metadata\(config, metadata, call_context\)/);
