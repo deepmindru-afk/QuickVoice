@@ -56,37 +56,6 @@ type ConversationMessage = {
   pending?: boolean;
 };
 
-type SpeechRecognitionResultLike = {
-  isFinal: boolean;
-  [index: number]: { transcript: string };
-};
-
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: {
-    length: number;
-    [index: number]: SpeechRecognitionResultLike;
-  };
-};
-
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-
-type PreviewWindow = Window & {
-  SpeechRecognition?: SpeechRecognitionConstructor;
-  webkitSpeechRecognition?: SpeechRecognitionConstructor;
-};
-
 type AgentPreviewPanelProps = {
   agentId: string;
   agentName: string;
@@ -103,9 +72,6 @@ const statusCopy: Record<PreviewState, string> = {
   error: "Needs attention",
 };
 
-const PREVIEW_TRANSCRIPT_TOPIC = "quickvoice.preview.transcript";
-const PREVIEW_TRANSCRIPT_TYPE = "preview_user_transcript";
-
 export function AgentPreviewPanel({
   agentId,
   agentName,
@@ -115,7 +81,6 @@ export function AgentPreviewPanel({
   const createPreview = useCreateAgentPreviewSession(agentId);
   const roomRef = useRef<Room | null>(null);
   const localTrackRef = useRef<LocalAudioTrack | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const remoteAudioRef = useRef<HTMLDivElement | null>(null);
   const [preview, setPreview] = useState<AgentPreviewSession | null>(null);
   const [state, setState] = useState<PreviewState>("idle");
@@ -155,93 +120,6 @@ export function AgentPreviewPanel({
     },
     [],
   );
-
-  const publishPreviewTranscript = useCallback(
-    async (text: string) => {
-      const room = roomRef.current;
-      const trimmedText = text.trim();
-      if (!room || !trimmedText) return;
-
-      try {
-        await room.localParticipant.sendText(
-          JSON.stringify({
-            type: PREVIEW_TRANSCRIPT_TYPE,
-            text: trimmedText,
-          }),
-          { topic: PREVIEW_TRANSCRIPT_TOPIC },
-        );
-      } catch {
-        addConversationMessage(
-          "system",
-          "Could not send browser transcript to the preview agent.",
-        );
-      }
-    },
-    [addConversationMessage],
-  );
-
-  const stopSpeechRecognition = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
-    setInterimTranscript("");
-  }, []);
-
-  const startSpeechRecognition = useCallback(() => {
-    const SpeechRecognition =
-      (window as PreviewWindow).SpeechRecognition ??
-      (window as PreviewWindow).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      addConversationMessage(
-        "system",
-        "Live captions are not available in this browser.",
-      );
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      let interim = "";
-      let finalText = "";
-
-      for (
-        let index = event.resultIndex;
-        index < event.results.length;
-        index += 1
-      ) {
-        const result = event.results[index];
-        const transcript = result?.[0]?.transcript?.trim() ?? "";
-        if (!transcript) continue;
-        if (result.isFinal) {
-          finalText = `${finalText} ${transcript}`.trim();
-        } else {
-          interim = `${interim} ${transcript}`.trim();
-        }
-      }
-
-      if (finalText) {
-        addConversationMessage("user", finalText);
-        void publishPreviewTranscript(finalText);
-      }
-      setInterimTranscript(interim);
-    };
-    recognition.onerror = () => {
-      addConversationMessage("system", "Browser captions stopped listening.");
-    };
-    recognition.onend = () => {
-      recognitionRef.current = null;
-    };
-
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-    } catch {
-      addConversationMessage("system", "Browser captions could not start.");
-    }
-  }, [addConversationMessage, publishPreviewTranscript]);
 
   const handleLiveKitTranscript = useCallback(
     (segments: unknown, participant?: { identity?: string }) => {
@@ -312,13 +190,12 @@ export function AgentPreviewPanel({
   }, []);
 
   const disconnectPreview = useCallback(() => {
-    stopSpeechRecognition();
     localTrackRef.current?.stop();
     localTrackRef.current = null;
     cleanupAudioElements();
     roomRef.current?.disconnect();
     roomRef.current = null;
-  }, [cleanupAudioElements, stopSpeechRecognition]);
+  }, [cleanupAudioElements]);
 
   const endPreview = useCallback(async () => {
     disconnectPreview();
@@ -405,7 +282,6 @@ export function AgentPreviewPanel({
       localTrackRef.current = localTrack;
       await room.localParticipant.publishTrack(localTrack);
       setState("live");
-      startSpeechRecognition();
       addEvent("Live", "Speak naturally. The agent can hear your microphone.");
     } catch (err) {
       await endPreview();

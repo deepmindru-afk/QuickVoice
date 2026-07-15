@@ -24,8 +24,15 @@ test("buildAgentPreviewSessionPayload maps saved config to an ephemeral preview 
     llmModel: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
     ttsModel: "eleven_flash_v2_5",
     voiceId: "EXAVITQu4vr4xnSDxMaL",
-    firstMessage: "Hello from saved config.",
-    systemPrompt: "You are a helpful preview agent.",
+    firstMessage: "Hello {{first_name}} from saved config.",
+    systemPrompt: "You are helping {{company}}.",
+    variables: {
+      placeholders: {
+        first_name: "Aman",
+        company: "QuickIntell",
+        empty_value: "",
+      },
+    },
   });
 
   assert.equal(payload.ttl_seconds, PREVIEW_SESSION_TTL_SECONDS);
@@ -43,11 +50,12 @@ test("buildAgentPreviewSessionPayload maps saved config to an ephemeral preview 
   });
   assert.equal(payload.metadata.mode, "preview");
   assert.equal(payload.metadata.retention, "ephemeral");
-  assert.equal(payload.metadata.first_message, "Hello from saved config.");
-  assert.equal(
-    payload.metadata.system_prompt,
-    "You are a helpful preview agent.",
-  );
+  assert.equal(payload.metadata.first_message, "Hello {{first_name}} from saved config.");
+  assert.equal(payload.metadata.system_prompt, "You are helping {{company}}.");
+  assert.deepEqual(payload.metadata.dynamic_variables, {
+    first_name: "Aman",
+    company: "QuickIntell",
+  });
 });
 
 test("requestAgentPreviewSession calls AI sessions with internal auth and maps response", async () => {

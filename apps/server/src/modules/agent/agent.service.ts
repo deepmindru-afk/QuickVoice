@@ -42,6 +42,7 @@ type PreviewConfigSource = {
   voiceId: string;
   firstMessage: string;
   systemPrompt: string;
+  variables?: unknown;
 };
 
 export type AgentPreviewSessionPayload = {
@@ -60,6 +61,7 @@ export type AgentPreviewSessionPayload = {
     organization_id: string;
     first_message: string;
     system_prompt: string;
+    dynamic_variables?: Record<string, string>;
     retention: "ephemeral";
   };
   ttl_seconds: number;
@@ -145,6 +147,7 @@ export const createAgentPreviewSession = async (
       voiceId: configuration.voiceId,
       firstMessage: configuration.firstMessage,
       systemPrompt: configuration.systemPrompt,
+      variables: configuration.variables,
     }),
   );
 };
@@ -153,6 +156,7 @@ export const buildAgentPreviewSessionPayload = (
   configuration: PreviewConfigSource,
 ): AgentPreviewSessionPayload => {
   const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
+  const dynamicVariables = previewDynamicVariables(configuration.variables);
   return {
     room: { name: `preview-${suffix}` },
     participant: {
@@ -175,11 +179,37 @@ export const buildAgentPreviewSessionPayload = (
       organization_id: configuration.organizationId,
       first_message: configuration.firstMessage,
       system_prompt: configuration.systemPrompt,
+      ...(Object.keys(dynamicVariables).length > 0
+        ? { dynamic_variables: dynamicVariables }
+        : {}),
       retention: "ephemeral",
     },
     ttl_seconds: PREVIEW_SESSION_TTL_SECONDS,
   };
 };
+
+function previewDynamicVariables(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const placeholders = (value as { placeholders?: unknown }).placeholders;
+  if (
+    !placeholders ||
+    typeof placeholders !== "object" ||
+    Array.isArray(placeholders)
+  ) {
+    return {};
+  }
+
+  const variables: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(
+    placeholders as Record<string, unknown>,
+  )) {
+    const name = key.trim();
+    if (!name || typeof entry !== "string") continue;
+    const variableValue = entry.trim();
+    if (variableValue) variables[name] = variableValue;
+  }
+  return variables;
+}
 
 export const requestAgentPreviewSession = async (
   payload: AgentPreviewSessionPayload,
