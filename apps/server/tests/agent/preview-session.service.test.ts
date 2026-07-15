@@ -50,8 +50,8 @@ test("buildAgentPreviewSessionPayload maps saved config to an ephemeral preview 
   });
   assert.equal(payload.metadata.mode, "preview");
   assert.equal(payload.metadata.retention, "ephemeral");
-  assert.equal(payload.metadata.first_message, "Hello {{first_name}} from saved config.");
-  assert.equal(payload.metadata.system_prompt, "You are helping {{company}}.");
+  assert.equal(payload.metadata.first_message, "Hello Aman from saved config.");
+  assert.equal(payload.metadata.system_prompt, "You are helping QuickIntell.");
   assert.deepEqual(payload.metadata.dynamic_variables, {
     first_name: "Aman",
     company: "QuickIntell",

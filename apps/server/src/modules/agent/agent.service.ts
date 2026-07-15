@@ -157,6 +157,15 @@ export const buildAgentPreviewSessionPayload = (
 ): AgentPreviewSessionPayload => {
   const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
   const dynamicVariables = previewDynamicVariables(configuration.variables);
+  const firstMessage = renderPreviewDynamicVariables(
+    configuration.firstMessage,
+    dynamicVariables,
+  );
+  const systemPrompt = renderPreviewDynamicVariables(
+    configuration.systemPrompt,
+    dynamicVariables,
+  );
+
   return {
     room: { name: `preview-${suffix}` },
     participant: {
@@ -177,8 +186,8 @@ export const buildAgentPreviewSessionPayload = (
       mode: "preview",
       agent_id: configuration.agentId,
       organization_id: configuration.organizationId,
-      first_message: configuration.firstMessage,
-      system_prompt: configuration.systemPrompt,
+      first_message: firstMessage,
+      system_prompt: systemPrompt,
       ...(Object.keys(dynamicVariables).length > 0
         ? { dynamic_variables: dynamicVariables }
         : {}),
@@ -187,6 +196,16 @@ export const buildAgentPreviewSessionPayload = (
     ttl_seconds: PREVIEW_SESSION_TTL_SECONDS,
   };
 };
+
+function renderPreviewDynamicVariables(
+  template: string,
+  variables: Record<string, string>,
+): string {
+  return template.replace(/\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g, (match, key) => {
+    const value = variables[key];
+    return value?.trim() ? value : match;
+  });
+}
 
 function previewDynamicVariables(value: unknown): Record<string, string> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
