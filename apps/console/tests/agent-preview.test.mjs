@@ -39,18 +39,20 @@ test("agent preview panel uses LiveKit microphone flow and is available on the a
   assert.ok(page.includes("Preview"));
 });
 
-test("agent preview renders a conversation view with transcript capture hooks", () => {
+test("agent preview renders a conversation view with LiveKit transcript hooks", () => {
   const panel = read("src/components/agents/AgentPreviewPanel.tsx");
 
   assert.match(panel, /Conversation/);
   assert.match(panel, /Call started/);
   assert.match(panel, /conversationMessages/);
-  assert.match(panel, /SpeechRecognition/);
-  assert.match(panel, /webkitSpeechRecognition/);
-  assert.match(panel, /quickvoice\.preview\.transcript/);
-  assert.match(panel, /preview_user_transcript/);
+  assert.doesNotMatch(panel, /SpeechRecognition/);
+  assert.doesNotMatch(panel, /webkitSpeechRecognition/);
+  assert.doesNotMatch(panel, /quickvoice\.preview\.transcript/);
+  assert.doesNotMatch(panel, /preview_user_transcript/);
   assert.doesNotMatch(panel, /lk\.chat/);
-  assert.match(panel, /sendText/);
+  assert.match(panel, /handleLiveKitTranscript/);
+  assert.match(panel, /handleLiveKitData/);
+  assert.match(panel, /TextDecoder/);
   assert.match(panel, /TranscriptionReceived/);
   assert.match(panel, /DataReceived/);
 });
