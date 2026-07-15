@@ -98,7 +98,14 @@ export function AdvancedTab({ agentId }: { agentId: string }) {
   }, [config, form]);
 
   async function onSubmit(values: FormValues) {
-    await save.mutateAsync(mergeConfig(config, values));
+    const payload = mergeConfig(config, {
+      use_rag: values.use_rag,
+      preemptive_generation: values.preemptive_generation,
+      ivr_navigation_enabled: values.ivr_navigation_enabled,
+    });
+
+    await save.mutateAsync(payload);
+    form.reset(values);
   }
 
   async function pauseAgent() {

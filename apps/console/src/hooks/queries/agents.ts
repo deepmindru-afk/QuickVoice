@@ -100,9 +100,11 @@ export function useSaveAgentConfig(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ConfigureAgentInput) => agentsApi.saveConfig(id, input),
-    onSuccess: (config) => {
-      qc.setQueryData(queryKeys.agents.config(id), config);
-      qc.invalidateQueries({ queryKey: queryKeys.agents.config(id) });
+    onSuccess: (config, input) => {
+      qc.setQueryData(queryKeys.agents.config(id), {
+        ...config,
+        ivr_navigation_enabled: input.ivr_navigation_enabled,
+      });
       qc.invalidateQueries({ queryKey: queryKeys.agents.list() });
       toast.success("Saved");
     },

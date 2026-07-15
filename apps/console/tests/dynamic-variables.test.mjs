@@ -43,7 +43,7 @@ test("agent config saves preserve and submit variable metadata", async () => {
   assert.match(configDefaults, /variables:\s*normalizeAgentVariables\(current\.variables\)/);
   assert.match(behaviorTab, /buildAgentVariables\(\s*values\.firstMessage,\s*values\.systemPrompt,\s*placeholderValues\s*\)/s);
   assert.match(behaviorTab, /mergeConfig\(config,\s*\{\s*\.\.\.values,\s*variables\s*\}\)/);
-  assert.match(agentQueries, /qc\.setQueryData\(queryKeys\.agents\.config\(id\),\s*config\)/);
+  assert.match(agentQueries, /qc\.setQueryData\(queryKeys\.agents\.config\(id\),\s*\{[\s\S]*ivr_navigation_enabled:\s*input\.ivr_navigation_enabled/);
 });
 
 test("quick outbound calls submit and dispatch dynamic variable values", async () => {
@@ -109,6 +109,7 @@ test("advanced runtime settings expose IVR navigation", async () => {
   assert.match(advancedTab, /ivr_navigation_enabled/);
   assert.match(advancedTab, /IVR navigation/);
   assert.match(advancedTab, /DTMF tones/);
+  assert.match(advancedTab, /form\.reset\(values\)/);
   assert.match(configDefaults, /ivr_navigation_enabled:\s*true/);
   assert.match(configDefaults, /ivr_navigation_enabled:\s*current\.ivr_navigation_enabled \?\? true/);
   assert.match(agentResource, /ivr_navigation_enabled:\s*boolean/);
