@@ -117,10 +117,10 @@ export function BreakdownCharts({
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="border bg-card p-5" aria-labelledby={statusTitleId}>
+      <div className="rounded-lg border bg-card p-5 shadow-sm" aria-labelledby={statusTitleId}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Outcomes
             </p>
             <h3
@@ -134,7 +134,7 @@ export function BreakdownCharts({
               Y-axis shows call status.
             </p>
           </div>
-          <div className="border bg-background px-3 py-2 text-right">
+          <div className="rounded-lg border bg-background px-3 py-2 text-right shadow-xs">
             <p className="text-sm font-semibold text-foreground">{totalStatus}</p>
             <p className="text-xs text-muted-foreground">tracked</p>
           </div>
@@ -195,7 +195,7 @@ export function BreakdownCharts({
                 <Link
                   key={item.status}
                   href={dashboardCallsHref({ range, status: item.status })}
-                  className="group flex items-center justify-between gap-3 border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/35 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="group flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   aria-label={`Review ${labelStatus(item.status)} calls in the selected dashboard range`}
                 >
                   <span className="min-w-0">
@@ -263,12 +263,12 @@ export function BreakdownCharts({
         )}
       </div>
       <div
-        className="min-w-0 overflow-hidden border bg-card p-5"
+        className="min-w-0 overflow-hidden rounded-lg border bg-card p-5 shadow-sm"
         aria-labelledby={directionTitleId}
       >
         <div className="mb-5 flex min-w-0 items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Routing
             </p>
             <h3
@@ -282,7 +282,7 @@ export function BreakdownCharts({
               routed calls.
             </p>
           </div>
-          <div className="shrink-0 border bg-background px-3 py-2 text-right">
+          <div className="shrink-0 rounded-lg border bg-background px-3 py-2 text-right shadow-xs">
             <p className="text-sm font-semibold text-foreground">{inboundPct}%</p>
             <p className="text-xs text-muted-foreground">inbound</p>
           </div>
@@ -322,7 +322,7 @@ export function BreakdownCharts({
               {directionChartData.map((item) => (
                 <div
                   key={item.direction}
-                  className="min-w-0 w-full max-w-full overflow-hidden border px-3 py-2 text-sm"
+                  className="min-w-0 w-full max-w-full overflow-hidden rounded-lg border bg-background px-3 py-2 text-sm shadow-xs"
                 >
                   <div className="flex min-w-0 items-center justify-between gap-2">
                     <span className="min-w-0 truncate capitalize text-muted-foreground">
@@ -340,7 +340,7 @@ export function BreakdownCharts({
                       of routed calls, {item.pattern}
                     </span>
                   </p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden bg-muted">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full"
                       style={{

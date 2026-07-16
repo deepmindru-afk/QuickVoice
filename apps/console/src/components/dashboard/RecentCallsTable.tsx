@@ -155,10 +155,10 @@ export function RecentCallsTable({
     agentsError && Boolean(summary?.recent.some((call) => call.agentId));
 
   return (
-    <div className="border bg-card">
-      <div className="flex items-center justify-between border-b px-5 py-4">
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b bg-muted/20 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Recent activity
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">
@@ -307,7 +307,7 @@ export function RecentCallsTable({
                   });
 
                   return (
-                    <TableRow key={call.callId} className="hover:bg-muted/30">
+                    <TableRow key={call.callId} className="transition-colors hover:bg-muted/30">
                       <TableCell className="pl-5 align-top text-sm text-muted-foreground">
                         <CallTimestamp call={call} />
                         <p className="mt-1 text-xs capitalize">

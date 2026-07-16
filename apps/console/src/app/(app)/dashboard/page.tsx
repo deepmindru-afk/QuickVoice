@@ -7,11 +7,15 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  Bot,
   CheckCircle2,
   Clock3,
   PhoneCall,
+  Radio,
   ShieldAlert,
+  Sparkles,
   Timer,
+  TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -29,6 +33,7 @@ import { BreakdownCharts } from "@/src/components/dashboard/BreakdownCharts";
 import { RecentCallsTable } from "@/src/components/dashboard/RecentCallsTable";
 import { AgentActivityList } from "@/src/components/dashboard/AgentActivityList";
 import { DashboardFreshness } from "@/src/components/dashboard/DashboardFreshness";
+import { dashboardCallsHref } from "@/src/components/dashboard/call-filter-links";
 import { useDashboardSummary } from "@/src/hooks/queries/dashboard";
 import type {
   DashboardRange,
@@ -108,11 +113,11 @@ function DashboardSignal({
   tone?: "neutral" | "success" | "warning" | "danger" | "info";
 }) {
   const toneClass = {
-    neutral: "text-slate-600 bg-slate-100",
-    success: "text-emerald-700 bg-emerald-50",
-    warning: "text-amber-700 bg-amber-50",
-    danger: "text-red-700 bg-red-50",
-    info: "text-[#002FA7] bg-blue-50",
+    neutral: "bg-muted text-muted-foreground",
+    success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    warning: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    danger: "bg-destructive/10 text-destructive",
+    info: "bg-primary/10 text-primary",
   }[tone];
 
   return (
@@ -139,6 +144,83 @@ function DashboardSignal({
   );
 }
 
+function formatDashboardDateLabel(value?: string) {
+  if (!value) return "No traffic yet";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No traffic yet";
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function DashboardActionLink({
+  href,
+  label,
+  description,
+  icon: Icon,
+}: {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex min-h-20 items-start gap-3 rounded-lg border bg-background p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-3 text-sm font-semibold text-foreground">
+          {label}
+          <ArrowRight className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+        </span>
+        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function DashboardInsightCard({
+  label,
+  value,
+  detail,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="rounded-lg border bg-background/80 p-4 shadow-xs">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-foreground tabular-nums">
+            {value}
+          </p>
+        </div>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          <Icon className="size-4" />
+        </span>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        {detail}
+      </p>
+    </div>
+  );
+}
+
 function DashboardCommandCenter({
   summary,
   range,
@@ -157,113 +239,174 @@ function DashboardCommandCenter({
   const minutes = totals?.minutes ?? 0;
   const activeAgents = summary?.topAgents.length ?? 0;
   const avgDuration = formatDashboardDuration(totals?.avgDurationSeconds ?? 0);
+  const exceptionRate = calls ? Math.round((exceptionCalls / calls) * 100) : 0;
+  const peakPoint = summary?.series.reduce<
+    DashboardSummary["series"][number] | null
+  >((peak, point) => (!peak || point.calls > peak.calls ? point : peak), null);
+  const peakLabel = peakPoint?.calls
+    ? `${peakPoint.calls} calls at ${formatDashboardDateLabel(peakPoint.t)}`
+    : "No traffic spike yet";
   const hasCalls = calls > 0;
   const successAngle = Math.max(0, Math.min(100, successPct)) * 3.6;
+  const healthLabel = !hasCalls
+    ? "Ready for traffic"
+    : exceptionRate >= 20
+      ? "Needs attention"
+      : exceptionRate >= 8
+        ? "Watch closely"
+        : "Healthy";
+  const healthDescription = !hasCalls
+    ? "Place a test call to start validating routing and agent performance."
+    : exceptionRate >= 8
+      ? "Exceptions are high enough to review failed and missed calls."
+      : "Calls are completing cleanly in the selected reporting window.";
+  const exceptionHref = exceptionCalls
+    ? dashboardCallsHref({
+        range,
+        status: totals?.failedCalls ? "FAILED" : "NOT_ANSWERED",
+      })
+    : "/calls";
 
   return (
     <section className="overflow-hidden rounded-lg border bg-card shadow-sm">
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="relative min-w-0 p-6 sm:p-7">
-          <div
-            className="absolute inset-x-0 top-0 h-1 bg-[#002FA7]"
-            aria-hidden
-          />
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_176px] xl:items-start">
-            <div className="min-w-0">
-              <div className="inline-flex h-8 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium text-muted-foreground">
-                <Activity className="size-3.5 text-[#002FA7]" />
-                {RANGE_LABELS[range]}
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_390px]">
+        <div className="relative min-w-0 p-6 sm:p-7 lg:p-8">
+          <div className="absolute inset-x-0 top-0 h-1 bg-primary" aria-hidden />
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 max-w-3xl">
+              <div className="inline-flex h-8 items-center gap-2 rounded-full border bg-background px-3 text-xs font-medium text-muted-foreground shadow-xs">
+                <Activity className="size-3.5 text-primary" />
+                {RANGE_LABELS[range]} overview
               </div>
               <h2 className="mt-5 max-w-4xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                 {loading
-                  ? "Loading call performance"
+                  ? "Loading operational health"
                   : hasCalls
                     ? `${formatCompactNumber(
                         calls
-                      )} calls, ${successPct}% completed`
-                    : "No call activity in this range yet"}
+                      )} calls with ${successPct}% completion quality`
+                    : "Your voice operation is ready for its first signal"}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Track volume, reliability, exceptions, and agent load without
-                jumping between reports.
+                One view for demand, reliability, routing coverage, and the next
+                action your team should take.
               </p>
-              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-                <Button
-                  asChild
-                  className="h-10 justify-between gap-3 rounded-md bg-[#002FA7] hover:bg-[#002FA7]/90"
-                >
-                  <Link href="/outbound">
-                    Start outbound call <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-10 justify-between gap-3 rounded-md bg-background"
-                >
-                  <Link href="/calls">
-                    Review call logs <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-              </div>
             </div>
-
-            <div className="rounded-lg border bg-background p-4">
-              <div
-                className="mx-auto grid size-32 place-items-center rounded-full"
-                style={{
-                  background: `conic-gradient(#002FA7 ${successAngle}deg, hsl(var(--muted)) 0deg)`,
-                }}
-                aria-label={`${successPct}% success rate`}
+            <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+              <Button
+                asChild
+                className="h-10 justify-between gap-3 rounded-md bg-primary shadow-sm hover:bg-primary/90"
               >
-                <div className="grid size-24 place-items-center rounded-full bg-card text-center shadow-sm">
-                  <div>
-                    <p className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
-                      {successPct}%
-                    </p>
-                    <p className="text-[11px] font-semibold uppercase text-muted-foreground">
-                      Success
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <p className="mt-4 text-center text-xs leading-relaxed text-muted-foreground">
-                Completed calls out of total activity in this range.
-              </p>
+                <Link href="/outbound">
+                  Start outbound call <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="h-10 justify-between gap-3 rounded-md bg-background"
+              >
+                <Link href={exceptionHref}>
+                  Review exceptions <ArrowRight className="size-4" />
+                </Link>
+              </Button>
             </div>
+          </div>
+
+          <div className="mt-7 grid gap-3 md:grid-cols-3">
+            <DashboardInsightCard
+              label="Exception rate"
+              value={`${exceptionRate}%`}
+              detail={`${formatCompactNumber(exceptionCalls)} failed or missed calls need follow-up.`}
+              icon={ShieldAlert}
+            />
+            <DashboardInsightCard
+              label="Peak demand"
+              value={
+                peakPoint?.calls ? formatCompactNumber(peakPoint.calls) : "0"
+              }
+              detail={peakLabel}
+              icon={TrendingUp}
+            />
+            <DashboardInsightCard
+              label="Agent coverage"
+              value={formatCompactNumber(activeAgents)}
+              detail={
+                activeAgents
+                  ? "Agents handled traffic in this period."
+                  : "Create or assign an agent to start routing calls."
+              }
+              icon={Bot}
+            />
           </div>
         </div>
 
-        <aside className="border-t bg-muted/20 p-6 lg:border-l lg:border-t-0">
-          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
-            Routing capacity
-          </p>
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between rounded-md bg-background px-4 py-3 shadow-xs">
-              <span className="text-sm text-muted-foreground">Minutes used</span>
-              <span className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCompactNumber(minutes)}
+        <aside className="border-t bg-muted/20 p-6 xl:border-l xl:border-t-0 lg:p-7">
+          <div className="rounded-lg border bg-background p-5 shadow-xs">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                  Operations health
+                </p>
+                <h3 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                  {healthLabel}
+                </h3>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                <Sparkles className="size-3 text-primary" />
+                Live summary
               </span>
             </div>
-            <div className="flex items-center justify-between rounded-md bg-background px-4 py-3 shadow-xs">
-              <span className="text-sm text-muted-foreground">Active agents</span>
-              <span className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCompactNumber(activeAgents)}
-              </span>
+            <div
+              className="mx-auto mt-5 grid size-36 place-items-center rounded-full"
+              style={{
+                background: `conic-gradient(hsl(var(--primary)) ${successAngle}deg, hsl(var(--muted)) 0deg)`,
+              }}
+              aria-label={`${successPct}% success rate`}
+            >
+              <div className="grid size-28 place-items-center rounded-full bg-card text-center shadow-sm">
+                <div>
+                  <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">
+                    {successPct}%
+                  </p>
+                  <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+                    Success
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between rounded-md bg-background px-4 py-3 shadow-xs">
-              <span className="text-sm text-muted-foreground">Missed calls</span>
-              <span className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCompactNumber(totals?.missedCalls ?? 0)}
-              </span>
+            <p className="mt-5 text-sm leading-6 text-muted-foreground">
+              {healthDescription}
+            </p>
+            <div className="mt-5 grid gap-2 text-sm">
+              <div className="flex items-center justify-between rounded-md bg-muted/45 px-3 py-2">
+                <span className="text-muted-foreground">Minutes used</span>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatCompactNumber(minutes)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-muted/45 px-3 py-2">
+                <span className="text-muted-foreground">Missed calls</span>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatCompactNumber(totals?.missedCalls ?? 0)}
+                </span>
+              </div>
             </div>
           </div>
-          <div className="mt-4 flex items-start gap-2 rounded-md border bg-background px-3 py-3 text-xs text-muted-foreground">
-            <Clock3 className="mt-0.5 size-3.5 shrink-0 text-[#002FA7]" />
-            <span>
-              Use the range control to compare short-term spikes against longer
-              campaign trends.
-            </span>
+
+          <div className="mt-4 grid gap-3">
+            <DashboardActionLink
+              href="/agents"
+              label="Tune agents"
+              description="Review agent setup and routing readiness."
+              icon={Bot}
+            />
+            <DashboardActionLink
+              href="/numbers"
+              label="Manage numbers"
+              description="Connect phone numbers and assignment coverage."
+              icon={Radio}
+            />
           </div>
         </aside>
       </div>
@@ -457,7 +600,7 @@ export default function DashboardPage() {
             exceptionCalls={exceptionCalls}
           />
           <KpiCards summary={data} range={range} loading={isLoading} />
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <section className="grid grid-cols-1 gap-4 xl:grid-cols-3" aria-label="Traffic and agent performance">
             <div className="xl:col-span-2">
               <VolumeChart summary={data} range={range} loading={isLoading} />
             </div>
@@ -466,7 +609,7 @@ export default function DashboardPage() {
               range={range}
               loading={isLoading}
             />
-          </div>
+          </section>
           <BreakdownCharts summary={data} range={range} loading={isLoading} />
           <RecentCallsTable summary={data} loading={isLoading} />
         </>

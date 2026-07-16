@@ -63,7 +63,7 @@ export function VolumeChart({
 
   if (loading) {
     return (
-      <div className="border bg-card p-5">
+      <div className="rounded-lg border bg-card p-5 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-5 w-40" />
@@ -82,10 +82,13 @@ export function VolumeChart({
   const minutes = totalFor(data, "minutes");
 
   return (
-    <div className="border bg-card" aria-labelledby={titleId}>
-      <div className="flex flex-col gap-4 border-b p-5 xl:flex-row xl:items-end xl:justify-between">
+    <div
+      className="overflow-hidden rounded-lg border bg-card shadow-sm"
+      aria-labelledby={titleId}
+    >
+      <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Traffic timeline
           </p>
           <h3
@@ -99,7 +102,7 @@ export function VolumeChart({
             calls and failed calls; right axis shows minutes.
           </p>
         </div>
-        <div className="grid grid-cols-3 border bg-background text-center text-xs sm:min-w-96">
+        <div className="grid grid-cols-3 overflow-hidden rounded-lg border bg-background text-center text-xs shadow-xs sm:min-w-96">
           <div className="border-r px-3 py-2">
             <p className="font-semibold text-foreground">{calls}</p>
             <p className="text-muted-foreground">calls</p>

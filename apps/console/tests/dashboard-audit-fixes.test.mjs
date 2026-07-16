@@ -32,14 +32,20 @@ test("dashboard command center surfaces operational priorities and quick actions
 
   assert.match(page, /DashboardCommandCenter/);
   assert.match(page, /DashboardSignal/);
+  assert.match(page, /DashboardInsightCard/);
+  assert.match(page, /DashboardActionLink/);
   assert.match(page, /RANGE_LABELS/);
+  assert.match(page, /Operations health/);
+  assert.match(page, /Exception rate/);
+  assert.match(page, /Peak demand/);
+  assert.match(page, /Agent coverage/);
   assert.match(page, /Start outbound call/);
-  assert.match(page, /Review call logs/);
-  assert.match(page, /Routing capacity/);
-  assert.match(page, /Minutes used/);
-  assert.match(page, /Active agents/);
-  assert.match(page, /Missed calls/);
+  assert.match(page, /Review exceptions/);
+  assert.match(page, /Tune agents/);
+  assert.match(page, /Manage numbers/);
+  assert.match(page, /dashboardCallsHref/);
   assert.match(page, /formatDashboardDuration/);
+  assert.match(page, /formatDashboardDateLabel/);
 });
 
 test("dashboard KPI deltas use unit-aware copy and a named previous period", () => {

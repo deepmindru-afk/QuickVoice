@@ -61,10 +61,10 @@ export function AgentActivityList({
   const hasAgentLookupGap = agentsError && top.some((agent) => agent.agentId);
 
   return (
-    <div className="border bg-card">
-      <div className="flex items-center justify-between border-b px-5 py-4">
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b bg-muted/20 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Agent activity
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">Top agents</h3>
@@ -141,11 +141,11 @@ export function AgentActivityList({
               <Link
                 key={agent.agentId ?? "unknown"}
                 href={dashboardCallsHref({ range, agentId: agent.agentId })}
-                className="group block border bg-background p-3 transition-colors hover:border-primary/35 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="group block rounded-lg border bg-background p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={`View calls for ${agentName} in the selected dashboard range`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center border bg-card text-xs font-semibold text-muted-foreground">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
                     {index + 1}
                   </div>
                   <div className="min-w-0 flex-1 space-y-3">
@@ -174,9 +174,9 @@ export function AgentActivityList({
                         </p>
                       </div>
                     </div>
-                    <div className="h-2 w-full overflow-hidden bg-muted">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full bg-gradient-to-r from-primary to-emerald-500"
+                        className="h-full bg-primary"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
