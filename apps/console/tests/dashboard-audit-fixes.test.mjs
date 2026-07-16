@@ -33,6 +33,7 @@ test("dashboard command center surfaces operational priorities and quick actions
   assert.match(page, /DashboardCommandCenter/);
   assert.match(page, /DashboardSignal/);
   assert.match(page, /DashboardInsightCard/);
+  assert.match(page, /PerformanceGraphs/);
   assert.match(page, /DashboardActionLink/);
   assert.match(page, /RANGE_LABELS/);
   assert.match(page, /Operations health/);
@@ -124,6 +125,29 @@ test("dashboard exception signals link to filtered calls views with range contex
   assert.match(agents, /dashboardCallsHref/);
   assert.match(agents, /agentId:\s*agent\.agentId/);
   assert.match(agents, /View calls/);
+});
+
+test("dashboard performance graphs add quality, risk, and efficiency analytics", () => {
+  const page = read("src/app/(app)/dashboard/page.tsx");
+  const graphs = read("src/components/dashboard/PerformanceGraphs.tsx");
+
+  assert.match(page, /<PerformanceGraphs[\s\S]*summary=\{data\}/);
+  assert.match(graphs, /Success trend/);
+  assert.match(graphs, /Exception pressure/);
+  assert.match(graphs, /Conversation efficiency/);
+  assert.match(graphs, /AreaChart/);
+  assert.match(graphs, /BarChart/);
+  assert.match(graphs, /LineChart/);
+  assert.match(graphs, /successRate: Math\.round/);
+  assert.match(graphs, /minutesPerCall/);
+  assert.match(graphs, /motion-safe:animate-in/);
+  assert.match(graphs, /aria-label="Success rate trend chart"/);
+  assert.match(graphs, /aria-label="Exception pressure stacked bar chart"/);
+  assert.match(graphs, /aria-label="Conversation efficiency line chart"/);
+  assert.match(graphs, /dashboardCallsHref\(\{ range, status: "FAILED" \}\)/);
+  assert.match(graphs, /Success rate trend data table/);
+  assert.match(graphs, /Exception pressure data table/);
+  assert.match(graphs, /Conversation efficiency data table/);
 });
 
 test("dashboard charts expose accessible summaries, unit labels, and data tables", () => {

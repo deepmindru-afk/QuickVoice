@@ -28,6 +28,7 @@ import { RetryButton } from "@/src/components/common/RetryButton";
 import { RangeSwitcher } from "@/src/components/dashboard/RangeSwitcher";
 import { KpiCards } from "@/src/components/dashboard/KpiCards";
 import { VolumeChart } from "@/src/components/dashboard/VolumeChart";
+import { PerformanceGraphs } from "@/src/components/dashboard/PerformanceGraphs";
 import { BreakdownCharts } from "@/src/components/dashboard/BreakdownCharts";
 import { RecentCallsTable } from "@/src/components/dashboard/RecentCallsTable";
 import { AgentActivityList } from "@/src/components/dashboard/AgentActivityList";
@@ -599,6 +600,7 @@ export default function DashboardPage() {
             exceptionCalls={exceptionCalls}
           />
           <KpiCards summary={data} range={range} loading={isLoading} />
+          <PerformanceGraphs summary={data} range={range} loading={isLoading} />
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-3" aria-label="Traffic and agent performance">
             <div className="xl:col-span-2">
               <VolumeChart summary={data} range={range} loading={isLoading} />
