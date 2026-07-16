@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+SYNTHETIC_USER_PREFIX = "user-transcript-"
+SYNTHETIC_AGENT_PREFIX = "agent-transcript-"
+
 
 class TranscriptCollector:
     def __init__(
@@ -39,13 +42,21 @@ class TranscriptCollector:
         message_id = str(getattr(item, "id", "") or f"msg-{len(self._items)}")
         if message_id in self._seen_ids:
             return
+        item_time = getattr(item, "created_at", None) or getattr(event, "created_at", None)
+        if self._replace_matching_synthetic_turn(
+            role=role,
+            text=text,
+            message_id=message_id,
+            time=item_time,
+        ):
+            return
         self._seen_ids.add(message_id)
         self._append(
             {
                 "id": message_id,
                 "role": role,
                 "content": text,
-                "time": getattr(item, "created_at", None) or getattr(event, "created_at", None),
+                "time": item_time,
             }
         )
 
@@ -71,6 +82,25 @@ class TranscriptCollector:
             }
         )
 
+    def on_agent_transcription_final(self, text: str, time: Any = None) -> None:
+        text = str(text or "").strip()
+        if not text:
+            return
+        if any(
+            item["role"] == "agent"
+            and _normalize_text(item["content"]) == _normalize_text(text)
+            for item in self._items[-3:]
+        ):
+            return
+        self._append(
+            {
+                "id": f"agent-transcript-{len(self._items)}",
+                "role": "agent",
+                "content": text,
+                "time": time,
+            }
+        )
+
     def read(self) -> list[dict[str, Any]]:
         return list(self._items)
 
@@ -85,6 +115,30 @@ class TranscriptCollector:
             # collection or the voice session.
             return
 
+    def _replace_matching_synthetic_turn(
+        self,
+        *,
+        role: str,
+        text: str,
+        message_id: str,
+        time: Any,
+    ) -> bool:
+        prefix = SYNTHETIC_USER_PREFIX if role == "user" else SYNTHETIC_AGENT_PREFIX
+        normalized_text = _normalize_text(text)
+        for item in reversed(self._items[-5:]):
+            if item.get("role") != role:
+                continue
+            if not str(item.get("id", "")).startswith(prefix):
+                continue
+            if _normalize_text(item.get("content")) != normalized_text:
+                continue
+            self._seen_ids.discard(str(item.get("id")))
+            item["id"] = message_id
+            item["time"] = time
+            self._seen_ids.add(message_id)
+            return True
+        return False
+
 
 def _content_to_text(content: Any) -> str:
     if isinstance(content, str):
@@ -92,3 +146,7 @@ def _content_to_text(content: Any) -> str:
     if isinstance(content, list):
         return " ".join(str(part).strip() for part in content if isinstance(part, str)).strip()
     return str(content or "").strip()
+
+
+def _normalize_text(value: Any) -> str:
+    return " ".join(str(value or "").split()).casefold()

@@ -52,6 +52,48 @@ class TranscriptCollectorTests(unittest.TestCase):
         self.assertEqual(collector.read()[0]["role"], "user")
         self.assertEqual(collector.read()[0]["content"], "I need help")
 
+    def test_committed_user_item_replaces_matching_stt_fallback(self):
+        published = []
+        collector = TranscriptCollector(on_item=published.append)
+        collector.on_user_input_transcribed(
+            SimpleNamespace(transcript="I need help", is_final=True, created_at=1704067202.0)
+        )
+        collector.on_conversation_item_added(
+            SimpleNamespace(
+                created_at=1704067203.0,
+                item=SimpleNamespace(
+                    id="user-committed-1",
+                    role="user",
+                    text_content="I need help",
+                    created_at=1704067203.0,
+                ),
+            )
+        )
+
+        self.assertEqual(len(collector.read()), 1)
+        self.assertEqual(collector.read()[0]["id"], "user-committed-1")
+        self.assertEqual(len(published), 1)
+
+    def test_committed_agent_item_replaces_early_transcription_turn(self):
+        published = []
+        collector = TranscriptCollector(on_item=published.append)
+        collector.on_agent_transcription_final("How can I help?", time=1704067201.0)
+        collector.on_conversation_item_added(
+            SimpleNamespace(
+                created_at=1704067202.0,
+                item=SimpleNamespace(
+                    id="agent-committed-1",
+                    role="assistant",
+                    text_content="How can I help?",
+                    created_at=1704067202.0,
+                ),
+            )
+        )
+
+        self.assertEqual(len(collector.read()), 1)
+        self.assertEqual(collector.read()[0]["id"], "agent-committed-1")
+        self.assertEqual(len(published), 1)
+
     def test_notifies_live_publisher_only_for_new_final_items(self):
         published = []
         collector = TranscriptCollector(on_item=published.append)

@@ -104,33 +104,23 @@ function useClock(active: boolean) {
   return now;
 }
 
-function TranscriptRow({
-  message,
-  index,
-}: {
-  message: LiveTranscriptMessage;
-  index: number;
-}) {
+function TranscriptRow({ message }: { message: LiveTranscriptMessage }) {
   const isAgent = message.speaker === "agent";
   return (
     <article
       className={cn(
-        "grid grid-cols-[2.75rem_minmax(0,1fr)] border-t border-[#D9D9DD] py-5",
+        "border-t border-[#D9D9DD] py-5",
         !isAgent && "ml-[12%]"
       )}
     >
-      <p
-        aria-hidden="true"
-        className="pt-0.5 text-xs font-semibold tabular-nums text-[#77777F]"
-      >
-        {String(index + 1).padStart(2, "0")}
-      </p>
       <div className="min-w-0">
-        <div className="mb-2 flex items-baseline justify-between gap-3">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <p
             className={cn(
-              "text-xs font-semibold",
-              isAgent ? "text-[#002FA7]" : "text-[#111111]"
+              "border px-2 py-1 text-xs font-semibold",
+              isAgent
+                ? "border-[#002FA7] bg-[#002FA7] text-white"
+                : "border-[#D9D9DD] bg-[#F7F7F8] text-[#111111]"
             )}
           >
             {isAgent ? "Agent" : "Caller"}
@@ -340,11 +330,10 @@ function LiveTranscriptDrawer({
                     </div>
                   ) : (
                     <div>
-                      {transcript.messages.map((message, index) => (
+                      {transcript.messages.map((message) => (
                         <TranscriptRow
                           key={message.messageId}
                           message={message}
-                          index={index}
                         />
                       ))}
                     </div>
@@ -434,7 +423,7 @@ export function LiveCallsDock({ organizationId }: { organizationId: string }) {
 
   const sortedCalls = useMemo(
     () =>
-      [...(liveCalls.data ?? [])].sort((left, right) =>
+      dedupeLiveCalls(liveCalls.data ?? []).sort((left, right) =>
         (right.startedAt ?? "").localeCompare(left.startedAt ?? "")
       ),
     [liveCalls.data]
@@ -623,4 +612,28 @@ export function LiveCallsDock({ organizationId }: { organizationId: string }) {
       />
     </>
   );
+}
+
+function dedupeLiveCalls(calls: LiveCallRoom[]) {
+  const byCallId = new Map<string, LiveCallRoom>();
+  for (const call of calls) {
+    const existing = byCallId.get(call.callId);
+    if (!existing) {
+      byCallId.set(call.callId, call);
+      continue;
+    }
+    byCallId.set(call.callId, {
+      ...existing,
+      participantCount: Math.max(existing.participantCount, call.participantCount),
+      direction: existing.direction === "unknown" ? call.direction : existing.direction,
+      startedAt: existing.startedAt ?? call.startedAt,
+      agentId: existing.agentId ?? call.agentId,
+      agentName: existing.agentName ?? call.agentName,
+      callerId: existing.callerId ?? call.callerId,
+      calleeId: existing.calleeId ?? call.calleeId,
+      fromNumber: existing.fromNumber ?? call.fromNumber,
+      toNumber: existing.toNumber ?? call.toNumber,
+    });
+  }
+  return [...byCallId.values()];
 }

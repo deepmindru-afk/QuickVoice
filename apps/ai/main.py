@@ -143,6 +143,13 @@ def build_room_options() -> room_io.RoomOptions:
     )
 
 
+def _transcription_chunk_text(chunk) -> str:
+    text = getattr(chunk, "text", None)
+    if text is not None:
+        return str(text)
+    return str(chunk or "")
+
+
 def provider_section(value: str | None):
     if not value or "/" not in value:
         return None
@@ -254,7 +261,13 @@ def run_combined_server() -> int:
 
 
 class Assistant(Agent):
-    def __init__(self, system_prompt: str, config: dict, call_context: dict):
+    def __init__(
+        self,
+        system_prompt: str,
+        config: dict,
+        call_context: dict,
+        transcript_collector: TranscriptCollector | None = None,
+    ):
         super().__init__(
             instructions=system_prompt,
             tools=build_agent_tools(config, call_context),
@@ -262,6 +275,7 @@ class Assistant(Agent):
         self._config = config
         self._call_context = call_context
         self._metadata_collector = CallMetadataCollector(config)
+        self._transcript_collector = transcript_collector
 
     def _rag_enabled(self) -> bool:
         return bool(self._config.get("use_rag"))
@@ -316,6 +330,22 @@ class Assistant(Agent):
             ),
         )
         logger.info(f"[rag] injected context for agent={agent_id}")
+
+    async def transcription_node(self, text, model_settings):
+        chunks: list[str] = []
+        output = Agent.default.transcription_node(self, text, model_settings)
+        if output is None:
+            return
+        async for chunk in output:
+            chunk_text = _transcription_chunk_text(chunk)
+            if chunk_text:
+                chunks.append(chunk_text)
+            yield chunk
+        if self._transcript_collector is not None:
+            self._transcript_collector.on_agent_transcription_final(
+                "".join(chunks),
+                datetime.now(timezone.utc),
+            )
 
     @function_tool
     async def record_call_extracted_data(self, field: str, value: str) -> str:
@@ -499,6 +529,7 @@ async def entrypoint(ctx: JobContext):
         system_prompt=system_prompt,
         config=config,
         call_context=call_context,
+        transcript_collector=transcript_collector,
     )
 
     @ctx.room.on("data_received")

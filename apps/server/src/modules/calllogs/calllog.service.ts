@@ -146,13 +146,18 @@ export const listLiveCalls = async (
 
   const calls: LiveCallRoom[] = [];
   const claimedRooms = new Set<string>();
+  const claimedCallIds = new Set<string>();
   if (registered) {
     const roomsByName = new Map(
       normalizedRooms.map((room) => [room.roomName, room])
     );
+    const roomsByCallId = new Map(
+      normalizedRooms.map((room) => [room.callId, room])
+    );
     const stale: CallStartedEvent[] = [];
     for (const event of registered) {
-      const room = roomsByName.get(event.roomName);
+      claimedCallIds.add(event.callId);
+      const room = roomsByName.get(event.roomName) ?? roomsByCallId.get(event.callId);
       if (!room) {
         const startedAt = Date.parse(event.startedAt);
         const withinVisibilityGrace =
@@ -184,7 +189,7 @@ export const listLiveCalls = async (
   }
 
   const fallbackRooms = normalizedRooms.filter(
-    (room) => !claimedRooms.has(room.roomName)
+    (room) => !claimedRooms.has(room.roomName) && !claimedCallIds.has(room.callId)
   );
   const scopedFallback = await Promise.all(
     fallbackRooms.map(async (room) =>
@@ -200,7 +205,7 @@ export const listLiveCalls = async (
     ...scopedFallback.filter((room): room is LiveCallRoom => room !== null)
   );
 
-  const enriched = await enrichAgentNames(organizationId, calls);
+  const enriched = await enrichAgentNames(organizationId, mergeCallsByCallId(calls));
   return enriched.sort((a, b) =>
     (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
   );
@@ -288,6 +293,31 @@ function liveCallFromRegistry(
     fromNumber: event.fromNumber || null,
     toNumber: event.toNumber || null,
   };
+}
+
+function mergeCallsByCallId(calls: LiveCallRoom[]) {
+  const byCallId = new Map<string, LiveCallRoom>();
+  for (const call of calls) {
+    const existing = byCallId.get(call.callId);
+    if (!existing) {
+      byCallId.set(call.callId, call);
+      continue;
+    }
+    byCallId.set(call.callId, {
+      ...existing,
+      participantCount:
+        call.participantCount > existing.participantCount
+          ? call.participantCount
+          : existing.participantCount,
+      direction: existing.direction === "unknown" ? call.direction : existing.direction,
+      startedAt: existing.startedAt ?? call.startedAt,
+      agentId: existing.agentId ?? call.agentId,
+      agentName: existing.agentName ?? call.agentName,
+      fromNumber: existing.fromNumber ?? call.fromNumber,
+      toNumber: existing.toNumber ?? call.toNumber,
+    });
+  }
+  return [...byCallId.values()];
 }
 
 async function enrichAgentNames(

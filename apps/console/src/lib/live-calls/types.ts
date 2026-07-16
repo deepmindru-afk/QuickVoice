@@ -278,7 +278,47 @@ export function mergeTranscriptMessages(
   incoming: LiveTranscriptMessage[]
 ) {
   const byMessageId = new Map<string, LiveTranscriptMessage>();
-  for (const message of current) byMessageId.set(message.messageId, message);
-  for (const message of incoming) byMessageId.set(message.messageId, message);
+  const bySyntheticFingerprint = new Map<string, LiveTranscriptMessage>();
+  for (const message of [...current, ...incoming]) {
+    const fingerprint = transcriptFingerprint(message);
+    const existing = bySyntheticFingerprint.get(fingerprint);
+    if (existing && (isSyntheticMessage(existing) || isSyntheticMessage(message))) {
+      byMessageId.delete(existing.messageId);
+      const preferred = preferTranscriptMessage(existing, message);
+      bySyntheticFingerprint.set(fingerprint, preferred);
+      byMessageId.set(preferred.messageId, preferred);
+      continue;
+    }
+    bySyntheticFingerprint.set(fingerprint, message);
+    byMessageId.set(message.messageId, message);
+  }
   return [...byMessageId.values()].sort(compareTranscriptMessages);
+}
+
+function transcriptFingerprint(message: LiveTranscriptMessage) {
+  return [
+    message.organizationId,
+    message.callId,
+    message.speaker,
+    message.text.trim().replace(/\s+/g, " ").toLowerCase(),
+  ].join(":");
+}
+
+function isSyntheticMessage(message: LiveTranscriptMessage) {
+  return (
+    message.messageId.startsWith("user-transcript-") ||
+    message.messageId.startsWith("agent-transcript-")
+  );
+}
+
+function preferTranscriptMessage(
+  existing: LiveTranscriptMessage,
+  incoming: LiveTranscriptMessage
+) {
+  const existingSynthetic = isSyntheticMessage(existing);
+  const incomingSynthetic = isSyntheticMessage(incoming);
+  if (existingSynthetic !== incomingSynthetic) {
+    return existingSynthetic ? incoming : existing;
+  }
+  return compareTranscriptMessages(existing, incoming) <= 0 ? existing : incoming;
 }

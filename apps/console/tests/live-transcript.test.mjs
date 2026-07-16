@@ -37,6 +37,7 @@ test("watching a call replays, validates, deduplicates, and unwatches transcript
   assert.match(hook, /\.off\("connect", watch\)/);
   assert.match(types, /new Map<string, LiveTranscriptMessage>/);
   assert.match(types, /byMessageId\.set\(message\.messageId/);
+  assert.match(types, /isSyntheticMessage/);
   assert.match(types, /streamIdParts/);
   assert.match(types, /message\.organizationId !== organizationId/);
   assert.match(types, /status: "active" \| "ended"/);
@@ -44,10 +45,15 @@ test("watching a call replays, validates, deduplicates, and unwatches transcript
 
 test("live transcript UI restores selection and preserves reader scroll position", () => {
   const dock = read("src/components/calls/LiveCallsDock.tsx");
+  const transcriptRow = dock.slice(
+    dock.indexOf("function TranscriptRow"),
+    dock.indexOf("function ConnectionStatus")
+  );
   assert.match(dock, /window\.localStorage\.getItem\(storageKey\)/);
   assert.match(dock, /window\.localStorage\.setItem\(storageKey, call\.callId\)/);
   assert.match(dock, /distanceFromBottom < 96/);
   assert.match(dock, /new \{unseenMessages === 1 \? "message" : "messages"\}/);
+  assert.doesNotMatch(transcriptRow, /padStart/);
   assert.match(dock, /End this live call\?/);
   assert.match(dock, /canEndCall && !transcript\.isEnded/);
   assert.match(dock, /fromNumber/);

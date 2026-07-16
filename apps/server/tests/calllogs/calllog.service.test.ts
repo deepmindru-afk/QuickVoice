@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { signCallRecordingUrl } from "../../src/modules/calllogs/calllog.service.js";
+import {
+  listLiveCalls,
+  signCallRecordingUrl,
+} from "../../src/modules/calllogs/calllog.service.js";
 
 test("signCallRecordingUrl replaces a stored S3 key with a signed playback URL", async () => {
   const call = {
@@ -42,4 +45,47 @@ test("signCallRecordingUrl leaves missing recordings and existing URLs unchanged
     existingUrl.audioRecordingPath,
     "https://cdn.quickvoice.test/recording.ogg"
   );
+});
+
+test("listLiveCalls merges Redis registry and LiveKit room entries by call id", async () => {
+  const startedAt = new Date().toISOString();
+  const calls = await listLiveCalls(
+    "org_123",
+    {
+      listRooms: async () => [
+        {
+          name: "call_123",
+          numParticipants: 2,
+          creationTime: Math.floor(Date.now() / 1000),
+        },
+      ],
+      deleteRoom: async () => undefined,
+    },
+    {
+      listActiveCalls: async () => [
+        {
+          version: 1,
+          type: "call.started",
+          organizationId: "org_123",
+          callId: "call_123",
+          roomName: "legacy_room_name",
+          eventId: "0-0",
+          occurredAt: startedAt,
+          status: "active",
+          agentId: "",
+          direction: "inbound",
+          fromNumber: "+15550000001",
+          toNumber: "+15550000002",
+          startedAt,
+        },
+      ],
+      findActiveCallByRoom: async () => null,
+      markCallStale: async () => undefined,
+    }
+  );
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.callId, "call_123");
+  assert.equal(calls[0]?.participantCount, 2);
+  assert.equal(calls[0]?.fromNumber, "+15550000001");
 });
