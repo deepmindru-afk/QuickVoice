@@ -9,7 +9,6 @@ import {
   ArrowRight,
   Bot,
   CheckCircle2,
-  Clock3,
   PhoneCall,
   Radio,
   ShieldAlert,
