@@ -52,6 +52,26 @@ class TranscriptCollectorTests(unittest.TestCase):
         self.assertEqual(collector.read()[0]["role"], "user")
         self.assertEqual(collector.read()[0]["content"], "I need help")
 
+    def test_notifies_live_publisher_only_for_new_final_items(self):
+        published = []
+        collector = TranscriptCollector(on_item=published.append)
+        event = SimpleNamespace(
+            created_at=1704067200.0,
+            item=SimpleNamespace(
+                id="agent-1",
+                role="assistant",
+                text_content="One answer",
+                created_at=1704067201.0,
+            ),
+        )
+
+        collector.on_conversation_item_added(event)
+        collector.on_conversation_item_added(event)
+
+        self.assertEqual(len(published), 1)
+        self.assertEqual(published[0]["role"], "agent")
+        self.assertEqual(published[0]["content"], "One answer")
+
 
 if __name__ == "__main__":
     unittest.main()

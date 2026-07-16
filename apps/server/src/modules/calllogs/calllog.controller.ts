@@ -4,6 +4,7 @@ import { BadRequestError } from "../../common/errors/badRequest.js";
 import { ForbiddenError } from "../../common/errors/forbidden.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
 import { recordAuditEvent } from "../audit/audit-log.service.js";
+import { liveTranscriptStore } from "../../realtime/live-transcript.runtime.js";
 import * as calllogService from "./calllog.service.js";
 import {
   endLiveCallSchema,
@@ -47,7 +48,11 @@ export const listCallLogs = authorized(async (req, res) => {
 });
 
 export const listLiveCalls = authorized(async (req, res) => {
-  const liveCalls = await calllogService.listLiveCalls(req.auth.activeOrganizationId);
+  const liveCalls = await calllogService.listLiveCalls(
+    req.auth.activeOrganizationId,
+    undefined,
+    liveTranscriptStore
+  );
   res.status(StatusCodes.OK).json({
     success: true,
     message: "Live calls fetched successfully",
@@ -57,7 +62,12 @@ export const listLiveCalls = authorized(async (req, res) => {
 
 export const endLiveCall = authorized(async (req, res) => {
   const { roomName } = endLiveCallSchema.parse(req.body);
-  const result = await calllogService.endLiveCall(req.auth.activeOrganizationId, roomName);
+  const result = await calllogService.endLiveCall(
+    req.auth.activeOrganizationId,
+    roomName,
+    undefined,
+    liveTranscriptStore
+  );
   res.status(StatusCodes.OK).json({
     success: true,
     message: "Live call ended successfully",

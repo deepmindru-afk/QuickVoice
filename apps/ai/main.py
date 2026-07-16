@@ -19,6 +19,7 @@ from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
 from handlers.finalization_handler import CallFinalizer
 from handlers.livekit_handler import recording_path as build_recording_path, start_recording
+from handlers.live_transcript_publisher import LiveTranscriptPublisher
 from handlers.http_tool_handler import build_http_tool_instructions, call_http_tool, parse_http_tool_arguments
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
 from handlers.privacy_handler import should_store_call_audio
@@ -483,7 +484,16 @@ async def entrypoint(ctx: JobContext):
         ivr_detection=config["ivr_navigation_enabled"],
         preemptive_generation=config.get("preemptive_generation", True),
     )
-    transcript_collector = TranscriptCollector().attach(session)
+    call_start_time = datetime.now(timezone.utc)
+    live_transcript_publisher = LiveTranscriptPublisher(
+        config=config,
+        call_context=call_context,
+        room_name=ctx.room.name,
+    )
+    await live_transcript_publisher.start(call_start_time)
+    transcript_collector = TranscriptCollector(
+        on_item=live_transcript_publisher.publish_transcript
+    ).attach(session)
     system_prompt = build_agent_instructions(config)
     agent = Assistant(
         system_prompt=system_prompt,
@@ -528,14 +538,17 @@ async def entrypoint(ctx: JobContext):
             on_preview_text_stream,
         )
 
-    await session.start(
-        room=ctx.room,
-        agent=agent,
-        room_options=build_room_options(),
-    )
+    try:
+        await session.start(
+            room=ctx.room,
+            agent=agent,
+            room_options=build_room_options(),
+        )
+    except Exception:
+        await live_transcript_publisher.close(reason="session_start_failed")
+        raise
     speak_first_message(session, config)
 
-    call_start_time = datetime.now(timezone.utc)
     recording_id = None
     if should_store_call_audio(config):
         recording_id = await start_recording(ctx)
@@ -551,8 +564,16 @@ async def entrypoint(ctx: JobContext):
         recording_path=recording_path,
         transcript_reader=transcript_collector.read,
     )
+    shutdown_reason = "session_shutdown"
 
     async def unified_shutdown_hook():
+        try:
+            await live_transcript_publisher.close(reason=shutdown_reason)
+        except Exception as error:
+            logger.warning(
+                "[LIVE_TRANSCRIPT] Failed to close publisher: {}",
+                redact_sensitive(str(error)),
+            )
         try:
             await call_finalizer.finalize()
         except Exception as error:
@@ -563,11 +584,12 @@ async def entrypoint(ctx: JobContext):
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):
-        nonlocal shutdown_started
+        nonlocal shutdown_started, shutdown_reason
         logger.info("[HANGUP] Participant disconnected: {}", redact_sensitive(getattr(participant, "identity", "")))
         if shutdown_started:
             return
         shutdown_started = True
+        shutdown_reason = "participant_disconnected"
         asyncio.create_task(unified_shutdown_hook())
 
 

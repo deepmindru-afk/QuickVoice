@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 
 class TranscriptCollector:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        on_item: Callable[[dict[str, Any]], None] | None = None,
+    ) -> None:
         self._items: list[dict[str, Any]] = []
         self._seen_ids: set[str] = set()
         self._last_final_user_transcript: str | None = None
+        self._on_item = on_item
 
     def attach(self, session: Any) -> "TranscriptCollector":
         session.on("conversation_item_added", self.on_conversation_item_added)
@@ -35,7 +40,7 @@ class TranscriptCollector:
         if message_id in self._seen_ids:
             return
         self._seen_ids.add(message_id)
-        self._items.append(
+        self._append(
             {
                 "id": message_id,
                 "role": role,
@@ -57,7 +62,7 @@ class TranscriptCollector:
         # chat history before shutdown.
         if any(item["role"] == "user" and item["content"] == text for item in self._items[-3:]):
             return
-        self._items.append(
+        self._append(
             {
                 "id": f"user-transcript-{len(self._items)}",
                 "role": "user",
@@ -68,6 +73,17 @@ class TranscriptCollector:
 
     def read(self) -> list[dict[str, Any]]:
         return list(self._items)
+
+    def _append(self, item: dict[str, Any]) -> None:
+        self._items.append(item)
+        if self._on_item is None:
+            return
+        try:
+            self._on_item(dict(item))
+        except Exception:
+            # Live monitoring is optional and must never break transcript
+            # collection or the voice session.
+            return
 
 
 def _content_to_text(content: Any) -> str:

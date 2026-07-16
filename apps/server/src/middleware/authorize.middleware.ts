@@ -14,6 +14,7 @@
 // the trust-boundary policy in auth.middleware.ts. API keys are scoped to one
 // organization by auth.middleware.ts and must also carry explicit route scopes.
 
+import type { IncomingHttpHeaders } from "node:http";
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth.js";
@@ -21,7 +22,7 @@ import { UnauthenticatedError } from "../common/errors/unauthenticated.js";
 import { ForbiddenError } from "../common/errors/forbidden.js";
 import type { RequestAuth } from "../types/express.js";
 
-type Permissions = Record<string, string[]>;
+export type Permissions = Record<string, string[]>;
 
 // Request type after `requirePermission` has run: `auth` is non-optional and
 // `activeOrganizationId` is guaranteed to be a string. The guarantee holds
@@ -72,15 +73,13 @@ export const requirePermission =
         return next();
       }
 
-      const result = await auth.api.hasPermission({
-        headers: fromNodeHeaders(req.headers),
-        body: {
-          organizationId: req.auth.activeOrganizationId,
-          permissions,
-        },
-      });
-
-      if (!result?.success) {
+      if (
+        !(await hasSessionPermission(
+          req.headers,
+          req.auth.activeOrganizationId,
+          permissions
+        ))
+      ) {
         throw new ForbiddenError("Insufficient permissions");
       }
 
@@ -89,6 +88,23 @@ export const requirePermission =
       next(error);
     }
   };
+
+/**
+ * Shared Better Auth permission evaluation for cookie-authenticated HTTP and
+ * Socket.IO requests. The organization id must always come from the session,
+ * never from client event data.
+ */
+export async function hasSessionPermission(
+  headers: IncomingHttpHeaders,
+  organizationId: string,
+  permissions: Permissions
+) {
+  const result = await auth.api.hasPermission({
+    headers: fromNodeHeaders(headers),
+    body: { organizationId, permissions },
+  });
+  return result?.success === true;
+}
 
 export function hasApiKeyPermission(
   granted: Record<string, string[]> | undefined,

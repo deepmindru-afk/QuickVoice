@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { createServer } from "node:http";
 import express, { Request } from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -21,6 +22,7 @@ import "./workers/kb.worker.js";
 import "./workers/outbound-batch.worker.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
+import { LiveTranscriptGateway } from "./realtime/live-transcript.gateway.js";
 
 const app = express();
 
@@ -164,8 +166,39 @@ app.use(errorHandler);
  * =========================
  */
 
-app.listen(port, () => {
+const httpServer = createServer(app);
+const liveTranscriptGateway = new LiveTranscriptGateway(httpServer);
+
+void liveTranscriptGateway.start().catch((error) => {
+  console.warn("[live-transcript] failed to start Redis subscriber", {
+    error: error instanceof Error ? error.message : String(error),
+  });
+});
+
+httpServer.listen(port, () => {
   console.log(
     `Server listening on http://localhost:${port}`
   );
 });
+
+let shuttingDown = false;
+async function shutdown(signal: NodeJS.Signals) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[server] received ${signal}; shutting down`);
+  try {
+    await liveTranscriptGateway.close();
+    if (httpServer.listening) {
+      await new Promise<void>((resolve, reject) => {
+        httpServer.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+    process.exitCode = 0;
+  } catch (error) {
+    console.error("[server] graceful shutdown failed", error);
+    process.exitCode = 1;
+  }
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));

@@ -180,6 +180,20 @@ export const liveRoomBelongsToOrg = async (
   return numbers.some((number) => roomName.includes(number.number));
 };
 
+export const listAgentNamesForOrg = async (
+  organizationId: string,
+  agentIds: string[]
+) => {
+  if (agentIds.length === 0) return [];
+  return prisma.agent.findMany({
+    where: {
+      organizationId,
+      agentId: { in: agentIds },
+    },
+    select: { agentId: true, name: true },
+  });
+};
+
 export const deleteCallLog = async (callId: string, organizationId: string) => {
   // Soft delete: flip `deleted=true`. Idempotent — a row already deleted
   // yields count: 0, which the service surfaces as NotFoundError.

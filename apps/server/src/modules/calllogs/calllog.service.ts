@@ -8,9 +8,12 @@ import type {
   ListCallLogsArgs,
   ListTranscriptsArgs,
 } from "./calllog.schema.js";
+import type { LiveTranscriptStore } from "../../realtime/live-transcript.store.js";
+import type { CallStartedEvent } from "../../realtime/live-transcript.contract.js";
 
 type RecordingSigner = (key: string) => Promise<string>;
 type CallWithRecording = { audioRecordingPath: string | null };
+const LIVEKIT_REGISTRY_STALE_GRACE_MS = 30_000;
 
 const isHttpUrl = (value: string) => {
   try {
@@ -86,52 +89,167 @@ type LiveKitRoomClient = {
   deleteRoom: (roomName: string) => Promise<unknown>;
 };
 
+type LiveCallRegistry = Pick<
+  LiveTranscriptStore,
+  "findActiveCallByRoom" | "listActiveCalls" | "markCallStale"
+>;
+
 export type LiveCallRoom = {
   roomName: string;
   callId: string;
   direction: "inbound" | "outbound" | "unknown";
   participantCount: number;
   startedAt: string | null;
+  status: "active";
+  agentId: string | null;
+  agentName: string | null;
+  fromNumber: string | null;
+  toNumber: string | null;
 };
 
 export const listLiveCalls = async (
   organizationId: string,
-  roomClient: LiveKitRoomClient = livekitRoomServiceClient as LiveKitRoomClient
+  roomClient: LiveKitRoomClient = livekitRoomServiceClient as LiveKitRoomClient,
+  registry?: LiveCallRegistry
 ) => {
-  const rooms = await roomClient.listRooms();
-  const normalized = rooms
-    .map(normalizeLiveRoom)
-    .filter((room): room is LiveCallRoom => room !== null);
-  const scoped = await Promise.all(
-    normalized.map(async (room) =>
-      (await calllogRepository.liveRoomBelongsToOrg(organizationId, room.roomName))
+  let registered: CallStartedEvent[] | null = null;
+  if (registry) {
+    try {
+      registered = await registry.listActiveCalls(organizationId);
+    } catch (error) {
+      console.warn("[live-calls] Redis registry unavailable; using LiveKit fallback", {
+        organizationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  let normalizedRooms: LiveCallRoom[];
+  try {
+    const rooms = await roomClient.listRooms();
+    normalizedRooms = rooms
+      .map(normalizeLiveRoom)
+      .filter((room): room is LiveCallRoom => room !== null);
+  } catch (error) {
+    if (registered) {
+      console.warn("[live-calls] LiveKit unavailable; returning Redis registry", {
+        organizationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return enrichAgentNames(
+        organizationId,
+        registered.map((event) => liveCallFromRegistry(event, null))
+      );
+    }
+    throw error;
+  }
+
+  const calls: LiveCallRoom[] = [];
+  const claimedRooms = new Set<string>();
+  if (registered) {
+    const roomsByName = new Map(
+      normalizedRooms.map((room) => [room.roomName, room])
+    );
+    const stale: CallStartedEvent[] = [];
+    for (const event of registered) {
+      const room = roomsByName.get(event.roomName);
+      if (!room) {
+        const startedAt = Date.parse(event.startedAt);
+        const withinVisibilityGrace =
+          Number.isFinite(startedAt) &&
+          Date.now() - startedAt < LIVEKIT_REGISTRY_STALE_GRACE_MS;
+        if (withinVisibilityGrace) {
+          calls.push(liveCallFromRegistry(event, null));
+        } else {
+          stale.push(event);
+        }
+        continue;
+      }
+      claimedRooms.add(room.roomName);
+      calls.push(liveCallFromRegistry(event, room));
+    }
+    if (registry && stale.length > 0) {
+      await Promise.all(
+        stale.map((event) =>
+          registry.markCallStale(organizationId, event.callId).catch((error) => {
+            console.warn("[live-calls] failed to clean stale registry entry", {
+              organizationId,
+              callId: event.callId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          })
+        )
+      );
+    }
+  }
+
+  const fallbackRooms = normalizedRooms.filter(
+    (room) => !claimedRooms.has(room.roomName)
+  );
+  const scopedFallback = await Promise.all(
+    fallbackRooms.map(async (room) =>
+      (await calllogRepository.liveRoomBelongsToOrg(
+        organizationId,
+        room.roomName
+      ))
         ? room
         : null
     )
   );
-  return scoped
-    .filter((room): room is LiveCallRoom => room !== null)
-    .sort((a, b) => (b.startedAt ?? "").localeCompare(a.startedAt ?? ""));
+  calls.push(
+    ...scopedFallback.filter((room): room is LiveCallRoom => room !== null)
+  );
+
+  const enriched = await enrichAgentNames(organizationId, calls);
+  return enriched.sort((a, b) =>
+    (b.startedAt ?? "").localeCompare(a.startedAt ?? "")
+  );
 };
 
 export const endLiveCall = async (
   organizationId: string,
   roomName: string,
-  roomClient: LiveKitRoomClient = livekitRoomServiceClient as LiveKitRoomClient
+  roomClient: LiveKitRoomClient = livekitRoomServiceClient as LiveKitRoomClient,
+  registry?: LiveCallRegistry
 ) => {
   const normalizedRoomName = roomName.trim();
   if (!normalizedRoomName) {
     throw new NotFoundError("Live call room not found");
   }
-  const belongsToOrg = await calllogRepository.liveRoomBelongsToOrg(
-    organizationId,
-    normalizedRoomName
-  );
+  let registeredCall: CallStartedEvent | null = null;
+  if (registry) {
+    try {
+      registeredCall = await registry.findActiveCallByRoom(
+        organizationId,
+        normalizedRoomName
+      );
+    } catch (error) {
+      console.warn("[live-calls] Redis ownership check unavailable", {
+        organizationId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  const belongsToOrg =
+    registeredCall !== null ||
+    (await calllogRepository.liveRoomBelongsToOrg(
+      organizationId,
+      normalizedRoomName
+    ));
   if (!belongsToOrg) {
     throw new NotFoundError("Live call room not found");
   }
-  await roomClient.deleteRoom(normalizedRoomName);
-  return { status: "ended" as const, roomName: normalizedRoomName };
+  try {
+    await roomClient.deleteRoom(normalizedRoomName);
+  } catch (error) {
+    if (!isLiveKitRoomNotFound(error)) throw error;
+  }
+  return {
+    status: "ended" as const,
+    roomName: normalizedRoomName,
+    callId:
+      registeredCall?.callId ?? callIdFromRoomName(normalizedRoomName),
+  };
 };
 
 function normalizeLiveRoom(room: unknown): LiveCallRoom | null {
@@ -146,7 +264,70 @@ function normalizeLiveRoom(room: unknown): LiveCallRoom | null {
     direction: roomName.startsWith("outbound_") ? "outbound" : "inbound",
     participantCount: numberValue(record.numParticipants ?? record.num_participants) ?? 0,
     startedAt: liveKitTimestamp(record.creationTime ?? record.creation_time ?? record.createdAt),
+    status: "active",
+    agentId: null,
+    agentName: null,
+    fromNumber: null,
+    toNumber: null,
   };
+}
+
+function liveCallFromRegistry(
+  event: CallStartedEvent,
+  room: LiveCallRoom | null
+): LiveCallRoom {
+  return {
+    roomName: event.roomName,
+    callId: event.callId,
+    direction: event.direction,
+    participantCount: room?.participantCount ?? 0,
+    startedAt: event.startedAt,
+    status: "active",
+    agentId: event.agentId || null,
+    agentName: null,
+    fromNumber: event.fromNumber || null,
+    toNumber: event.toNumber || null,
+  };
+}
+
+async function enrichAgentNames(
+  organizationId: string,
+  calls: LiveCallRoom[]
+) {
+  const agentIds = Array.from(
+    new Set(
+      calls
+        .map((call) => call.agentId)
+        .filter((agentId): agentId is string => Boolean(agentId))
+    )
+  );
+  const agents = await calllogRepository.listAgentNamesForOrg(
+    organizationId,
+    agentIds
+  );
+  const names = new Map(
+    agents.map((agent) => [agent.agentId, agent.name])
+  );
+  return calls.map((call) => ({
+    ...call,
+    agentName: call.agentId ? (names.get(call.agentId) ?? null) : null,
+  }));
+}
+
+function isLiveKitRoomNotFound(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const record = error as Record<string, unknown>;
+  const code = String(record.code ?? "").toLowerCase();
+  const status = record.status ?? record.statusCode;
+  const message =
+    typeof record.message === "string" ? record.message.toLowerCase() : "";
+  return (
+    code === "not_found" ||
+    code === "5" ||
+    status === 404 ||
+    message.includes("not found") ||
+    message.includes("does not exist")
+  );
 }
 
 function callIdFromRoomName(roomName: string) {

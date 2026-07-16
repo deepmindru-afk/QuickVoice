@@ -23,6 +23,7 @@ export function useLiveCalls(enabled = true) {
     queryFn: () => callsApi.live(),
     enabled,
     refetchOnWindowFocus: false,
+    refetchInterval: 60_000,
     retry: false,
   });
 }

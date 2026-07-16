@@ -25,9 +25,16 @@ export interface TranscriptParams {
 export interface LiveCallRoom {
   roomName: string;
   callId: string;
+  status: "active";
   direction: "inbound" | "outbound" | "unknown";
   participantCount: number;
   startedAt: string | null;
+  agentId?: string | null;
+  agentName?: string | null;
+  callerId?: string | null;
+  calleeId?: string | null;
+  fromNumber?: string | null;
+  toNumber?: string | null;
 }
 
 export const callsApi = {
