@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  PhoneCall,
+  ShieldAlert,
+  Timer,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   ErrorState,
@@ -64,6 +74,218 @@ function collectionSize(value: unknown) {
   return Array.isArray(value) ? value.length : 0;
 }
 
+const RANGE_LABELS: Record<DashboardRange, string> = {
+  "24h": "Last 24 hours",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+};
+
+function formatDashboardDuration(seconds: number) {
+  const wholeSeconds = Math.max(0, Math.round(seconds));
+  if (!wholeSeconds) return "0s";
+  const minutes = Math.floor(wholeSeconds / 60);
+  const remainingSeconds = wholeSeconds % 60;
+  if (!minutes) return `${remainingSeconds}s`;
+  if (!remainingSeconds) return `${minutes}m`;
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function formatCompactNumber(value: number) {
+  return value.toLocaleString("en-US");
+}
+
+function DashboardSignal({
+  label,
+  value,
+  detail,
+  icon: Icon,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  icon: LucideIcon;
+  tone?: "neutral" | "success" | "warning" | "danger" | "info";
+}) {
+  const toneClass = {
+    neutral: "border-border bg-muted/30 text-foreground",
+    success:
+      "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    warning:
+      "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    danger: "border-destructive/25 bg-destructive/10 text-destructive",
+    info: "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  }[tone];
+
+  return (
+    <div className="group relative overflow-hidden border bg-background p-4 transition-colors hover:border-primary/35">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-2 text-2xl font-semibold leading-none tracking-tight text-foreground">
+            {value}
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            {detail}
+          </p>
+        </div>
+        <span
+          className={`flex size-9 shrink-0 items-center justify-center border ${toneClass}`}
+        >
+          <Icon className="size-4" />
+        </span>
+      </div>
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
+      />
+    </div>
+  );
+}
+
+function DashboardCommandCenter({
+  summary,
+  range,
+  loading,
+  successPct,
+  exceptionCalls,
+}: {
+  summary?: DashboardSummary;
+  range: DashboardRange;
+  loading?: boolean;
+  successPct: number;
+  exceptionCalls: number;
+}) {
+  const totals = summary?.totals;
+  const calls = totals?.calls ?? 0;
+  const minutes = totals?.minutes ?? 0;
+  const activeAgents = summary?.topAgents.length ?? 0;
+  const avgDuration = formatDashboardDuration(totals?.avgDurationSeconds ?? 0);
+  const hasCalls = calls > 0;
+
+  return (
+    <section className="overflow-hidden border bg-card shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="relative p-5 sm:p-6">
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,hsl(var(--primary)),#10b981,#f59e0b,#ef4444)]"
+          />
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                <Activity className="size-3.5" />
+                {RANGE_LABELS[range]} operations
+              </div>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                {loading
+                  ? "Loading call performance"
+                  : hasCalls
+                    ? `${formatCompactNumber(
+                        calls
+                      )} calls with ${successPct}% success`
+                    : "No call activity in this range yet"}
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Monitor demand, completion quality, agent load, and exceptions
+                from one dashboard.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row xl:flex-col">
+              <Button asChild className="justify-between gap-3">
+                <Link href="/outbound">
+                  Start outbound call <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="justify-between gap-3 bg-background"
+              >
+                <Link href="/calls">
+                  Review call logs <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <DashboardSignal
+              label="Calls"
+              value={formatCompactNumber(calls)}
+              detail="All inbound and outbound records"
+              icon={PhoneCall}
+              tone="info"
+            />
+            <DashboardSignal
+              label="Success"
+              value={`${successPct}%`}
+              detail="Completed calls out of total"
+              icon={CheckCircle2}
+              tone="success"
+            />
+            <DashboardSignal
+              label="Exceptions"
+              value={formatCompactNumber(exceptionCalls)}
+              detail="Failed and missed calls to inspect"
+              icon={ShieldAlert}
+              tone={exceptionCalls ? "danger" : "neutral"}
+            />
+            <DashboardSignal
+              label="Avg duration"
+              value={avgDuration}
+              detail="Average connected call length"
+              icon={Timer}
+              tone="warning"
+            />
+          </div>
+        </div>
+
+        <aside className="border-t bg-muted/20 p-5 lg:border-l lg:border-t-0 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Routing capacity
+          </p>
+          <div className="mt-4 grid gap-3">
+            <div className="flex items-center justify-between border bg-background px-4 py-3">
+              <span className="text-sm text-muted-foreground">
+                Minutes used
+              </span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatCompactNumber(minutes)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border bg-background px-4 py-3">
+              <span className="text-sm text-muted-foreground">
+                Active agents
+              </span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatCompactNumber(activeAgents)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border bg-background px-4 py-3">
+              <span className="text-sm text-muted-foreground">
+                Missed calls
+              </span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {formatCompactNumber(totals?.missedCalls ?? 0)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-start gap-2 border border-border bg-background px-3 py-3 text-xs text-muted-foreground">
+            <Clock3 className="mt-0.5 size-3.5 shrink-0" />
+            <span>
+              Use the range control to compare short-term spikes against longer
+              campaign trends.
+            </span>
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
 function isPermissionError(error: unknown) {
   const status = apiErrorStatus(error);
   return status === 401 || status === 403;
@@ -73,15 +295,21 @@ function getMissingDashboardSections(summary?: DashboardSummary) {
   if (!summary || (summary.totals?.calls ?? 0) === 0) return [];
 
   const missingSections: string[] = [];
-  if (collectionSize(summary.series) === 0) missingSections.push("traffic timeline");
+  if (collectionSize(summary.series) === 0) {
+    missingSections.push("traffic timeline");
+  }
   if (collectionSize(summary.statusBreakdown) === 0) {
     missingSections.push("outcome breakdown");
   }
   if (collectionSize(summary.directionBreakdown) === 0) {
     missingSections.push("routing mix");
   }
-  if (collectionSize(summary.topAgents) === 0) missingSections.push("agent activity");
-  if (collectionSize(summary.recent) === 0) missingSections.push("recent calls");
+  if (collectionSize(summary.topAgents) === 0) {
+    missingSections.push("agent activity");
+  }
+  if (collectionSize(summary.recent) === 0) {
+    missingSections.push("recent calls");
+  }
   return missingSections;
 }
 
@@ -150,9 +378,7 @@ export default function DashboardPage() {
     <RetryButton
       onClick={() => refetch()}
       isRetrying={isFetching}
-      disabled={
-        dashboardErrorState?.kind === "offline" && !isOnline
-      }
+      disabled={dashboardErrorState?.kind === "offline" && !isOnline}
     >
       Retry
     </RetryButton>
@@ -207,42 +433,13 @@ export default function DashboardPage() {
       ) : (
         <>
           <DashboardPartialDataNotice sections={missingDashboardSections} />
-          <div className="grid gap-4 border bg-card p-5 lg:grid-cols-[1fr_340px] lg:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Operations snapshot
-              </p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                {isLoading
-                  ? "Loading call performance"
-                  : `${data?.totals.calls ?? 0} calls at ${successPct}% success`}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Monitor traffic shape, service quality, and agent load from one
-                place.
-              </p>
-            </div>
-            <div className="grid grid-cols-3 border bg-background text-center text-xs">
-              <div className="border-r px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {data?.totals.minutes ?? 0}
-                </p>
-                <p className="text-muted-foreground">minutes</p>
-              </div>
-              <div className="border-r px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {exceptionCalls}
-                </p>
-                <p className="text-muted-foreground">exceptions</p>
-              </div>
-              <div className="px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {data?.topAgents.length ?? 0}
-                </p>
-                <p className="text-muted-foreground">agents</p>
-              </div>
-            </div>
-          </div>
+          <DashboardCommandCenter
+            summary={data}
+            range={range}
+            loading={isLoading}
+            successPct={successPct}
+            exceptionCalls={exceptionCalls}
+          />
           <KpiCards summary={data} range={range} loading={isLoading} />
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <div className="xl:col-span-2">

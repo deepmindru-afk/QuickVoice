@@ -27,6 +27,21 @@ test("dashboard exposes freshness, reporting window, and stale/offline state", (
   assert.match(freshness, /summary\.period\.to/);
 });
 
+test("dashboard command center surfaces operational priorities and quick actions", () => {
+  const page = read("src/app/(app)/dashboard/page.tsx");
+
+  assert.match(page, /DashboardCommandCenter/);
+  assert.match(page, /DashboardSignal/);
+  assert.match(page, /RANGE_LABELS/);
+  assert.match(page, /Start outbound call/);
+  assert.match(page, /Review call logs/);
+  assert.match(page, /Routing capacity/);
+  assert.match(page, /Minutes used/);
+  assert.match(page, /Active agents/);
+  assert.match(page, /Missed calls/);
+  assert.match(page, /formatDashboardDuration/);
+});
+
 test("dashboard KPI deltas use unit-aware copy and a named previous period", () => {
   const source = read("src/components/dashboard/KpiCards.tsx");
 
