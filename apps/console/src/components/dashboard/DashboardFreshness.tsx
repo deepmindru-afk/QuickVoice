@@ -60,12 +60,12 @@ export function DashboardFreshness({
     <section
       aria-busy={isFetching}
       aria-live="polite"
-      className="border bg-card p-4"
+      className="rounded-lg border bg-card/80 p-3 shadow-sm"
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-md bg-muted/35 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Reporting window
             </p>
             <p className="mt-1 text-foreground">
@@ -76,8 +76,8 @@ export function DashboardFreshness({
                   )}`}
             </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="rounded-md bg-muted/35 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Last updated
             </p>
             <p className="mt-1 inline-flex items-center gap-2 text-foreground">
@@ -92,14 +92,14 @@ export function DashboardFreshness({
           onClick={onRefresh}
           disabled={isFetching || !isOnline}
           aria-label="Refresh dashboard"
-          className="w-full sm:w-fit"
+          className="h-10 w-full rounded-md bg-background sm:w-fit"
         >
           <RefreshCw className={isFetching ? "animate-spin" : undefined} />
           {isFetching ? "Refreshing" : "Refresh dashboard"}
         </Button>
       </div>
       {!isOnline ? (
-        <div className="mt-3 flex items-start gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
+        <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200">
           <WifiOff className="mt-0.5 size-3.5 shrink-0" />
           <span>
             You are offline.{" "}
@@ -109,7 +109,7 @@ export function DashboardFreshness({
           </span>
         </div>
       ) : showStale ? (
-        <div className="mt-3 border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        <div className="mt-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
           Dashboard data is stale. Refresh to confirm the latest call activity.
         </div>
       ) : null}

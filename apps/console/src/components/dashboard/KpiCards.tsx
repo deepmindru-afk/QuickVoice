@@ -179,92 +179,103 @@ export function KpiCards({
   const previousPeriodWindow = formatPreviousPeriodWindow(summary);
 
   return (
-    <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <StatCard
-        label="Total calls"
-        value={totals?.calls.toLocaleString() ?? "0"}
-        eyebrow="All inbound and outbound activity"
-        helper={
-          deltas ? (
-            <Trend
-              value={deltas.calls}
-              unit="call"
-              comparisonLabel={previousPeriodLabel}
-              comparisonTitle={previousPeriodWindow}
-            />
-          ) : undefined
-        }
-        icon={PhoneCall}
-        loading={loading}
-        tone="info"
-        className="h-full"
-      />
-      <StatCard
-        label="Minutes used"
-        value={totals?.minutes.toLocaleString() ?? "0"}
-        eyebrow="Connected conversation time"
-        helper={
-          deltas ? (
-            <Trend
-              value={deltas.minutes}
-              unit="minute"
-              comparisonLabel={previousPeriodLabel}
-              comparisonTitle={previousPeriodWindow}
-            />
-          ) : undefined
-        }
-        icon={Clock}
-        loading={loading}
-        tone="neutral"
-        className="h-full"
-      />
-      <StatCard
-        label="Avg duration"
-        value={formatDuration(totals?.avgDurationSeconds ?? 0)}
-        eyebrow="Per completed interaction"
-        helper={
-          deltas ? (
-            <Trend
-              value={deltas.avgDurationSeconds}
-              unit="duration"
-              comparisonLabel={previousPeriodLabel}
-              comparisonTitle={previousPeriodWindow}
-            />
-          ) : undefined
-        }
-        icon={Timer}
-        loading={loading}
-        tone="warning"
-        className="h-full"
-      />
-      <StatCard
-        label="Success rate"
-        value={`${Math.round((totals?.successRate ?? 0) * 100)}%`}
-        eyebrow="Completed calls out of total"
-        helper={
-          deltas ? (
-            <Trend
-              value={deltas.successRate}
-              unit="percentage point"
-              comparisonLabel={previousPeriodLabel}
-              comparisonTitle={previousPeriodWindow}
-            />
-          ) : undefined
-        }
-        icon={CheckCircle2}
-        loading={loading}
-        tone="success"
-        className="h-full"
-      />
-      <Link
-        href={dashboardCallsHref({ range, status: "FAILED" })}
-        className={drilldownLinkClass}
-        aria-label="Review failed calls in the selected dashboard range"
-      >
+    <section className="space-y-3">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
+            Period movement
+          </p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+            KPI trends
+          </h2>
+        </div>
+      </div>
+      <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          label="Failed"
-          value={totals?.failedCalls.toLocaleString() ?? "0"}
+          label="Total calls"
+          value={totals?.calls.toLocaleString() ?? "0"}
+          eyebrow="All inbound and outbound activity"
           helper={
+            deltas ? (
+              <Trend
+                value={deltas.calls}
+                unit="call"
+                comparisonLabel={previousPeriodLabel}
+                comparisonTitle={previousPeriodWindow}
+              />
+            ) : undefined
+          }
+          icon={PhoneCall}
+          loading={loading}
+          tone="info"
+          className="h-full"
+        />
+        <StatCard
+          label="Minutes used"
+          value={totals?.minutes.toLocaleString() ?? "0"}
+          eyebrow="Connected conversation time"
+          helper={
+            deltas ? (
+              <Trend
+                value={deltas.minutes}
+                unit="minute"
+                comparisonLabel={previousPeriodLabel}
+                comparisonTitle={previousPeriodWindow}
+              />
+            ) : undefined
+          }
+          icon={Clock}
+          loading={loading}
+          tone="neutral"
+          className="h-full"
+        />
+        <StatCard
+          label="Avg duration"
+          value={formatDuration(totals?.avgDurationSeconds ?? 0)}
+          eyebrow="Per completed interaction"
+          helper={
+            deltas ? (
+              <Trend
+                value={deltas.avgDurationSeconds}
+                unit="duration"
+                comparisonLabel={previousPeriodLabel}
+                comparisonTitle={previousPeriodWindow}
+              />
+            ) : undefined
+          }
+          icon={Timer}
+          loading={loading}
+          tone="warning"
+          className="h-full"
+        />
+        <StatCard
+          label="Success rate"
+          value={`${Math.round((totals?.successRate ?? 0) * 100)}%`}
+          eyebrow="Completed calls out of total"
+          helper={
+            deltas ? (
+              <Trend
+                value={deltas.successRate}
+                unit="percentage point"
+                comparisonLabel={previousPeriodLabel}
+                comparisonTitle={previousPeriodWindow}
+              />
+            ) : undefined
+          }
+          icon={CheckCircle2}
+          loading={loading}
+          tone="success"
+          className="h-full"
+        />
+        <Link
+          href={dashboardCallsHref({ range, status: "FAILED" })}
+          className={drilldownLinkClass}
+          aria-label="Review failed calls in the selected dashboard range"
+        >
+          <StatCard
+            label="Failed"
+            value={totals?.failedCalls.toLocaleString() ?? "0"}
+            helper={
               <InvestigationHint action="Review failed calls">
                 {deltas ? (
                   <Trend
@@ -277,21 +288,21 @@ export function KpiCards({
                 ) : null}
               </InvestigationHint>
             }
-          icon={AlertTriangle}
-          loading={loading}
-          tone="danger"
-          className="h-full"
-        />
-      </Link>
-      <Link
-        href={dashboardCallsHref({ range, status: "NOT_ANSWERED" })}
-        className={drilldownLinkClass}
-        aria-label="View missed calls in the selected dashboard range"
-      >
-        <StatCard
-          label="Missed"
-          value={totals?.missedCalls.toLocaleString() ?? "0"}
-          helper={
+            icon={AlertTriangle}
+            loading={loading}
+            tone="danger"
+            className="h-full"
+          />
+        </Link>
+        <Link
+          href={dashboardCallsHref({ range, status: "NOT_ANSWERED" })}
+          className={drilldownLinkClass}
+          aria-label="View missed calls in the selected dashboard range"
+        >
+          <StatCard
+            label="Missed"
+            value={totals?.missedCalls.toLocaleString() ?? "0"}
+            helper={
               <InvestigationHint action="View missed calls">
                 {deltas ? (
                   <Trend
@@ -304,12 +315,13 @@ export function KpiCards({
                 ) : null}
               </InvestigationHint>
             }
-          icon={Voicemail}
-          loading={loading}
-          tone="warning"
-          className="h-full"
-        />
-      </Link>
-    </div>
+            icon={Voicemail}
+            loading={loading}
+            tone="warning"
+            className="h-full"
+          />
+        </Link>
+      </div>
+    </section>
   );
 }

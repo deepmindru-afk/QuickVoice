@@ -38,14 +38,14 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "relative flex h-full min-h-[168px] flex-col overflow-hidden border bg-card p-5 shadow-xs transition-colors hover:border-primary/35",
+        "relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-lg border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
         className
       )}
     >
       <div className="flex h-full items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-[2.5rem] space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               {label}
             </p>
             {eyebrow ? (
@@ -55,7 +55,7 @@ export function StatCard({
           {loading ? (
             <Skeleton className="mt-4 h-8 w-24" />
           ) : (
-            <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
+            <p className="mt-4 text-3xl font-semibold leading-none tracking-tight text-foreground tabular-nums">
               {value}
             </p>
           )}
@@ -64,14 +64,14 @@ export function StatCard({
           </div>
         </div>
         {Icon ? (
-          <div className={cn("shrink-0 border p-2.5", toneStyles[tone])}>
+          <div className={cn("shrink-0 rounded-md p-2.5", toneStyles[tone])}>
             <Icon className="size-4" />
           </div>
         ) : null}
       </div>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-primary/10"
       />
     </div>
   );

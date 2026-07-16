@@ -76,7 +76,7 @@ test("dashboard KPI cards reserve stable rows for aligned helper content", () =>
   assert.doesNotMatch(kpis, /xl:col-span/);
   assert.match(kpis, /className="h-full"/);
 
-  assert.match(statCard, /flex h-full min-h-\[168px\] flex-col/);
+  assert.match(statCard, /flex h-full min-h-\[148px\] flex-col/);
   assert.match(statCard, /flex min-w-0 flex-1 flex-col/);
   assert.match(statCard, /min-h-\[2.5rem\]/);
   assert.match(statCard, /mt-auto min-h-\[2.75rem\]/);
