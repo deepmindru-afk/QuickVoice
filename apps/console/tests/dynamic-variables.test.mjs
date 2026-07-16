@@ -73,14 +73,16 @@ test("batch templates include selected agent dynamic variables", async () => {
   assert.match(batchForm, /Template variables/);
 });
 
-test("initiation webhook static variables are editable and saved", async () => {
+test("initiation webhook response variables are editable and saved", async () => {
   const webhooksTab = await text("apps/console/src/components/agents/tabs/WebhooksTab.tsx");
   const agentSchema = await text("apps/server/src/modules/agent/agent.schema.ts");
 
   assert.match(agentSchema, /dynamic_variables:\s*z\.record\(z\.string\(\),\s*z\.string\(\)\)\.optional\(\)/);
-  assert.match(webhooksTab, /Static variables/);
+  assert.match(webhooksTab, /Response variables/);
   assert.match(webhooksTab, /webhookVariableNamePattern = \/\^\[A-Za-z_\]\[A-Za-z0-9_\]\*\$\//);
   assert.match(webhooksTab, /const dynamic_variables = recordFromRows\(initiationVariableRows\)/);
+  assert.match(webhooksTab, /fetch dynamic variables and caller context/);
+  assert.match(webhooksTab, /JSON paths from the webhook response/);
   assert.match(webhooksTab, /Object\.keys\(dynamic_variables\)\.length > 0 \? \{ dynamic_variables \} : \{\}/);
 });
 

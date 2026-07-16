@@ -340,7 +340,7 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                         <div className="space-y-1">
                             <h2 className="text-base font-semibold">Initiation webhook</h2>
                             <p className="text-sm text-muted-foreground">
-                                Fetched at call start to provide caller context.
+                                Called at the start of a real call to fetch dynamic variables and caller context.
                             </p>
                         </div>
                         <FormField
@@ -407,7 +407,7 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                     <div className="mt-5 grid gap-4 xl:grid-cols-2">
                         <WebhookSecretFieldEditor
                             label="Headers"
-                            description="Sent with the initiation webhook request."
+                            description="Optional request headers used when fetching call context."
                             rows={initiationHeaderRows}
                             onChange={setInitiationHeaderRows}
                             disabled={!initiationOn || save.isPending}
@@ -415,7 +415,7 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                         />
                         <WebhookSecretFieldEditor
                             label="Body fields"
-                            description="Sent in the initiation webhook body for POST requests."
+                            description="Optional POST body fields sent so your endpoint can identify the call."
                             rows={initiationBodyRows}
                             onChange={setInitiationBodyRows}
                             disabled={!initiationOn || initiationMethod === "GET" || save.isPending}
@@ -428,13 +428,13 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                             <div className="space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Braces className="size-4 text-muted-foreground" />
-                                    <p className="text-sm font-medium">Static variables</p>
+                                    <p className="text-sm font-medium">Response variables</p>
                                     <Badge variant="outline">
                                         {detectedVariableNames.length} variable{detectedVariableNames.length === 1 ? "" : "s"}
                                     </Badge>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                    Map static webhook response fields to variables detected in the agent prompts.
+                                    Map JSON paths from the webhook response into dynamic variables used during the call.
                                 </p>
                             </div>
                         </div>
@@ -463,7 +463,7 @@ export function WebhooksTab({ agentId }: { agentId: string }) {
                             </div>
                         ) : (
                             <p className="mt-4 text-sm text-muted-foreground">
-                                Add dynamic variables in the behavior prompt to map webhook response fields.
+                                Add dynamic variables in the behavior prompt, then map each one to a JSON path from the webhook response.
                             </p>
                         )}
                     </div>
