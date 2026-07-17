@@ -77,6 +77,14 @@ enum McpCatalogSource {
   CUSTOM
 }
 
+enum AgentWidgetSessionStatus {
+  CREATED
+  ACTIVE
+  ENDED
+  EXPIRED
+  FAILED
+}
+
 // ─── Better Auth Core Tables ─────────────────────────────────────────────────
 
 model User {
@@ -206,6 +214,7 @@ model Organization {
   accessKey         String?
   plan              PlanId             @default(free)
   agents            Agent[]
+  agentWidgets      AgentWidget[]
   knowledgeSources  KnowledgeSource[]
   phoneNumbers      PhoneNumber[]
   tools             Tool[]
@@ -333,6 +342,7 @@ model Agent {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   configuration         AgentConfiguration?
+  widgets               AgentWidget[]
   // TODO : Change in API, removed callLog[]
   callLogsCount         Int                 @default(0)
   callLogs              CallLog[]
@@ -396,6 +406,57 @@ model AgentConfiguration {
   preemptive_generation             Boolean  @default(false)
   ivr_navigation_enabled            Boolean  @default(true)
   timezone                          String   @default("UTC")
+}
+
+model AgentWidget {
+  widgetId        String       @id
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agentId         String
+  agent           Agent        @relation(fields: [agentId], references: [agentId], onDelete: Cascade)
+  name            String
+  enabled         Boolean      @default(false)
+  allowedOrigins  Json         @default("[]")
+  theme           Json         @default("{}")
+  consentRequired Boolean      @default(true)
+  consentText     String?
+  createdByUserId String?
+  updatedByUserId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  sessions        AgentWidgetSession[]
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([organizationId, agentId])
+  @@index([enabled])
+}
+
+model AgentWidgetSession {
+  sessionId           String                   @id
+  widgetId            String
+  widget              AgentWidget              @relation(fields: [widgetId], references: [widgetId], onDelete: Cascade)
+  organizationId      String
+  agentId             String
+  roomName            String                   @unique
+  callId              String?
+  participantIdentity String
+  dispatchId          String?
+  origin              String?
+  status              AgentWidgetSessionStatus @default(CREATED)
+  endTokenHash        String?
+  expiresAt           DateTime
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  metadata            Json?
+
+  @@index([widgetId])
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([organizationId, status])
+  @@index([expiresAt])
 }
 
 model KnowledgeSource {

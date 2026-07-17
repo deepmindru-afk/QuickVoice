@@ -397,6 +397,8 @@ export const ModelName = {
   PhoneNumber: 'PhoneNumber',
   Agent: 'Agent',
   AgentConfiguration: 'AgentConfiguration',
+  AgentWidget: 'AgentWidget',
+  AgentWidgetSession: 'AgentWidgetSession',
   KnowledgeSource: 'KnowledgeSource',
   CallLog: 'CallLog',
   CallTranscript: 'CallTranscript',
@@ -424,7 +426,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification" | "apikey" | "organization" | "organizationRole" | "member" | "invitation" | "subscription" | "phoneNumber" | "agent" | "agentConfiguration" | "knowledgeSource" | "callLog" | "callTranscript" | "outboundCall" | "campaign" | "tool" | "mcpServerCatalogItem" | "mcpConnection" | "agentMcpConnection" | "mcpToolExecutionLog" | "secret" | "auditLog"
+    modelProps: "user" | "session" | "account" | "verification" | "apikey" | "organization" | "organizationRole" | "member" | "invitation" | "subscription" | "phoneNumber" | "agent" | "agentConfiguration" | "agentWidget" | "agentWidgetSession" | "knowledgeSource" | "callLog" | "callTranscript" | "outboundCall" | "campaign" | "tool" | "mcpServerCatalogItem" | "mcpConnection" | "agentMcpConnection" | "mcpToolExecutionLog" | "secret" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1387,6 +1389,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AgentConfigurationCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AgentConfigurationCountAggregateOutputType> | number
+        }
+      }
+    }
+    AgentWidget: {
+      payload: Prisma.$AgentWidgetPayload<ExtArgs>
+      fields: Prisma.AgentWidgetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AgentWidgetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AgentWidgetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        findFirst: {
+          args: Prisma.AgentWidgetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AgentWidgetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        findMany: {
+          args: Prisma.AgentWidgetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>[]
+        }
+        create: {
+          args: Prisma.AgentWidgetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        createMany: {
+          args: Prisma.AgentWidgetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AgentWidgetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>[]
+        }
+        delete: {
+          args: Prisma.AgentWidgetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        update: {
+          args: Prisma.AgentWidgetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        deleteMany: {
+          args: Prisma.AgentWidgetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AgentWidgetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AgentWidgetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>[]
+        }
+        upsert: {
+          args: Prisma.AgentWidgetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetPayload>
+        }
+        aggregate: {
+          args: Prisma.AgentWidgetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAgentWidget>
+        }
+        groupBy: {
+          args: Prisma.AgentWidgetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AgentWidgetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AgentWidgetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AgentWidgetCountAggregateOutputType> | number
+        }
+      }
+    }
+    AgentWidgetSession: {
+      payload: Prisma.$AgentWidgetSessionPayload<ExtArgs>
+      fields: Prisma.AgentWidgetSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AgentWidgetSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AgentWidgetSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.AgentWidgetSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AgentWidgetSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        findMany: {
+          args: Prisma.AgentWidgetSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>[]
+        }
+        create: {
+          args: Prisma.AgentWidgetSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        createMany: {
+          args: Prisma.AgentWidgetSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AgentWidgetSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.AgentWidgetSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        update: {
+          args: Prisma.AgentWidgetSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.AgentWidgetSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AgentWidgetSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AgentWidgetSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.AgentWidgetSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AgentWidgetSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.AgentWidgetSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAgentWidgetSession>
+        }
+        groupBy: {
+          args: Prisma.AgentWidgetSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AgentWidgetSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AgentWidgetSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AgentWidgetSessionCountAggregateOutputType> | number
         }
       }
     }
@@ -2557,10 +2707,53 @@ export const AgentConfigurationScalarFieldEnum = {
   post_call_webhook: 'post_call_webhook',
   variables: 'variables',
   preemptive_generation: 'preemptive_generation',
+  ivr_navigation_enabled: 'ivr_navigation_enabled',
   timezone: 'timezone'
 } as const
 
 export type AgentConfigurationScalarFieldEnum = (typeof AgentConfigurationScalarFieldEnum)[keyof typeof AgentConfigurationScalarFieldEnum]
+
+
+export const AgentWidgetScalarFieldEnum = {
+  widgetId: 'widgetId',
+  organizationId: 'organizationId',
+  agentId: 'agentId',
+  name: 'name',
+  enabled: 'enabled',
+  allowedOrigins: 'allowedOrigins',
+  theme: 'theme',
+  consentRequired: 'consentRequired',
+  consentText: 'consentText',
+  createdByUserId: 'createdByUserId',
+  updatedByUserId: 'updatedByUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgentWidgetScalarFieldEnum = (typeof AgentWidgetScalarFieldEnum)[keyof typeof AgentWidgetScalarFieldEnum]
+
+
+export const AgentWidgetSessionScalarFieldEnum = {
+  sessionId: 'sessionId',
+  widgetId: 'widgetId',
+  organizationId: 'organizationId',
+  agentId: 'agentId',
+  roomName: 'roomName',
+  callId: 'callId',
+  participantIdentity: 'participantIdentity',
+  dispatchId: 'dispatchId',
+  origin: 'origin',
+  status: 'status',
+  endTokenHash: 'endTokenHash',
+  expiresAt: 'expiresAt',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  metadata: 'metadata'
+} as const
+
+export type AgentWidgetSessionScalarFieldEnum = (typeof AgentWidgetSessionScalarFieldEnum)[keyof typeof AgentWidgetSessionScalarFieldEnum]
 
 
 export const KnowledgeSourceScalarFieldEnum = {
@@ -2806,6 +2999,13 @@ export const NullableJsonNullValueInput = {
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -2939,6 +3139,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+
+
+
+/**
+ * Reference to a field of type 'AgentWidgetSessionStatus'
+ */
+export type EnumAgentWidgetSessionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentWidgetSessionStatus'>
+
+
+
+/**
+ * Reference to a field of type 'AgentWidgetSessionStatus[]'
+ */
+export type ListEnumAgentWidgetSessionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentWidgetSessionStatus[]'>
 
 
 
@@ -3147,6 +3361,8 @@ export type GlobalOmitConfig = {
   phoneNumber?: Prisma.PhoneNumberOmit
   agent?: Prisma.AgentOmit
   agentConfiguration?: Prisma.AgentConfigurationOmit
+  agentWidget?: Prisma.AgentWidgetOmit
+  agentWidgetSession?: Prisma.AgentWidgetSessionOmit
   knowledgeSource?: Prisma.KnowledgeSourceOmit
   callLog?: Prisma.CallLogOmit
   callTranscript?: Prisma.CallTranscriptOmit

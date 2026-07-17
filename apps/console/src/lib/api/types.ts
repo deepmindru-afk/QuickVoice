@@ -126,6 +126,65 @@ export interface AgentPreviewSession {
   expiresAt: string;
 }
 
+export type AgentWidgetPosition =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left";
+export type AgentWidgetLauncherSize = "compact" | "comfortable" | "large";
+
+export interface AgentWidgetTheme {
+  primaryColor: string;
+  accentColor: string;
+  surfaceColor: string;
+  textColor: string;
+  mutedTextColor: string;
+  buttonTextColor: string;
+  borderColor: string;
+  position: AgentWidgetPosition;
+  launcherSize: AgentWidgetLauncherSize;
+  panelWidth: number;
+  borderRadius: number;
+  defaultOpen: boolean;
+  showAvatar: boolean;
+  avatarImageUrl: string | null;
+  avatarOrbColor1: string;
+  avatarOrbColor2: string;
+  brandName: string;
+  actionText: string;
+  welcomeText: string;
+  startButtonText: string;
+  endButtonText: string;
+  connectingText: string;
+  listeningText: string;
+  speakingText: string;
+  endedText: string;
+  whiteLabel: boolean;
+}
+
+export interface AgentWidget {
+  widgetId: string;
+  organizationId: string;
+  agentId: string;
+  name: string;
+  enabled: boolean;
+  allowedOrigins: string[];
+  theme: AgentWidgetTheme;
+  consentRequired: boolean;
+  consentText: string;
+  createdAt: string;
+  updatedAt: string;
+  agent: {
+    agentId: string;
+    name: string;
+    isConfigured: boolean;
+  };
+  embed: {
+    scriptUrl: string;
+    snippet: string;
+  };
+}
+
 export interface WebhookConfig {
   webhook_url: string;
   method?: "GET" | "POST";

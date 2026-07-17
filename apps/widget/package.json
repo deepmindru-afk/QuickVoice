@@ -1,0 +1,20 @@
+{
+  "name": "quickvoice-widget",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=iife --global-name=QuickVoiceWidget --outfile=dist/quickvoice-widget.js --minify --sourcemap",
+    "check-types": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "livekit-client": "^2.20.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "esbuild": "^0.27.7",
+    "typescript": "^5"
+  }
+}

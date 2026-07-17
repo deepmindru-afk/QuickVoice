@@ -61,7 +61,11 @@ def parse_metadata(metadata: str | None) -> dict[str, Any]:
 
 
 def build_call_context(room_name: str, metadata: dict[str, Any]) -> dict[str, Any]:
-    room_agent_number, room_user_number = _numbers_from_room(room_name)
+    source = _pick(metadata, "source")
+    is_web_widget = source == "web_widget" or room_name.startswith("widget_")
+    room_agent_number, room_user_number = (
+        (None, None) if is_web_widget else _numbers_from_room(room_name)
+    )
     direction = _pick(metadata, "direction", "callDirection") or "inbound"
 
     if direction == "outbound":
@@ -116,7 +120,7 @@ def apply_metadata_overrides(config: dict[str, Any], metadata: dict[str, Any]) -
     language = _pick(metadata, "language", "agent_language", "agentLanguage")
     voice_id = _pick(metadata, "voice_id", "voiceId")
     metadata_dynamic_variables = _pick(metadata, "dynamic_variables", "dynamicVariables")
-    should_apply_metadata_overrides = direction == "outbound" or mode == "preview"
+    should_apply_metadata_overrides = direction == "outbound" or mode in {"preview", "widget"}
     if should_apply_metadata_overrides:
         if first_message:
             updated["first_message"] = first_message

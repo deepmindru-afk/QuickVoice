@@ -13,15 +13,19 @@ RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
 COPY apps/server/package.json apps/server/package.json
+COPY apps/widget/package.json apps/widget/package.json
 COPY packages/typescript-config packages/typescript-config
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter server...
+    pnpm install --frozen-lockfile --filter server... --filter quickvoice-widget...
 
 FROM deps AS build
 COPY apps/server/tsconfig.json apps/server/prisma.config.ts apps/server/
 COPY apps/server/src apps/server/src
 COPY apps/server/data apps/server/data
 COPY apps/server/prisma apps/server/prisma
+COPY apps/widget apps/widget
+WORKDIR /app
+RUN pnpm --filter quickvoice-widget build
 WORKDIR /app/apps/server
 ENV DATABASE_URL="postgresql://quickvoice:quickvoice@localhost:5432/quickvoice"
 RUN pnpm exec prisma generate
@@ -61,8 +65,10 @@ WORKDIR /app/apps/server
 COPY --from=build --chown=server:nodejs /app/apps/server/dist ./dist
 COPY --from=build --chown=server:nodejs /app/apps/server/prisma ./prisma
 COPY --from=build --chown=server:nodejs /app/apps/server/prisma.config.ts ./prisma.config.ts
+COPY --from=build --chown=server:nodejs /app/apps/widget/dist /app/apps/widget/dist
 RUN test -x /app/node_modules/.bin/prisma
 RUN test -f /app/apps/server/dist/src/index.js
+RUN test -f /app/apps/widget/dist/quickvoice-widget.js
 
 USER server
 EXPOSE 8000

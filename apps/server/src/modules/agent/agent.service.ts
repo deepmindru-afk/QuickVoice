@@ -56,16 +56,23 @@ export type AgentPreviewSessionPayload = {
     llm: { model: string };
     tts: { model: string; voice: string };
   };
-  metadata: {
-    mode: "preview";
-    agent_id: string;
-    organization_id: string;
-    first_message: string;
-    system_prompt: string;
-    dynamic_variables?: Record<string, string>;
-    retention: "ephemeral";
-  };
+  metadata: VoiceSessionMetadata;
   ttl_seconds: number;
+};
+
+export type VoiceSessionMetadata = {
+  mode: "preview" | "widget" | "session";
+  agent_id: string;
+  organization_id: string;
+  first_message?: string;
+  system_prompt?: string;
+  dynamic_variables?: Record<string, string>;
+  retention?: "ephemeral" | "configured";
+  [key: string]: unknown;
+};
+
+export type VoiceSessionPayload = Omit<AgentPreviewSessionPayload, "metadata"> & {
+  metadata: VoiceSessionMetadata;
 };
 
 export type AgentPreviewSession = {
@@ -254,8 +261,9 @@ function previewDynamicVariableOverrides(
   return variables;
 }
 
-export const requestAgentPreviewSession = async (
-  payload: AgentPreviewSessionPayload,
+export const requestVoiceSession = async (
+  payload: VoiceSessionPayload,
+  unavailableMessage = "Voice session is unavailable",
 ): Promise<AgentPreviewSession> => {
   const aiApiUrl = process.env.AI_API_URL ?? "http://localhost:5555";
   const internalApiKey = process.env.INTERNAL_API_KEY ?? "";
@@ -272,7 +280,7 @@ export const requestAgentPreviewSession = async (
   );
 
   if (!response.ok) {
-    throw new CustomApiError("Agent preview is unavailable", 503);
+    throw new CustomApiError(unavailableMessage, 503);
   }
 
   const body = (await response.json()) as {
@@ -310,6 +318,11 @@ export const requestAgentPreviewSession = async (
     expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
   };
 };
+
+export const requestAgentPreviewSession = async (
+  payload: AgentPreviewSessionPayload,
+): Promise<AgentPreviewSession> =>
+  requestVoiceSession(payload, "Agent preview is unavailable");
 
 export const updateAgent = async (
   organizationId: string,

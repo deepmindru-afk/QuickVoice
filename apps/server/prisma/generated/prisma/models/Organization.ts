@@ -217,6 +217,7 @@ export type OrganizationWhereInput = {
   members?: Prisma.MemberListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  agentWidgets?: Prisma.AgentWidgetListRelationFilter
   knowledgeSources?: Prisma.KnowledgeSourceListRelationFilter
   phoneNumbers?: Prisma.PhoneNumberListRelationFilter
   tools?: Prisma.ToolListRelationFilter
@@ -245,6 +246,7 @@ export type OrganizationOrderByWithRelationInput = {
   members?: Prisma.MemberOrderByRelationAggregateInput
   invitations?: Prisma.InvitationOrderByRelationAggregateInput
   agents?: Prisma.AgentOrderByRelationAggregateInput
+  agentWidgets?: Prisma.AgentWidgetOrderByRelationAggregateInput
   knowledgeSources?: Prisma.KnowledgeSourceOrderByRelationAggregateInput
   phoneNumbers?: Prisma.PhoneNumberOrderByRelationAggregateInput
   tools?: Prisma.ToolOrderByRelationAggregateInput
@@ -276,6 +278,7 @@ export type OrganizationWhereUniqueInput = Prisma.AtLeast<{
   members?: Prisma.MemberListRelationFilter
   invitations?: Prisma.InvitationListRelationFilter
   agents?: Prisma.AgentListRelationFilter
+  agentWidgets?: Prisma.AgentWidgetListRelationFilter
   knowledgeSources?: Prisma.KnowledgeSourceListRelationFilter
   phoneNumbers?: Prisma.PhoneNumberListRelationFilter
   tools?: Prisma.ToolListRelationFilter
@@ -334,6 +337,7 @@ export type OrganizationCreateInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -362,6 +366,7 @@ export type OrganizationUncheckedCreateInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -390,6 +395,7 @@ export type OrganizationUpdateInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -418,6 +424,7 @@ export type OrganizationUncheckedUpdateInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -589,6 +596,20 @@ export type OrganizationUpdateOneRequiredWithoutAgentsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutAgentsInput, Prisma.OrganizationUpdateWithoutAgentsInput>, Prisma.OrganizationUncheckedUpdateWithoutAgentsInput>
 }
 
+export type OrganizationCreateNestedOneWithoutAgentWidgetsInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedCreateWithoutAgentWidgetsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutAgentWidgetsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+}
+
+export type OrganizationUpdateOneRequiredWithoutAgentWidgetsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrganizationCreateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedCreateWithoutAgentWidgetsInput>
+  connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutAgentWidgetsInput
+  upsert?: Prisma.OrganizationUpsertWithoutAgentWidgetsInput
+  connect?: Prisma.OrganizationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrganizationUpdateToOneWithWhereWithoutAgentWidgetsInput, Prisma.OrganizationUpdateWithoutAgentWidgetsInput>, Prisma.OrganizationUncheckedUpdateWithoutAgentWidgetsInput>
+}
+
 export type OrganizationCreateNestedOneWithoutKnowledgeSourcesInput = {
   create?: Prisma.XOR<Prisma.OrganizationCreateWithoutKnowledgeSourcesInput, Prisma.OrganizationUncheckedCreateWithoutKnowledgeSourcesInput>
   connectOrCreate?: Prisma.OrganizationCreateOrConnectWithoutKnowledgeSourcesInput
@@ -758,6 +779,7 @@ export type OrganizationCreateWithoutOrganizationrolesInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -785,6 +807,7 @@ export type OrganizationUncheckedCreateWithoutOrganizationrolesInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -828,6 +851,7 @@ export type OrganizationUpdateWithoutOrganizationrolesInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -855,6 +879,7 @@ export type OrganizationUncheckedUpdateWithoutOrganizationrolesInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -881,6 +906,7 @@ export type OrganizationCreateWithoutMembersInput = {
   plan?: $Enums.PlanId
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -908,6 +934,7 @@ export type OrganizationUncheckedCreateWithoutMembersInput = {
   plan?: $Enums.PlanId
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -951,6 +978,7 @@ export type OrganizationUpdateWithoutMembersInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -978,6 +1006,7 @@ export type OrganizationUncheckedUpdateWithoutMembersInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1005,6 +1034,7 @@ export type OrganizationCreateWithoutInvitationsInput = {
   plan?: $Enums.PlanId
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -1032,6 +1062,7 @@ export type OrganizationUncheckedCreateWithoutInvitationsInput = {
   plan?: $Enums.PlanId
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1075,6 +1106,7 @@ export type OrganizationUpdateWithoutInvitationsInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -1102,6 +1134,7 @@ export type OrganizationUncheckedUpdateWithoutInvitationsInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1130,6 +1163,7 @@ export type OrganizationCreateWithoutPhoneNumbersInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutOrganizationInput
@@ -1157,6 +1191,7 @@ export type OrganizationUncheckedCreateWithoutPhoneNumbersInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1200,6 +1235,7 @@ export type OrganizationUpdateWithoutPhoneNumbersInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUpdateManyWithoutOrganizationNestedInput
@@ -1227,6 +1263,7 @@ export type OrganizationUncheckedUpdateWithoutPhoneNumbersInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1253,6 +1290,7 @@ export type OrganizationCreateWithoutAgentsInput = {
   plan?: $Enums.PlanId
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -1280,6 +1318,7 @@ export type OrganizationUncheckedCreateWithoutAgentsInput = {
   plan?: $Enums.PlanId
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1323,6 +1362,7 @@ export type OrganizationUpdateWithoutAgentsInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -1350,6 +1390,135 @@ export type OrganizationUncheckedUpdateWithoutAgentsInput = {
   plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
+  knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
+  phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
+  tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
+  mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutOrganizationNestedInput
+  mcpCatalogItems?: Prisma.McpServerCatalogItemUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentMcpConnections?: Prisma.AgentMcpConnectionUncheckedUpdateManyWithoutOrganizationNestedInput
+  mcpToolExecutionLogs?: Prisma.McpToolExecutionLogUncheckedUpdateManyWithoutOrganizationNestedInput
+  secrets?: Prisma.SecretUncheckedUpdateManyWithoutOrganizationNestedInput
+  callLogs?: Prisma.CallLogUncheckedUpdateManyWithoutOrganizationNestedInput
+  outboundCalls?: Prisma.OutboundCallUncheckedUpdateManyWithoutOrganizationNestedInput
+  campaigns?: Prisma.CampaignUncheckedUpdateManyWithoutOrganizationNestedInput
+  organizationroles?: Prisma.OrganizationRoleUncheckedUpdateManyWithoutOrganizationNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationCreateWithoutAgentWidgetsInput = {
+  id: string
+  name: string
+  slug: string
+  logo?: string | null
+  createdAt: Date | string
+  metadata?: string | null
+  stripeCustomerId?: string | null
+  accessKey?: string | null
+  plan?: $Enums.PlanId
+  members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
+  agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
+  phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
+  tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
+  mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutOrganizationInput
+  mcpCatalogItems?: Prisma.McpServerCatalogItemCreateNestedManyWithoutOrganizationInput
+  agentMcpConnections?: Prisma.AgentMcpConnectionCreateNestedManyWithoutOrganizationInput
+  mcpToolExecutionLogs?: Prisma.McpToolExecutionLogCreateNestedManyWithoutOrganizationInput
+  secrets?: Prisma.SecretCreateNestedManyWithoutOrganizationInput
+  callLogs?: Prisma.CallLogCreateNestedManyWithoutOrganizationInput
+  outboundCalls?: Prisma.OutboundCallCreateNestedManyWithoutOrganizationInput
+  campaigns?: Prisma.CampaignCreateNestedManyWithoutOrganizationInput
+  organizationroles?: Prisma.OrganizationRoleCreateNestedManyWithoutOrganizationInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationUncheckedCreateWithoutAgentWidgetsInput = {
+  id: string
+  name: string
+  slug: string
+  logo?: string | null
+  createdAt: Date | string
+  metadata?: string | null
+  stripeCustomerId?: string | null
+  accessKey?: string | null
+  plan?: $Enums.PlanId
+  members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
+  invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
+  agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
+  phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
+  tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
+  mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutOrganizationInput
+  mcpCatalogItems?: Prisma.McpServerCatalogItemUncheckedCreateNestedManyWithoutOrganizationInput
+  agentMcpConnections?: Prisma.AgentMcpConnectionUncheckedCreateNestedManyWithoutOrganizationInput
+  mcpToolExecutionLogs?: Prisma.McpToolExecutionLogUncheckedCreateNestedManyWithoutOrganizationInput
+  secrets?: Prisma.SecretUncheckedCreateNestedManyWithoutOrganizationInput
+  callLogs?: Prisma.CallLogUncheckedCreateNestedManyWithoutOrganizationInput
+  outboundCalls?: Prisma.OutboundCallUncheckedCreateNestedManyWithoutOrganizationInput
+  campaigns?: Prisma.CampaignUncheckedCreateNestedManyWithoutOrganizationInput
+  organizationroles?: Prisma.OrganizationRoleUncheckedCreateNestedManyWithoutOrganizationInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutOrganizationInput
+}
+
+export type OrganizationCreateOrConnectWithoutAgentWidgetsInput = {
+  where: Prisma.OrganizationWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedCreateWithoutAgentWidgetsInput>
+}
+
+export type OrganizationUpsertWithoutAgentWidgetsInput = {
+  update: Prisma.XOR<Prisma.OrganizationUpdateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedUpdateWithoutAgentWidgetsInput>
+  create: Prisma.XOR<Prisma.OrganizationCreateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedCreateWithoutAgentWidgetsInput>
+  where?: Prisma.OrganizationWhereInput
+}
+
+export type OrganizationUpdateToOneWithWhereWithoutAgentWidgetsInput = {
+  where?: Prisma.OrganizationWhereInput
+  data: Prisma.XOR<Prisma.OrganizationUpdateWithoutAgentWidgetsInput, Prisma.OrganizationUncheckedUpdateWithoutAgentWidgetsInput>
+}
+
+export type OrganizationUpdateWithoutAgentWidgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
+  members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
+  agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
+  phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
+  tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
+  mcpConnections?: Prisma.McpConnectionUpdateManyWithoutOrganizationNestedInput
+  mcpCatalogItems?: Prisma.McpServerCatalogItemUpdateManyWithoutOrganizationNestedInput
+  agentMcpConnections?: Prisma.AgentMcpConnectionUpdateManyWithoutOrganizationNestedInput
+  mcpToolExecutionLogs?: Prisma.McpToolExecutionLogUpdateManyWithoutOrganizationNestedInput
+  secrets?: Prisma.SecretUpdateManyWithoutOrganizationNestedInput
+  callLogs?: Prisma.CallLogUpdateManyWithoutOrganizationNestedInput
+  outboundCalls?: Prisma.OutboundCallUpdateManyWithoutOrganizationNestedInput
+  campaigns?: Prisma.CampaignUpdateManyWithoutOrganizationNestedInput
+  organizationroles?: Prisma.OrganizationRoleUpdateManyWithoutOrganizationNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutOrganizationNestedInput
+}
+
+export type OrganizationUncheckedUpdateWithoutAgentWidgetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  logo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  metadata?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stripeCustomerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  accessKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  plan?: Prisma.EnumPlanIdFieldUpdateOperationsInput | $Enums.PlanId
+  members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
+  invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
+  agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1378,6 +1547,7 @@ export type OrganizationCreateWithoutKnowledgeSourcesInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutOrganizationInput
@@ -1405,6 +1575,7 @@ export type OrganizationUncheckedCreateWithoutKnowledgeSourcesInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1448,6 +1619,7 @@ export type OrganizationUpdateWithoutKnowledgeSourcesInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUpdateManyWithoutOrganizationNestedInput
@@ -1475,6 +1647,7 @@ export type OrganizationUncheckedUpdateWithoutKnowledgeSourcesInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1502,6 +1675,7 @@ export type OrganizationCreateWithoutCallLogsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -1529,6 +1703,7 @@ export type OrganizationUncheckedCreateWithoutCallLogsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1572,6 +1747,7 @@ export type OrganizationUpdateWithoutCallLogsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -1599,6 +1775,7 @@ export type OrganizationUncheckedUpdateWithoutCallLogsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1626,6 +1803,7 @@ export type OrganizationCreateWithoutOutboundCallsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -1653,6 +1831,7 @@ export type OrganizationUncheckedCreateWithoutOutboundCallsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1696,6 +1875,7 @@ export type OrganizationUpdateWithoutOutboundCallsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -1723,6 +1903,7 @@ export type OrganizationUncheckedUpdateWithoutOutboundCallsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1750,6 +1931,7 @@ export type OrganizationCreateWithoutCampaignsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -1777,6 +1959,7 @@ export type OrganizationUncheckedCreateWithoutCampaignsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1820,6 +2003,7 @@ export type OrganizationUpdateWithoutCampaignsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -1847,6 +2031,7 @@ export type OrganizationUncheckedUpdateWithoutCampaignsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1874,6 +2059,7 @@ export type OrganizationCreateWithoutToolsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionCreateNestedManyWithoutOrganizationInput
@@ -1901,6 +2087,7 @@ export type OrganizationUncheckedCreateWithoutToolsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   mcpConnections?: Prisma.McpConnectionUncheckedCreateNestedManyWithoutOrganizationInput
@@ -1944,6 +2131,7 @@ export type OrganizationUpdateWithoutToolsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUpdateManyWithoutOrganizationNestedInput
@@ -1971,6 +2159,7 @@ export type OrganizationUncheckedUpdateWithoutToolsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   mcpConnections?: Prisma.McpConnectionUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -1998,6 +2187,7 @@ export type OrganizationCreateWithoutMcpCatalogItemsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2025,6 +2215,7 @@ export type OrganizationUncheckedCreateWithoutMcpCatalogItemsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2068,6 +2259,7 @@ export type OrganizationUpdateWithoutMcpCatalogItemsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2095,6 +2287,7 @@ export type OrganizationUncheckedUpdateWithoutMcpCatalogItemsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2122,6 +2315,7 @@ export type OrganizationCreateWithoutMcpConnectionsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2149,6 +2343,7 @@ export type OrganizationUncheckedCreateWithoutMcpConnectionsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2192,6 +2387,7 @@ export type OrganizationUpdateWithoutMcpConnectionsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2219,6 +2415,7 @@ export type OrganizationUncheckedUpdateWithoutMcpConnectionsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2246,6 +2443,7 @@ export type OrganizationCreateWithoutAgentMcpConnectionsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2273,6 +2471,7 @@ export type OrganizationUncheckedCreateWithoutAgentMcpConnectionsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2316,6 +2515,7 @@ export type OrganizationUpdateWithoutAgentMcpConnectionsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2343,6 +2543,7 @@ export type OrganizationUncheckedUpdateWithoutAgentMcpConnectionsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2370,6 +2571,7 @@ export type OrganizationCreateWithoutMcpToolExecutionLogsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2397,6 +2599,7 @@ export type OrganizationUncheckedCreateWithoutMcpToolExecutionLogsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2440,6 +2643,7 @@ export type OrganizationUpdateWithoutMcpToolExecutionLogsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2467,6 +2671,7 @@ export type OrganizationUncheckedUpdateWithoutMcpToolExecutionLogsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2494,6 +2699,7 @@ export type OrganizationCreateWithoutSecretsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2521,6 +2727,7 @@ export type OrganizationUncheckedCreateWithoutSecretsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2564,6 +2771,7 @@ export type OrganizationUpdateWithoutSecretsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2591,6 +2799,7 @@ export type OrganizationUncheckedUpdateWithoutSecretsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2618,6 +2827,7 @@ export type OrganizationCreateWithoutAuditLogsInput = {
   members?: Prisma.MemberCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolCreateNestedManyWithoutOrganizationInput
@@ -2645,6 +2855,7 @@ export type OrganizationUncheckedCreateWithoutAuditLogsInput = {
   members?: Prisma.MemberUncheckedCreateNestedManyWithoutOrganizationInput
   invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutOrganizationInput
   agents?: Prisma.AgentUncheckedCreateNestedManyWithoutOrganizationInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedCreateNestedManyWithoutOrganizationInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedCreateNestedManyWithoutOrganizationInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedCreateNestedManyWithoutOrganizationInput
   tools?: Prisma.ToolUncheckedCreateNestedManyWithoutOrganizationInput
@@ -2688,6 +2899,7 @@ export type OrganizationUpdateWithoutAuditLogsInput = {
   members?: Prisma.MemberUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUpdateManyWithoutOrganizationNestedInput
@@ -2715,6 +2927,7 @@ export type OrganizationUncheckedUpdateWithoutAuditLogsInput = {
   members?: Prisma.MemberUncheckedUpdateManyWithoutOrganizationNestedInput
   invitations?: Prisma.InvitationUncheckedUpdateManyWithoutOrganizationNestedInput
   agents?: Prisma.AgentUncheckedUpdateManyWithoutOrganizationNestedInput
+  agentWidgets?: Prisma.AgentWidgetUncheckedUpdateManyWithoutOrganizationNestedInput
   knowledgeSources?: Prisma.KnowledgeSourceUncheckedUpdateManyWithoutOrganizationNestedInput
   phoneNumbers?: Prisma.PhoneNumberUncheckedUpdateManyWithoutOrganizationNestedInput
   tools?: Prisma.ToolUncheckedUpdateManyWithoutOrganizationNestedInput
@@ -2738,6 +2951,7 @@ export type OrganizationCountOutputType = {
   members: number
   invitations: number
   agents: number
+  agentWidgets: number
   knowledgeSources: number
   phoneNumbers: number
   tools: number
@@ -2757,6 +2971,7 @@ export type OrganizationCountOutputTypeSelect<ExtArgs extends runtime.Types.Exte
   members?: boolean | OrganizationCountOutputTypeCountMembersArgs
   invitations?: boolean | OrganizationCountOutputTypeCountInvitationsArgs
   agents?: boolean | OrganizationCountOutputTypeCountAgentsArgs
+  agentWidgets?: boolean | OrganizationCountOutputTypeCountAgentWidgetsArgs
   knowledgeSources?: boolean | OrganizationCountOutputTypeCountKnowledgeSourcesArgs
   phoneNumbers?: boolean | OrganizationCountOutputTypeCountPhoneNumbersArgs
   tools?: boolean | OrganizationCountOutputTypeCountToolsArgs
@@ -2801,6 +3016,13 @@ export type OrganizationCountOutputTypeCountInvitationsArgs<ExtArgs extends runt
  */
 export type OrganizationCountOutputTypeCountAgentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AgentWhereInput
+}
+
+/**
+ * OrganizationCountOutputType without action
+ */
+export type OrganizationCountOutputTypeCountAgentWidgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgentWidgetWhereInput
 }
 
 /**
@@ -2908,6 +3130,7 @@ export type OrganizationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>
   agents?: boolean | Prisma.Organization$agentsArgs<ExtArgs>
+  agentWidgets?: boolean | Prisma.Organization$agentWidgetsArgs<ExtArgs>
   knowledgeSources?: boolean | Prisma.Organization$knowledgeSourcesArgs<ExtArgs>
   phoneNumbers?: boolean | Prisma.Organization$phoneNumbersArgs<ExtArgs>
   tools?: boolean | Prisma.Organization$toolsArgs<ExtArgs>
@@ -2965,6 +3188,7 @@ export type OrganizationInclude<ExtArgs extends runtime.Types.Extensions.Interna
   members?: boolean | Prisma.Organization$membersArgs<ExtArgs>
   invitations?: boolean | Prisma.Organization$invitationsArgs<ExtArgs>
   agents?: boolean | Prisma.Organization$agentsArgs<ExtArgs>
+  agentWidgets?: boolean | Prisma.Organization$agentWidgetsArgs<ExtArgs>
   knowledgeSources?: boolean | Prisma.Organization$knowledgeSourcesArgs<ExtArgs>
   phoneNumbers?: boolean | Prisma.Organization$phoneNumbersArgs<ExtArgs>
   tools?: boolean | Prisma.Organization$toolsArgs<ExtArgs>
@@ -2989,6 +3213,7 @@ export type $OrganizationPayload<ExtArgs extends runtime.Types.Extensions.Intern
     members: Prisma.$MemberPayload<ExtArgs>[]
     invitations: Prisma.$InvitationPayload<ExtArgs>[]
     agents: Prisma.$AgentPayload<ExtArgs>[]
+    agentWidgets: Prisma.$AgentWidgetPayload<ExtArgs>[]
     knowledgeSources: Prisma.$KnowledgeSourcePayload<ExtArgs>[]
     phoneNumbers: Prisma.$PhoneNumberPayload<ExtArgs>[]
     tools: Prisma.$ToolPayload<ExtArgs>[]
@@ -3410,6 +3635,7 @@ export interface Prisma__OrganizationClient<T, Null = never, ExtArgs extends run
   members<T extends Prisma.Organization$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   invitations<T extends Prisma.Organization$invitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$invitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   agents<T extends Prisma.Organization$agentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$agentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  agentWidgets<T extends Prisma.Organization$agentWidgetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$agentWidgetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentWidgetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   knowledgeSources<T extends Prisma.Organization$knowledgeSourcesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$knowledgeSourcesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeSourcePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   phoneNumbers<T extends Prisma.Organization$phoneNumbersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$phoneNumbersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PhoneNumberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   tools<T extends Prisma.Organization$toolsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Organization$toolsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ToolPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3923,6 +4149,30 @@ export type Organization$agentsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AgentScalarFieldEnum | Prisma.AgentScalarFieldEnum[]
+}
+
+/**
+ * Organization.agentWidgets
+ */
+export type Organization$agentWidgetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentWidget
+   */
+  select?: Prisma.AgentWidgetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentWidget
+   */
+  omit?: Prisma.AgentWidgetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentWidgetInclude<ExtArgs> | null
+  where?: Prisma.AgentWidgetWhereInput
+  orderBy?: Prisma.AgentWidgetOrderByWithRelationInput | Prisma.AgentWidgetOrderByWithRelationInput[]
+  cursor?: Prisma.AgentWidgetWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgentWidgetScalarFieldEnum | Prisma.AgentWidgetScalarFieldEnum[]
 }
 
 /**

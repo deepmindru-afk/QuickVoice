@@ -520,7 +520,8 @@ async def entrypoint(ctx: JobContext):
         call_context=call_context,
         room_name=ctx.room.name,
     )
-    await live_transcript_publisher.start(call_start_time)
+    if not preview_mode:
+        await live_transcript_publisher.start(call_start_time)
     transcript_collector = TranscriptCollector(
         on_item=live_transcript_publisher.publish_transcript
     ).attach(session)
@@ -605,6 +606,8 @@ async def entrypoint(ctx: JobContext):
                 "[LIVE_TRANSCRIPT] Failed to close publisher: {}",
                 redact_sensitive(str(error)),
             )
+        if preview_mode:
+            return
         try:
             await call_finalizer.finalize()
         except Exception as error:

@@ -6,6 +6,7 @@ import {
   BookOpen,
   Bot,
   Gauge,
+  Globe2,
   Settings,
   ClipboardCheck,
   Webhook,
@@ -20,6 +21,7 @@ import { KnowledgeTab } from "@/src/components/agents/tabs/KnowledgeTab";
 import { AdvancedTab } from "@/src/components/agents/tabs/AdvancedTab";
 import { AnalysisTab } from "@/src/components/agents/tabs/AnalysisTab";
 import { LimitsTab } from "@/src/components/agents/tabs/LimitsTab";
+import { WebsiteWidgetTab } from "@/src/components/agents/tabs/WebsiteWidgetTab";
 
 const TABS = [
   { id: "behavior", label: "Behavior", icon: Bot },
@@ -27,6 +29,7 @@ const TABS = [
   { id: "analysis", label: "Analysis", icon: ClipboardCheck },
   { id: "webhooks", label: "Webhooks", icon: Webhook },
   { id: "tools", label: "Tools", icon: Wrench },
+  { id: "widget", label: "Website widget", icon: Globe2 },
   { id: "knowledge", label: "Knowledge", icon: BookOpen },
   { id: "limits", label: "Limits", icon: Gauge },
   { id: "advanced", label: "Advanced", icon: Settings },
@@ -81,6 +84,9 @@ export function AgentTabs({ agentId }: { agentId: string }) {
       </TabsContent>
       <TabsContent value="tools" className="mt-6 min-w-0">
         <ToolsTab agentId={agentId} />
+      </TabsContent>
+      <TabsContent value="widget" className="mt-6 min-w-0">
+        <WebsiteWidgetTab agentId={agentId} />
       </TabsContent>
       <TabsContent value="knowledge" className="mt-6 min-w-0">
         <KnowledgeTab agentId={agentId} />

@@ -10,6 +10,8 @@ export const queryKeys = {
     previewSession: (id: string) =>
       [...queryKeys.agents.all, "previewSession", id] as const,
     voiceCatalog: () => [...queryKeys.agents.all, "voiceCatalog"] as const,
+    widgets: (agentId: string) =>
+      [...queryKeys.agents.all, "widgets", agentId] as const,
   },
   numbers: {
     all: ["numbers"] as const,

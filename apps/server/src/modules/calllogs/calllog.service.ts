@@ -361,7 +361,10 @@ function isLiveKitRoomNotFound(error: unknown) {
 }
 
 function callIdFromRoomName(roomName: string) {
-  return roomName.startsWith("outbound_") ? roomName.slice("outbound_".length) : roomName;
+  if (roomName.startsWith("outbound_")) {
+    return roomName.slice("outbound_".length);
+  }
+  return roomName;
 }
 
 function liveKitTimestamp(value: unknown): string | null {

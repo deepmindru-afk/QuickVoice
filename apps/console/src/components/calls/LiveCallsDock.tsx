@@ -61,7 +61,12 @@ function phoneDetails(call: LiveCallRoom) {
   };
 }
 
+function isWidgetCall(call: LiveCallRoom) {
+  return call.roomName.startsWith("widget_") || call.callId.startsWith("widget_");
+}
+
 function callTitle(call: LiveCallRoom) {
+  if (isWidgetCall(call)) return "Website visitor";
   const phone = phoneDetails(call);
   const primary = call.direction === "outbound" ? phone.to : phone.from;
   return primary ?? `${directionLabel(call.direction)} ${call.callId.slice(0, 8)}`;
@@ -229,6 +234,7 @@ function LiveTranscriptDrawer({
   }
 
   const phone = call ? phoneDetails(call) : { from: null, to: null };
+  const widgetCall = call ? isWidgetCall(call) : false;
 
   return (
     <>
@@ -280,13 +286,13 @@ function LiveTranscriptDrawer({
                   <div className="border-r border-[#D9D9DD] px-4 py-3">
                     <p className="text-[11px] text-[#77777F]">From</p>
                     <p className="mt-1 truncate text-sm font-semibold text-[#111111]">
-                      {phone.from ?? "Unavailable"}
+                      {widgetCall ? "Website visitor" : phone.from ?? "Unavailable"}
                     </p>
                   </div>
                   <div className="px-4 py-3">
                     <p className="text-[11px] text-[#77777F]">To</p>
                     <p className="mt-1 truncate text-sm font-semibold text-[#111111]">
-                      {phone.to ?? "Unavailable"}
+                      {widgetCall ? "Voice agent" : phone.to ?? "Unavailable"}
                     </p>
                   </div>
                 </div>

@@ -182,6 +182,25 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(context["to_number"], "+15550001111")
         self.assertEqual(context["outbound_id"], "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113")
 
+    def test_build_call_context_keeps_web_widget_room_out_of_phone_fields(self):
+        context = build_call_context(
+            room_name="widget_wgs_123",
+            metadata={
+                "source": "web_widget",
+                "agent_id": "agent_123",
+                "call_id": "widget_wgs_123",
+                "provider": "WEB_WIDGET",
+            },
+        )
+
+        self.assertEqual(context["direction"], "inbound")
+        self.assertEqual(context["call_id"], "widget_wgs_123")
+        self.assertIsNone(context["agent_number"])
+        self.assertIsNone(context["user_number"])
+        self.assertIsNone(context["from_number"])
+        self.assertIsNone(context["to_number"])
+        self.assertEqual(context["metadata"]["source"], "web_widget")
+
     def test_build_call_context_preserves_non_routing_metadata(self):
         context = build_call_context(
             room_name="outbound-room",
@@ -309,6 +328,25 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["first_message"], "Preview hello.")
         self.assertEqual(result["system_prompt"], "Use the saved agent behavior in preview.")
         self.assertEqual(config["first_message"], "Default greeting.")
+
+    def test_apply_metadata_overrides_uses_widget_prompt_and_first_message(self):
+        config = {
+            "first_message": "Default greeting.",
+            "system_prompt": "Default prompt.",
+            "provider": "WEB_WIDGET",
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "mode": "widget",
+                "first_message": "Website hello.",
+                "system_prompt": "Help the website visitor.",
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Website hello.")
+        self.assertEqual(result["system_prompt"], "Help the website visitor.")
 
     def test_apply_metadata_overrides_uses_batch_language_voice_and_dynamic_variables(self):
         config = {
