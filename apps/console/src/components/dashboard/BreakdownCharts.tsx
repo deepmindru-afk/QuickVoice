@@ -2,14 +2,7 @@
 
 import { useId } from "react";
 import Link from "next/link";
-import { Bar, BarChart, Cell, XAxis, YAxis } from "recharts";
 import { ArrowRight, PhoneCall } from "lucide-react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/src/components/ui/chart";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { EmptyState } from "@/src/components/common/EmptyState";
@@ -18,10 +11,6 @@ import type {
   DashboardRange,
   DashboardSummary,
 } from "@/src/lib/api/resources/dashboard";
-
-const statusConfig = {
-  count: { label: "Calls", color: "var(--chart-1)" },
-} satisfies ChartConfig;
 
 const directionStyles = {
   inbound: {
@@ -47,13 +36,58 @@ const directionStyles = {
   },
 };
 
-const statusColors: Record<string, string> = {
-  COMPLETED: "#10b981",
-  FAILED: "var(--destructive)",
-  NOT_ANSWERED: "#f59e0b",
-  IN_PROGRESS: "var(--chart-1)",
-  SCHEDULED: "var(--chart-3)",
-  PROCESSED: "var(--chart-4)",
+const statusStyles: Record<
+  string,
+  {
+    label: string;
+    color: string;
+    accentClass: string;
+    textClass: string;
+    surfaceClass: string;
+  }
+> = {
+  COMPLETED: {
+    label: "Completed",
+    color: "#10B981",
+    accentClass: "bg-emerald-500",
+    textClass: "text-emerald-600 dark:text-emerald-300",
+    surfaceClass: "border-emerald-500/25 bg-emerald-500/10",
+  },
+  FAILED: {
+    label: "Failed",
+    color: "#F43F5E",
+    accentClass: "bg-rose-500",
+    textClass: "text-rose-600 dark:text-rose-300",
+    surfaceClass: "border-rose-500/25 bg-rose-500/10",
+  },
+  NOT_ANSWERED: {
+    label: "Missed",
+    color: "#F59E0B",
+    accentClass: "bg-amber-500",
+    textClass: "text-amber-600 dark:text-amber-300",
+    surfaceClass: "border-amber-500/25 bg-amber-500/10",
+  },
+  IN_PROGRESS: {
+    label: "In progress",
+    color: "#3B82F6",
+    accentClass: "bg-blue-500",
+    textClass: "text-blue-600 dark:text-blue-300",
+    surfaceClass: "border-blue-500/25 bg-blue-500/10",
+  },
+  SCHEDULED: {
+    label: "Scheduled",
+    color: "#8B5CF6",
+    accentClass: "bg-violet-500",
+    textClass: "text-violet-600 dark:text-violet-300",
+    surfaceClass: "border-violet-500/25 bg-violet-500/10",
+  },
+  PROCESSED: {
+    label: "Processed",
+    color: "#06B6D4",
+    accentClass: "bg-cyan-500",
+    textClass: "text-cyan-600 dark:text-cyan-300",
+    surfaceClass: "border-cyan-500/25 bg-cyan-500/10",
+  },
 };
 
 const statusPattern: Record<string, string> = {
@@ -72,7 +106,7 @@ const directionPattern = {
 };
 
 function labelStatus(status: string) {
-  return status.toLowerCase().replace("_", " ");
+  return statusStyles[status]?.label ?? status.toLowerCase().replace("_", " ");
 }
 
 function percent(count: number, total: number) {
@@ -121,11 +155,15 @@ export function BreakdownCharts({
   const outboundPct = directionTotal
     ? Math.round((outbound / directionTotal) * 100)
     : 0;
+  const completedCalls =
+    statusData.find((item) => item.status === "COMPLETED")?.count ?? 0;
+  const completionPct = percent(completedCalls, totalStatus);
   const statusChartData = statusData.map((item) => ({
     ...item,
     label: labelStatus(item.status),
     pattern: statusPattern[item.status] ?? "solid bar",
     percentage: percent(item.count, totalStatus),
+    style: statusStyles[item.status] ?? statusStyles.PROCESSED,
   }));
   const directionChartData = directionData.map((item) => ({
     ...item,
@@ -137,8 +175,11 @@ export function BreakdownCharts({
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="rounded-lg border bg-card p-5 shadow-sm" aria-labelledby={statusTitleId}>
-        <div className="mb-5 flex items-start justify-between gap-4">
+      <div
+        className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
+        aria-labelledby={statusTitleId}
+      >
+        <div className="flex flex-col gap-4 border-b bg-[linear-gradient(135deg,hsl(var(--primary)/0.08),hsl(var(--background)),hsl(var(--muted)/0.55))] p-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Outcomes
@@ -150,97 +191,99 @@ export function BreakdownCharts({
               Call outcomes
             </h3>
             <p id={statusSummaryId} className="text-xs text-muted-foreground">
-              Status distribution for the selected range. X-axis shows calls;
-              Y-axis shows call status.
+              Status distribution for the selected range by count and share of
+              calls.
             </p>
           </div>
-          <div className="rounded-lg border bg-background px-3 py-2 text-right shadow-xs">
-            <p className="text-sm font-semibold text-foreground">{totalStatus}</p>
-            <p className="text-xs text-muted-foreground">tracked</p>
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-56">
+            <div className="border-r border-border/70 px-3 py-2.5">
+              <p className="font-semibold text-foreground tabular-nums">
+                {totalStatus}
+              </p>
+              <p className="text-muted-foreground">tracked</p>
+            </div>
+            <div className="px-3 py-2.5">
+              <p className="font-semibold text-emerald-600 tabular-nums dark:text-emerald-300">
+                {completionPct}%
+              </p>
+              <p className="text-muted-foreground">completed</p>
+            </div>
           </div>
         </div>
         {statusData.length ? (
-          <>
-            <ChartContainer
-              config={statusConfig}
-              className="h-64 w-full"
-              role="group"
-              aria-label="Call outcome status breakdown chart"
-            >
-              <BarChart
-                accessibilityLayer
-                data={statusChartData}
-                layout="vertical"
-                margin={{ top: 0, right: 16, left: 18, bottom: 24 }}
-                aria-label="Call outcome status breakdown chart"
-                aria-describedby={statusSummaryId}
-              >
-                <XAxis
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-muted-foreground"
-                  label={{
-                    value: "Calls",
-                    position: "insideBottom",
-                    offset: -12,
-                  }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  width={112}
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-muted-foreground"
-                  label={{
-                    value: "Status",
-                    angle: -90,
-                    position: "insideLeft",
-                  }}
-                />
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Bar dataKey="count" name="Calls" barSize={18}>
-                  {statusData.map((item) => (
-                    <Cell
-                      key={item.status}
-                      fill={statusColors[item.status] ?? "var(--color-count)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {statusData.map((item) => (
+          <div
+            className="space-y-5 p-5"
+            role="group"
+            aria-label="Call outcome status breakdown chart"
+            aria-describedby={statusSummaryId}
+          >
+            <div className="rounded-xl border bg-background/60 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-muted-foreground">
+                  Outcome share
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {totalStatus} total
+                </span>
+              </div>
+              <div className="flex h-4 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                {statusChartData.map((item) => (
+                  <div
+                    key={item.status}
+                    className="h-full transition-all duration-500 motion-safe:animate-in motion-safe:fade-in-0"
+                    style={{
+                      width: `${item.percentage}%`,
+                      background: item.style.color,
+                    }}
+                    title={`${item.label}: ${item.percentage}%`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {statusChartData.map((item, index) => (
                 <Link
                   key={item.status}
                   href={dashboardCallsHref({ range, status: item.status, from: customFrom, to: customTo })}
-                  className="group flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2 text-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className={`group rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 ${item.style.surfaceClass}`}
+                  style={{ animationDelay: `${index * 60}ms` }}
                   aria-label={`Review ${labelStatus(item.status)} calls in the selected dashboard range`}
                 >
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span
-                        aria-hidden
-                        className="size-2 shrink-0"
-                        style={{
-                          background:
-                            statusColors[item.status] ?? "var(--color-count)",
-                        }}
-                      />
-                      <span className="truncate capitalize text-foreground">
-                        {labelStatus(item.status)}
-                      </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className={`size-2.5 shrink-0 rounded-full ${item.style.accentClass}`}
+                        />
+                        <span className="truncate text-sm font-semibold text-foreground">
+                          {item.label}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
+                        {item.count}
+                      </p>
+                    </div>
+                    <span className={`rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold shadow-xs ${item.style.textClass}`}>
+                      {item.percentage}%
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {item.count} calls,{" "}
-                      {statusPattern[item.status] ?? "solid bar"}
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${item.style.accentClass}`}
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-muted-foreground">
+                      {item.pattern}
                     </span>
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
-                    Review
-                    <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
+                    <span className={`inline-flex items-center gap-1 font-medium ${item.style.textClass}`}>
+                      Review
+                      <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -267,13 +310,13 @@ export function BreakdownCharts({
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         ) : (
           <EmptyState
             icon={PhoneCall}
             title="No outcomes yet"
             description="Place a test call to confirm completion, failed, and missed call states are flowing into reporting."
-            className="h-64 bg-background/40"
+            className="m-5 h-64 bg-background/40"
             action={
               <Button asChild size="sm">
                 <Link href="/outbound">Place a test call</Link>

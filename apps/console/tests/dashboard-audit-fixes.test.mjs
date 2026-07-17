@@ -136,8 +136,9 @@ test("dashboard charts expose accessible summaries, unit labels, and data tables
   const volume = read("src/components/dashboard/VolumeChart.tsx");
   const breakdown = read("src/components/dashboard/BreakdownCharts.tsx");
 
+  assert.match(volume, /accessibilityLayer/);
+
   for (const source of [volume, breakdown]) {
-    assert.match(source, /accessibilityLayer/);
     assert.match(source, /aria-label=/);
     assert.match(source, /<table/);
     assert.match(source, /<caption/);
@@ -153,8 +154,10 @@ test("dashboard charts expose accessible summaries, unit labels, and data tables
 
   assert.match(breakdown, /aria-label="Call outcome status breakdown chart"/);
   assert.match(breakdown, /aria-label="Inbound and outbound direction mix chart"/);
-  assert.match(breakdown, /statusPattern/);
-  assert.match(breakdown, /directionPattern/);
+  assert.match(breakdown, /statusStyles/);
+  assert.match(breakdown, /directionStyles/);
+  assert.match(breakdown, /motion-safe:animate-in/);
+  assert.match(breakdown, /Outcome share/);
   assert.match(breakdown, /Percentage of routed calls/);
 });
 
