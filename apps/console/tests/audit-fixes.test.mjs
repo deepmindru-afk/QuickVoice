@@ -188,3 +188,24 @@ test("call transcript drawer uses a wide review layout", () => {
   assert.match(audio, /rounded-2xl border bg-background p-5/);
   assert.match(transcript, /sm:max-w-\[76%\]/);
 });
+
+
+test("phone numbers page supports filtering and a roomier buy flow", () => {
+  const page = read("src/app/(app)/numbers/page.tsx");
+  const drawer = read("src/components/numbers/BuyNumberDrawer.tsx");
+
+  assert.match(page, /searchTerm/);
+  assert.match(page, /providerFilter/);
+  assert.match(page, /routingFilter/);
+  assert.match(page, /filteredNumbers/);
+  assert.match(page, /Search number, name, provider, or SID/);
+  assert.match(page, /No numbers match these filters/);
+  assert.match(page, /Clear filters/);
+
+  assert.match(drawer, /data-\[side=right\]:sm:w-\[min\(94vw,940px\)\]/);
+  assert.match(drawer, /data-\[side=right\]:sm:max-w-none/);
+  assert.match(drawer, /Search criteria/);
+  assert.match(drawer, /lg:grid-cols-\[260px_minmax\(0,1fr\)\]/);
+  assert.match(drawer, /xl:grid-cols-2/);
+  assert.match(drawer, /Buy this number/);
+});

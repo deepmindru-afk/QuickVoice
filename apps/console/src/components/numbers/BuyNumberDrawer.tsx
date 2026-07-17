@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Phone, PhoneCall, Search, Plus } from "lucide-react";
+import { Loader2, MapPin, Phone, PhoneCall, Search, Plus } from "lucide-react";
 
 import {
     Sheet,
@@ -61,6 +61,9 @@ export function BuyNumberDrawer() {
         resolver: zodResolver(schema),
         defaultValues: { provider: "twilio", country: "US", areaCode: "" },
     });
+    const watchedProvider = useWatch({ control: form.control, name: "provider" });
+    const watchedCountry = useWatch({ control: form.control, name: "country" });
+    const watchedAreaCode = useWatch({ control: form.control, name: "areaCode" });
 
     const search = useNumberSearch(searchParams, !!searchParams);
     const buy = useBuyNumber();
@@ -70,7 +73,7 @@ export function BuyNumberDrawer() {
             provider: values.provider,
             country: values.country,
             areaCode: values.areaCode || undefined,
-            limit: 10,
+            limit: 12,
         });
     }
 
@@ -97,7 +100,7 @@ export function BuyNumberDrawer() {
                     <Plus /> Buy number
                 </Button>
             </SheetTrigger>
-            <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
+            <SheetContent className="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:w-[min(94vw,940px)] data-[side=right]:sm:max-w-none">
                 <SheetHeader className="border-b px-6 py-5">
                     <SheetTitle>Buy a phone number</SheetTitle>
                     <SheetDescription>
@@ -106,11 +109,11 @@ export function BuyNumberDrawer() {
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="border-b px-6 py-5">
+                <div className="border-b bg-muted/20 px-6 py-5">
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(onSubmit)}
-                            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.1fr_0.8fr_0.8fr_auto] lg:items-end"
+                            className="grid gap-4 md:grid-cols-[1fr_0.8fr_0.8fr_auto] md:items-end"
                         >
                             <FormField
                                 control={form.control}
@@ -186,7 +189,31 @@ export function BuyNumberDrawer() {
                     </Form>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
+                    <aside className="border-b bg-muted/10 px-6 py-5 lg:border-r lg:border-b-0">
+                        <div className="rounded-xl border bg-background p-4 shadow-sm">
+                            <p className="text-sm font-semibold text-foreground">Search criteria</p>
+                            <dl className="mt-4 space-y-3 text-sm">
+                                <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Provider</dt>
+                                    <dd className="mt-1 capitalize text-foreground">{watchedProvider}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Country</dt>
+                                    <dd className="mt-1 font-mono text-foreground">{watchedCountry}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Area code</dt>
+                                    <dd className="mt-1 font-mono text-foreground">{watchedAreaCode || "Any"}</dd>
+                                </div>
+                            </dl>
+                            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+                                Results stay visible while you compare locality, provider context, and the number before purchase.
+                            </p>
+                        </div>
+                    </aside>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
                     {!searchParams ? (
                         <EmptyState
                             icon={Phone}
@@ -215,24 +242,25 @@ export function BuyNumberDrawer() {
                             className="border-0"
                         />
                     ) : (
-                        <div className="divide-y border bg-card">
+                        <div className="grid gap-3 xl:grid-cols-2">
                             {search.data.map((n) => (
                                 <div
                                     key={n.phoneNumber}
-                                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                    className="rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/30 hover:shadow-md"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-500">
                                             <PhoneCall className="size-4" />
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="font-mono text-sm font-semibold text-foreground">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-mono text-base font-semibold text-foreground">
                                                 {n.phoneNumber}
                                             </p>
-                                            <p className="truncate text-xs text-muted-foreground">
+                                            <p className="mt-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
+                                                <MapPin className="size-3" />
                                                 {[n.locality, n.region, n.isoCountry]
                                                     .filter(Boolean)
-                                                    .join(" · ")}
+                                                    .join(" · ") || "Location unavailable"}
                                             </p>
                                         </div>
                                     </div>
@@ -240,18 +268,19 @@ export function BuyNumberDrawer() {
                                         size="sm"
                                         onClick={() => onBuy(n.phoneNumber)}
                                         disabled={buy.isPending}
-                                        className="w-full sm:w-auto"
+                                        className="mt-4 w-full"
                                     >
                                         {buyingNumber === n.phoneNumber ? (
                                             <><Loader2 className="animate-spin" /> Buying…</>
                                         ) : (
-                                            "Buy"
+                                            "Buy this number"
                                         )}
                                     </Button>
                                 </div>
                             ))}
                         </div>
                     )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>
