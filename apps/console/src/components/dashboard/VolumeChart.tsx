@@ -38,7 +38,7 @@ const config = {
   },
   failed: {
     label: "Failed",
-    color: "#ef4444",
+    color: "#f87171",
   },
 } satisfies ChartConfig;
 
@@ -254,7 +254,7 @@ export function VolumeChart({
                 type="monotone"
                 dataKey="failed"
                 name="Failed calls"
-                stroke={failedCalls > 0 ? "#ef4444" : "hsl(var(--muted-foreground))"}
+                stroke={failedCalls > 0 ? "#f87171" : "hsl(var(--muted-foreground))"}
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={failedCalls > 0 ? { r: 4, strokeWidth: 0 } : false}
@@ -282,7 +282,7 @@ export function VolumeChart({
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className={failedCalls > 0 ? "h-px w-6 border-t-2 border-red-500" : "h-px w-6 border-t-2 border-muted-foreground/60"}
+                className={failedCalls > 0 ? "h-px w-6 border-t-2 border-red-400/70" : "h-px w-6 border-t-2 border-muted-foreground/60"}
               />
               <span>Failed calls - line series</span>
             </li>

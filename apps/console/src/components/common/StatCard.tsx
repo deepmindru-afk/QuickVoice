@@ -16,7 +16,7 @@ const cardToneStyles: Record<StatTone, string> = {
   neutral: "border-border",
   success: "border-border",
   warning: "border-amber-500/30",
-  danger: "border-red-500/30",
+  danger: "border-red-400/25",
   info: "border-border",
 };
 

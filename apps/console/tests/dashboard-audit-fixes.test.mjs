@@ -261,11 +261,11 @@ test("dashboard styling uses a restrained semantic palette", () => {
     "src/components/dashboard/VolumeChart.tsx",
   ].map(read).join("\n");
 
-  assert.doesNotMatch(files, /cyan-|orange-|rose-|emerald-|violet-|purple-|bg-gradient|from-blue|to-cyan/);
+  assert.doesNotMatch(files, /cyan-|orange-|rose-|emerald-|violet-|purple-|bg-gradient|from-blue|to-cyan|text-green-500|text-red-500/);
   assert.match(files, /text-blue-400/);
-  assert.match(files, /text-green-500/);
-  assert.match(files, /text-red-500/);
+  assert.match(files, /text-green-400\/80/);
+  assert.match(files, /text-red-400\/80/);
   assert.match(files, /text-amber-500/);
-  assert.match(read("src/components/dashboard/VolumeChart.tsx"), /failedCalls > 0 \? "#ef4444" : "hsl\(var\(--muted-foreground\)\)"/);
+  assert.match(read("src/components/dashboard/VolumeChart.tsx"), /failedCalls > 0 \? "#f87171" : "hsl\(var\(--muted-foreground\)\)"/);
   assert.match(read("src/components/common/StatCard.tsx"), /h-px bg-border\/80/);
 });

@@ -135,8 +135,8 @@ function Trend({
       aria-label={accessibleCopy}
       className={
         good
-          ? "flex max-w-full items-start gap-1 text-green-500"
-          : "flex max-w-full items-start gap-1 text-red-500"
+          ? "flex max-w-full items-start gap-1 text-green-400/80"
+          : "flex max-w-full items-start gap-1 text-red-400/80"
       }
     >
       <Icon className="mt-0.5 size-3 shrink-0" />

@@ -42,7 +42,7 @@ function statusVariant(
 function statusClass(status: CallStatus) {
   switch (status) {
     case "COMPLETED":
-      return "border-green-500/20 bg-green-500/10 text-green-500";
+      return "border-green-400/20 bg-green-400/8 text-green-400/80";
     case "FAILED":
     case "NOT_ANSWERED":
       return "border-border bg-muted/40 text-muted-foreground";

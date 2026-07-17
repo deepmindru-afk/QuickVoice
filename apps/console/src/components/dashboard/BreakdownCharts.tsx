@@ -48,17 +48,17 @@ const statusStyles: Record<
 > = {
   COMPLETED: {
     label: "Completed",
-    color: "#22c55e",
-    accentClass: "bg-green-500/80",
-    textClass: "text-green-500",
+    color: "#4ade80",
+    accentClass: "bg-green-400/55",
+    textClass: "text-green-400/80",
     surfaceClass: "border-border bg-muted/25",
   },
   FAILED: {
     label: "Failed",
-    color: "#ef4444",
-    accentClass: "bg-red-500/80",
-    textClass: "text-red-500",
-    surfaceClass: "border-red-500/25 bg-red-500/5",
+    color: "#f87171",
+    accentClass: "bg-red-400/55",
+    textClass: "text-red-400/80",
+    surfaceClass: "border-red-400/25 bg-red-400/8",
   },
   NOT_ANSWERED: {
     label: "Missed",
@@ -203,7 +203,7 @@ export function BreakdownCharts({
               <p className="text-muted-foreground">tracked</p>
             </div>
             <div className="px-3 py-2.5">
-              <p className="font-semibold text-green-500 tabular-nums">
+              <p className="font-semibold text-green-400/80 tabular-nums">
                 {completionPct}%
               </p>
               <p className="text-muted-foreground">completed</p>
