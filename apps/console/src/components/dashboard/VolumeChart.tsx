@@ -28,9 +28,18 @@ import type {
 } from "@/src/lib/api/resources/dashboard";
 
 const config = {
-  calls: { label: "Calls", color: "var(--chart-1)" },
-  minutes: { label: "Minutes", color: "#10b981" },
-  failed: { label: "Failed", color: "var(--destructive)" },
+  calls: {
+    label: "Calls",
+    theme: { light: "#2563EB", dark: "#60A5FA" },
+  },
+  minutes: {
+    label: "Minutes",
+    theme: { light: "#D97706", dark: "#FBBF24" },
+  },
+  failed: {
+    label: "Failed",
+    theme: { light: "#E11D48", dark: "#FB7185" },
+  },
 } satisfies ChartConfig;
 
 function formatTick(iso: string, range: DashboardRange) {
@@ -83,10 +92,10 @@ export function VolumeChart({
 
   return (
     <div
-      className="overflow-hidden rounded-lg border bg-card shadow-sm"
+      className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
       aria-labelledby={titleId}
     >
-      <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-4 border-b bg-[linear-gradient(135deg,hsl(var(--primary)/0.10),hsl(var(--background)),hsl(var(--accent)/0.45))] p-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Traffic timeline
@@ -102,17 +111,17 @@ export function VolumeChart({
             calls and failed calls; right axis shows minutes.
           </p>
         </div>
-        <div className="grid grid-cols-3 overflow-hidden rounded-lg border bg-background text-center text-xs shadow-xs sm:min-w-96">
-          <div className="border-r px-3 py-2">
-            <p className="font-semibold text-foreground">{calls}</p>
+        <div className="grid grid-cols-3 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-96">
+          <div className="border-r border-border/70 px-3 py-2.5">
+            <p className="font-semibold text-blue-600 tabular-nums dark:text-blue-300">{calls}</p>
             <p className="text-muted-foreground">calls</p>
           </div>
-          <div className="border-r px-3 py-2">
-            <p className="font-semibold text-foreground">{minutes}</p>
+          <div className="border-r border-border/70 px-3 py-2.5">
+            <p className="font-semibold text-amber-600 tabular-nums dark:text-amber-300">{minutes}</p>
             <p className="text-muted-foreground">minutes</p>
           </div>
-          <div className="px-3 py-2">
-            <p className="font-semibold text-foreground">{peak}</p>
+          <div className="px-3 py-2.5">
+            <p className="font-semibold text-rose-600 tabular-nums dark:text-rose-300">{peak}</p>
             <p className="text-muted-foreground">peak</p>
           </div>
         </div>
@@ -160,18 +169,18 @@ export function VolumeChart({
                   <stop
                     offset="0%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.34}
+                    stopOpacity={0.28}
                   />
                   <stop
                     offset="100%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.02}
+                    stopOpacity={0.04}
                   />
                 </linearGradient>
               </defs>
               <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-border"
+                strokeDasharray="4 6"
+                className="stroke-border/70"
                 vertical={false}
               />
               <XAxis
@@ -227,7 +236,7 @@ export function VolumeChart({
                 dataKey="minutes"
                 name="Minutes (right axis)"
                 stroke="var(--color-minutes)"
-                strokeWidth={2}
+                strokeWidth={2.5}
                 fill="url(#dashboard-minutes-fill)"
               />
               <Bar
@@ -235,7 +244,9 @@ export function VolumeChart({
                 dataKey="calls"
                 name={`Calls by ${bucketUnit}`}
                 fill="var(--color-calls)"
-                barSize={16}
+                fillOpacity={0.92}
+                barSize={18}
+                radius={[6, 6, 2, 2]}
               />
               <Line
                 yAxisId="left"
@@ -243,8 +254,9 @@ export function VolumeChart({
                 dataKey="failed"
                 name="Failed calls"
                 stroke="var(--color-failed)"
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={false}
+                activeDot={{ r: 4, strokeWidth: 0 }}
               />
             </ComposedChart>
           </ChartContainer>
@@ -255,21 +267,21 @@ export function VolumeChart({
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-4 w-2 border border-primary bg-primary"
+                className="h-4 w-2 rounded-sm border border-blue-500 bg-blue-500/80 dark:border-blue-300 dark:bg-blue-300/80"
               />
               <span>Calls by {bucketUnit} - bar series</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-3 w-5 border border-emerald-500 bg-emerald-500/20"
+                className="h-3 w-5 rounded-sm border border-amber-500 bg-amber-500/20 dark:border-amber-300 dark:bg-amber-300/20"
               />
               <span>Minutes (right axis) - shaded area</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-px w-6 border-t-2 border-destructive"
+                className="h-px w-6 border-t-2 border-rose-500 dark:border-rose-300"
               />
               <span>Failed calls - line series</span>
             </li>
