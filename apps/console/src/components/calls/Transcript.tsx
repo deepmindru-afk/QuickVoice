@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
@@ -22,31 +22,38 @@ export function Transcript({ callId }: { callId: string }) {
 
   if (!rows.length) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No transcript captured for this call.
-      </p>
+      <div className="rounded-2xl border bg-background p-6 text-sm text-muted-foreground shadow-sm">
+        <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          <MessageCircle className="size-5" />
+        </div>
+        <p className="font-medium text-foreground">No transcript captured</p>
+        <p className="mt-1">This call does not have transcript messages yet.</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {rows.map((r) => {
         const isAgent = r.speaker === "agent" || r.speaker === "assistant";
         return (
           <div
             key={r.callTransId}
-            className={cn("flex", isAgent ? "justify-start" : "justify-end")}
+            className={cn("group flex", isAgent ? "justify-start" : "justify-end")}
           >
             <div
               className={cn(
-                "max-w-[78%] px-4 py-3",
+                "max-w-[88%] rounded-2xl border px-4 py-3 shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5 sm:max-w-[76%]",
                 isAgent
-                  ? "rounded-2xl rounded-tl-sm bg-[#0f2142] text-white"
-                  : "rounded-2xl rounded-tr-sm bg-blue-600 text-white"
+                  ? "rounded-tl-md bg-background text-foreground"
+                  : "rounded-tr-md border-primary/20 bg-primary text-primary-foreground"
               )}
             >
-              <p className="text-sm leading-relaxed">{r.messageText}</p>
-              <p className={cn("mt-1 text-right text-[10px]", isAgent ? "text-white/40" : "text-white/60")}>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] opacity-70">
+                {isAgent ? "Agent" : "Caller"}
+              </p>
+              <p className="text-sm leading-6">{r.messageText}</p>
+              <p className={cn("mt-2 text-right text-[10px]", isAgent ? "text-muted-foreground" : "text-primary-foreground/70")}>
                 {new Date(r.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
               </p>
             </div>

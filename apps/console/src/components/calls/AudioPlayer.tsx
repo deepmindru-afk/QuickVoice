@@ -30,37 +30,43 @@ export function AudioPlayer({ src }: { src: string | null }) {
 
     if (!src) {
         return (
-            <div className="flex items-center gap-3 border bg-card p-4 text-sm text-muted-foreground">
-                <Music className="size-4" />
-                No recording available for this call.
+            <div className="rounded-2xl border bg-background p-5 text-sm text-muted-foreground shadow-sm">
+                <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <Music className="size-5" />
+                </div>
+                <p className="font-medium text-foreground">No recording available</p>
+                <p className="mt-1 leading-relaxed">This call does not have an audio file attached.</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-3 border bg-card p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3 text-sm font-medium">
-                    <Music className="size-4 text-muted-foreground" />
-                    <span>Recording</span>
+        <div className="rounded-2xl border bg-background p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Music className="size-5" />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button
-                        type="button"
-                        size="sm"
-                        onClick={togglePlayback}
-                        aria-label={playing ? "Pause recording" : "Play recording"}
-                    >
-                        {playing ? <Pause /> : <Play />}
-                        {playing ? "Pause" : "Play recording"}
-                    </Button>
-                    <Button asChild type="button" variant="outline" size="sm">
-                        <a href={src} target="_blank" rel="noreferrer" download>
-                            <Download />
-                            Download
-                        </a>
-                    </Button>
+                <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">Recording</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Listen to the captured call audio or download it for review.</p>
                 </div>
+            </div>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <Button
+                    type="button"
+                    className="w-full justify-center sm:flex-1"
+                    onClick={togglePlayback}
+                    aria-label={playing ? "Pause recording" : "Play recording"}
+                >
+                    {playing ? <Pause /> : <Play />}
+                    {playing ? "Pause" : "Play recording"}
+                </Button>
+                <Button asChild type="button" variant="outline" className="w-full justify-center sm:flex-1">
+                    <a href={src} target="_blank" rel="noreferrer" download>
+                        <Download />
+                        Download
+                    </a>
+                </Button>
             </div>
             <audio
                 ref={audioRef}

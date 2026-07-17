@@ -170,5 +170,20 @@ test("sidebar exposes a direct theme toggle and transcript bubbles keep readable
   assert.match(sidebar, /<ThemeToggle \/>/);
 
   assert.doesNotMatch(transcript, /bg-\[#0f2142\] text-foreground/);
-  assert.match(transcript, /bg-\[#0f2142\] text-white/);
+  assert.match(transcript, /bg-background text-foreground/);
+  assert.match(transcript, /bg-primary text-primary-foreground/);
+});
+
+
+test("call transcript drawer uses a wide review layout", () => {
+  const sheet = read("src/components/calls/CallTranscriptSheet.tsx");
+  const audio = read("src/components/calls/AudioPlayer.tsx");
+  const transcript = read("src/components/calls/Transcript.tsx");
+
+  assert.match(sheet, /sm:max-w-\[820px\]/);
+  assert.match(sheet, /xl:max-w-\[920px\]/);
+  assert.match(sheet, /lg:grid-cols-\[320px_minmax\(0,1fr\)\]/);
+  assert.match(sheet, /Review tip/);
+  assert.match(audio, /rounded-2xl border bg-background p-5/);
+  assert.match(transcript, /sm:max-w-\[76%\]/);
 });
