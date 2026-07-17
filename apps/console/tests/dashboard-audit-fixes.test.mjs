@@ -30,26 +30,18 @@ test("dashboard keeps top chrome minimal and supports custom ranges", () => {
   assert.match(api, /DashboardSummaryParams/);
 });
 
-test("dashboard command center surfaces operational priorities and quick actions", () => {
+test("dashboard removes the hero command center and prioritizes analytics", () => {
   const page = read("src/app/(app)/dashboard/page.tsx");
 
-  assert.match(page, /DashboardCommandCenter/);
-  assert.match(page, /DashboardSignal/);
-  assert.match(page, /DashboardInsightCard/);
-  assert.match(page, /PerformanceGraphs/);
-  assert.match(page, /DashboardActionLink/);
-  assert.match(page, /RANGE_LABELS/);
-  assert.match(page, /Operations health/);
-  assert.match(page, /Exception rate/);
-  assert.match(page, /Peak demand/);
-  assert.match(page, /Agent coverage/);
-  assert.match(page, /Start outbound call/);
-  assert.match(page, /Review exceptions/);
-  assert.match(page, /Tune agents/);
-  assert.match(page, /Manage numbers/);
-  assert.match(page, /dashboardCallsHref/);
-  assert.match(page, /formatDashboardDuration/);
-  assert.match(page, /formatDashboardDateLabel/);
+  assert.doesNotMatch(page, /DashboardCommandCenter/);
+  assert.doesNotMatch(page, /DashboardSignal/);
+  assert.doesNotMatch(page, /DashboardInsightCard/);
+  assert.doesNotMatch(page, /DashboardActionLink/);
+  assert.doesNotMatch(page, /Operations health/);
+  assert.doesNotMatch(page, /Start outbound call/);
+  assert.match(page, /<KpiCards[\s\S]*summary=\{data\}/);
+  assert.match(page, /<PerformanceGraphs[\s\S]*summary=\{data\}/);
+  assert.match(page, /<VolumeChart[\s\S]*summary=\{data\}/);
 });
 
 test("dashboard KPI deltas use unit-aware copy and a named previous period", () => {
