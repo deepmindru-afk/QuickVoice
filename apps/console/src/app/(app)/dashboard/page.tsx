@@ -14,7 +14,6 @@ import { RetryButton } from "@/src/components/common/RetryButton";
 import { RangeSwitcher } from "@/src/components/dashboard/RangeSwitcher";
 import { KpiCards } from "@/src/components/dashboard/KpiCards";
 import { VolumeChart } from "@/src/components/dashboard/VolumeChart";
-import { PerformanceGraphs } from "@/src/components/dashboard/PerformanceGraphs";
 import { BreakdownCharts } from "@/src/components/dashboard/BreakdownCharts";
 import { RecentCallsTable } from "@/src/components/dashboard/RecentCallsTable";
 import { AgentActivityList } from "@/src/components/dashboard/AgentActivityList";
@@ -233,13 +232,6 @@ export default function DashboardPage() {
         <>
           <DashboardPartialDataNotice sections={missingDashboardSections} />
           <KpiCards
-            summary={data}
-            range={range}
-            loading={isLoading}
-            customFrom={customFrom}
-            customTo={customTo}
-          />
-          <PerformanceGraphs
             summary={data}
             range={range}
             loading={isLoading}
