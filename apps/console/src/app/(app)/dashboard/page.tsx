@@ -118,7 +118,7 @@ function DashboardPartialDataNotice({ sections }: { sections: string[] }) {
     <div
       role="status"
       aria-live="polite"
-      className="flex flex-col gap-3 border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200 sm:flex-row sm:items-start sm:justify-between"
+      className="flex flex-col gap-3 border bg-muted/40 p-4 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between"
     >
       <div className="flex gap-3">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

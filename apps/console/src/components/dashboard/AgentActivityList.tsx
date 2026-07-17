@@ -97,7 +97,7 @@ export function AgentActivityList({
         <div
           role="status"
           aria-live="polite"
-          className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-5 py-3 text-xs text-amber-800 dark:text-amber-200"
+          className="flex items-start gap-2 border-b bg-muted/40 px-5 py-3 text-xs text-muted-foreground"
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           <span>

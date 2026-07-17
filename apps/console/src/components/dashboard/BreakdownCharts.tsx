@@ -15,24 +15,24 @@ import type {
 const directionStyles = {
   inbound: {
     label: "Inbound",
-    color: "#0284C7",
-    accentClass: "bg-sky-500",
-    textClass: "text-sky-600 dark:text-sky-300",
-    surfaceClass: "border-sky-500/25 bg-sky-500/10",
+    color: "hsl(var(--primary))",
+    accentClass: "bg-primary",
+    textClass: "text-primary",
+    surfaceClass: "border-primary/20 bg-primary/5",
   },
   outbound: {
     label: "Outbound",
-    color: "#F59E0B",
-    accentClass: "bg-amber-500",
-    textClass: "text-amber-600 dark:text-amber-300",
-    surfaceClass: "border-amber-500/25 bg-amber-500/10",
+    color: "hsl(var(--muted-foreground))",
+    accentClass: "bg-muted-foreground",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/30",
   },
   unknown: {
     label: "Unknown",
-    color: "#64748B",
-    accentClass: "bg-slate-500",
-    textClass: "text-slate-600 dark:text-slate-300",
-    surfaceClass: "border-slate-500/25 bg-slate-500/10",
+    color: "hsl(var(--border))",
+    accentClass: "bg-border",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/30",
   },
 };
 
@@ -48,45 +48,45 @@ const statusStyles: Record<
 > = {
   COMPLETED: {
     label: "Completed",
-    color: "#10B981",
-    accentClass: "bg-emerald-500",
-    textClass: "text-emerald-600 dark:text-emerald-300",
-    surfaceClass: "border-emerald-500/25 bg-emerald-500/10",
+    color: "hsl(var(--primary))",
+    accentClass: "bg-primary",
+    textClass: "text-primary",
+    surfaceClass: "border-primary/20 bg-primary/5",
   },
   FAILED: {
     label: "Failed",
-    color: "#F43F5E",
-    accentClass: "bg-rose-500",
-    textClass: "text-rose-600 dark:text-rose-300",
-    surfaceClass: "border-rose-500/25 bg-rose-500/10",
+    color: "hsl(var(--muted-foreground))",
+    accentClass: "bg-muted-foreground",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/30",
   },
   NOT_ANSWERED: {
     label: "Missed",
-    color: "#F59E0B",
-    accentClass: "bg-amber-500",
-    textClass: "text-amber-600 dark:text-amber-300",
-    surfaceClass: "border-amber-500/25 bg-amber-500/10",
+    color: "hsl(var(--muted-foreground))",
+    accentClass: "bg-muted-foreground",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/30",
   },
   IN_PROGRESS: {
     label: "In progress",
-    color: "#3B82F6",
-    accentClass: "bg-blue-500",
-    textClass: "text-blue-600 dark:text-blue-300",
-    surfaceClass: "border-blue-500/25 bg-blue-500/10",
+    color: "hsl(var(--primary))",
+    accentClass: "bg-primary",
+    textClass: "text-primary",
+    surfaceClass: "border-primary/20 bg-primary/5",
   },
   SCHEDULED: {
     label: "Scheduled",
-    color: "#8B5CF6",
-    accentClass: "bg-violet-500",
-    textClass: "text-violet-600 dark:text-violet-300",
-    surfaceClass: "border-violet-500/25 bg-violet-500/10",
+    color: "hsl(var(--muted-foreground))",
+    accentClass: "bg-muted-foreground",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/30",
   },
   PROCESSED: {
     label: "Processed",
-    color: "#06B6D4",
-    accentClass: "bg-cyan-500",
-    textClass: "text-cyan-600 dark:text-cyan-300",
-    surfaceClass: "border-cyan-500/25 bg-cyan-500/10",
+    color: "hsl(var(--primary))",
+    accentClass: "bg-primary",
+    textClass: "text-primary",
+    surfaceClass: "border-primary/20 bg-primary/5",
   },
 };
 
@@ -179,7 +179,7 @@ export function BreakdownCharts({
         className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
         aria-labelledby={statusTitleId}
       >
-        <div className="flex flex-col gap-4 border-b bg-[linear-gradient(135deg,hsl(var(--primary)/0.08),hsl(var(--background)),hsl(var(--muted)/0.55))] p-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Outcomes
@@ -203,7 +203,7 @@ export function BreakdownCharts({
               <p className="text-muted-foreground">tracked</p>
             </div>
             <div className="px-3 py-2.5">
-              <p className="font-semibold text-emerald-600 tabular-nums dark:text-emerald-300">
+              <p className="font-semibold text-primary tabular-nums">
                 {completionPct}%
               </p>
               <p className="text-muted-foreground">completed</p>
@@ -329,7 +329,7 @@ export function BreakdownCharts({
         className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
         aria-labelledby={directionTitleId}
       >
-        <div className="flex min-w-0 flex-col gap-4 border-b bg-[linear-gradient(135deg,hsl(var(--primary)/0.08),hsl(var(--background)),hsl(var(--muted)/0.55))] p-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-col gap-4 border-b bg-muted/20 p-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Routing
@@ -347,13 +347,13 @@ export function BreakdownCharts({
           </div>
           <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-56">
             <div className="border-r border-border/70 px-3 py-2.5">
-              <p className="font-semibold tabular-nums text-sky-600 dark:text-sky-300">
+              <p className="font-semibold tabular-nums text-primary">
                 {inboundPct}%
               </p>
               <p className="text-muted-foreground">inbound</p>
             </div>
             <div className="px-3 py-2.5">
-              <p className="font-semibold tabular-nums text-amber-600 dark:text-amber-300">
+              <p className="font-semibold tabular-nums text-muted-foreground">
                 {outboundPct}%
               </p>
               <p className="text-muted-foreground">outbound</p>
@@ -368,45 +368,45 @@ export function BreakdownCharts({
             aria-describedby={directionSummaryId}
           >
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-sky-500/25 bg-sky-500/10 p-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       Inbound calls
                     </p>
-                    <p className="mt-2 text-3xl font-semibold tracking-tight text-sky-600 tabular-nums dark:text-sky-300">
+                    <p className="mt-2 text-3xl font-semibold tracking-tight text-primary tabular-nums">
                       {inbound}
                     </p>
                   </div>
-                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-sky-600 shadow-xs dark:text-sky-300">
+                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-primary shadow-xs">
                     {inboundPct}%
                   </span>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
                   <div
-                    className="h-full rounded-full bg-sky-500"
+                    className="h-full rounded-full bg-primary"
                     style={{ width: `${inboundPct}%` }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">
                       Outbound calls
                     </p>
-                    <p className="mt-2 text-3xl font-semibold tracking-tight text-amber-600 tabular-nums dark:text-amber-300">
+                    <p className="mt-2 text-3xl font-semibold tracking-tight text-muted-foreground tabular-nums">
                       {outbound}
                     </p>
                   </div>
-                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-amber-600 shadow-xs dark:text-amber-300">
+                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-xs">
                     {outboundPct}%
                   </span>
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
                   <div
-                    className="h-full rounded-full bg-amber-500"
+                    className="h-full rounded-full bg-muted-foreground"
                     style={{ width: `${outboundPct}%` }}
                   />
                 </div>

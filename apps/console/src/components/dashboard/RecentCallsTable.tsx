@@ -27,11 +27,10 @@ function statusVariant(
 ): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "COMPLETED":
+    case "IN_PROGRESS":
       return "default";
     case "FAILED":
     case "NOT_ANSWERED":
-      return "destructive";
-    case "IN_PROGRESS":
     case "SCHEDULED":
     case "PROCESSED":
       return "secondary";
@@ -43,14 +42,14 @@ function statusVariant(
 function statusClass(status: CallStatus) {
   switch (status) {
     case "COMPLETED":
-      return "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300";
+      return "border-primary/20 bg-primary/5 text-primary";
     case "FAILED":
     case "NOT_ANSWERED":
-      return "border-destructive/25 bg-destructive/10 text-destructive";
+      return "border-border bg-muted/40 text-muted-foreground";
     case "IN_PROGRESS":
-      return "border-sky-500/25 bg-sky-500/10 text-sky-600 dark:text-sky-300";
+      return "border-primary/20 bg-primary/5 text-primary";
     default:
-      return "border-border bg-muted/50 text-muted-foreground";
+      return "border-border bg-muted/40 text-muted-foreground";
   }
 }
 
@@ -121,13 +120,10 @@ function primaryNumber(call: CallLog, parties: ReturnType<typeof callParties>) {
 }
 
 function directionClasses(direction: CallLog["direction"]) {
-  if (direction === "inbound") {
-    return "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300";
+  if (direction === "inbound" || direction === "outbound") {
+    return "border-primary/20 bg-primary/5 text-primary";
   }
-  if (direction === "outbound") {
-    return "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300";
-  }
-  return "border-border bg-muted/50 text-muted-foreground";
+  return "border-border bg-muted/40 text-muted-foreground";
 }
 
 function resolveAgentLabel({
@@ -195,7 +191,7 @@ export function RecentCallsTable({
         <div
           role="status"
           aria-live="polite"
-          className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-5 py-3 text-xs text-amber-800 dark:text-amber-200"
+          className="flex items-start gap-2 border-b bg-muted/40 px-5 py-3 text-xs text-muted-foreground"
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           <span>
@@ -344,7 +340,7 @@ export function RecentCallsTable({
                       key={call.callId}
                       className="border-b border-border/70 bg-card transition-colors hover:bg-muted/25"
                     >
-                      <TableCell className="h-13 pl-5 align-middle text-sm text-sky-600 dark:text-sky-300">
+                      <TableCell className="h-13 pl-5 align-middle text-sm text-primary">
                         <CallTimestamp call={call} />
                       </TableCell>
                       <TableCell className="align-middle">
@@ -353,7 +349,7 @@ export function RecentCallsTable({
                         </p>
                       </TableCell>
                       <TableCell className="max-w-[220px] align-middle">
-                        <p className="truncate text-sm text-sky-600 dark:text-sky-300">
+                        <p className="truncate text-sm text-primary">
                           {agentLabel}
                         </p>
                         <span className="sr-only">

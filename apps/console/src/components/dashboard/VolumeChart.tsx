@@ -30,15 +30,15 @@ import type {
 const config = {
   calls: {
     label: "Calls",
-    theme: { light: "#2563EB", dark: "#60A5FA" },
+    color: "hsl(var(--primary))",
   },
   minutes: {
     label: "Minutes",
-    theme: { light: "#D97706", dark: "#FBBF24" },
+    color: "hsl(var(--muted-foreground))",
   },
   failed: {
     label: "Failed",
-    theme: { light: "#E11D48", dark: "#FB7185" },
+    color: "hsl(var(--foreground))",
   },
 } satisfies ChartConfig;
 
@@ -95,7 +95,7 @@ export function VolumeChart({
       className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
       aria-labelledby={titleId}
     >
-      <div className="flex flex-col gap-4 border-b bg-[linear-gradient(135deg,hsl(var(--primary)/0.10),hsl(var(--background)),hsl(var(--accent)/0.45))] p-5 xl:flex-row xl:items-end xl:justify-between">
+      <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Traffic timeline
@@ -113,15 +113,15 @@ export function VolumeChart({
         </div>
         <div className="grid grid-cols-3 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-96">
           <div className="border-r border-border/70 px-3 py-2.5">
-            <p className="font-semibold text-blue-600 tabular-nums dark:text-blue-300">{calls}</p>
+            <p className="font-semibold text-primary tabular-nums">{calls}</p>
             <p className="text-muted-foreground">calls</p>
           </div>
           <div className="border-r border-border/70 px-3 py-2.5">
-            <p className="font-semibold text-amber-600 tabular-nums dark:text-amber-300">{minutes}</p>
+            <p className="font-semibold text-foreground tabular-nums">{minutes}</p>
             <p className="text-muted-foreground">minutes</p>
           </div>
           <div className="px-3 py-2.5">
-            <p className="font-semibold text-rose-600 tabular-nums dark:text-rose-300">{peak}</p>
+            <p className="font-semibold text-muted-foreground tabular-nums">{peak}</p>
             <p className="text-muted-foreground">peak</p>
           </div>
         </div>
@@ -267,21 +267,21 @@ export function VolumeChart({
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-4 w-2 rounded-sm border border-blue-500 bg-blue-500/80 dark:border-blue-300 dark:bg-blue-300/80"
+                className="h-4 w-2 rounded-sm border border-primary bg-primary/80"
               />
               <span>Calls by {bucketUnit} - bar series</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-3 w-5 rounded-sm border border-amber-500 bg-amber-500/20 dark:border-amber-300 dark:bg-amber-300/20"
+                className="h-3 w-5 rounded-sm border border-muted-foreground bg-muted-foreground/20"
               />
               <span>Minutes (right axis) - shaded area</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-px w-6 border-t-2 border-rose-500 dark:border-rose-300"
+                className="h-px w-6 border-t-2 border-foreground"
               />
               <span>Failed calls - line series</span>
             </li>

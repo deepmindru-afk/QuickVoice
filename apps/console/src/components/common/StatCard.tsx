@@ -5,15 +5,11 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 type StatTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const toneStyles: Record<StatTone, string> = {
-  neutral: "border-border bg-card text-primary",
-  success:
-    "border-emerald-500/20 bg-emerald-500/5 text-emerald-500 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300",
-  warning:
-    "border-amber-500/20 bg-amber-500/5 text-amber-600 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300",
-  danger:
-    "border-destructive/20 bg-destructive/5 text-destructive dark:bg-destructive/10",
-  info:
-    "border-sky-500/20 bg-sky-500/5 text-sky-600 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-300",
+  neutral: "border-border bg-muted/35 text-muted-foreground",
+  success: "border-primary/20 bg-primary/5 text-primary",
+  warning: "border-primary/20 bg-primary/5 text-primary",
+  danger: "border-primary/20 bg-primary/5 text-primary",
+  info: "border-primary/20 bg-primary/5 text-primary",
 };
 
 export function StatCard({
