@@ -593,6 +593,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-5 rounded-lg border bg-muted/25 p-4 shadow-[inset_0_1px_0_hsl(var(--background))] sm:p-5">
       <div className="flex justify-end">
         <RangeSwitcher
+          key={`${range}-${customFrom ?? ""}-${customTo ?? ""}`}
           current={range}
           customFrom={customFrom}
           customTo={customTo}

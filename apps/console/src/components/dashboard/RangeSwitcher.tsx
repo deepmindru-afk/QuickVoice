@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { CalendarDays, Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
@@ -49,11 +49,6 @@ export function RangeSwitcher({
   const busy = loading || isPending;
   const customSelected = current === "custom";
   const invalidCustomRange = customSelected && Boolean(from && to && to < from);
-
-  useEffect(() => {
-    setFrom(customFrom ?? defaults.from);
-    setTo(customTo ?? defaults.to);
-  }, [customFrom, customTo, defaults.from, defaults.to]);
 
   function replaceWith(nextParams: URLSearchParams) {
     startTransition(() => {
