@@ -30,15 +30,15 @@ import type {
 const config = {
   calls: {
     label: "Calls",
-    color: "#2563eb",
+    color: "#3b82f6",
   },
   minutes: {
     label: "Minutes",
-    color: "#06b6d4",
+    color: "#64748b",
   },
   failed: {
     label: "Failed",
-    color: "#f97316",
+    color: "#ef4444",
   },
 } satisfies ChartConfig;
 
@@ -89,6 +89,7 @@ export function VolumeChart({
   const peak = data.reduce((max, point) => Math.max(max, point.calls), 0);
   const calls = totalFor(data, "calls");
   const minutes = totalFor(data, "minutes");
+  const failedCalls = totalFor(data, "failed");
 
   return (
     <div
@@ -113,7 +114,7 @@ export function VolumeChart({
         </div>
         <div className="grid grid-cols-3 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-96">
           <div className="border-r border-border/70 px-3 py-2.5">
-            <p className="font-semibold text-blue-500 tabular-nums">{calls}</p>
+            <p className="font-semibold text-blue-400 tabular-nums">{calls}</p>
             <p className="text-muted-foreground">calls</p>
           </div>
           <div className="border-r border-border/70 px-3 py-2.5">
@@ -121,7 +122,7 @@ export function VolumeChart({
             <p className="text-muted-foreground">minutes</p>
           </div>
           <div className="px-3 py-2.5">
-            <p className="font-semibold text-cyan-500 tabular-nums">{peak}</p>
+            <p className="font-semibold text-muted-foreground tabular-nums">{peak}</p>
             <p className="text-muted-foreground">peak</p>
           </div>
         </div>
@@ -169,12 +170,12 @@ export function VolumeChart({
                   <stop
                     offset="0%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.36}
+                    stopOpacity={0.2}
                   />
                   <stop
                     offset="100%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.06}
+                    stopOpacity={0.03}
                   />
                 </linearGradient>
               </defs>
@@ -244,7 +245,7 @@ export function VolumeChart({
                 dataKey="calls"
                 name={`Calls by ${bucketUnit}`}
                 fill="var(--color-calls)"
-                fillOpacity={0.95}
+                fillOpacity={0.72}
                 barSize={18}
                 radius={[6, 6, 2, 2]}
               />
@@ -253,10 +254,10 @@ export function VolumeChart({
                 type="monotone"
                 dataKey="failed"
                 name="Failed calls"
-                stroke="var(--color-failed)"
+                stroke={failedCalls > 0 ? "#ef4444" : "hsl(var(--muted-foreground))"}
                 strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 4, strokeWidth: 0 }}
+                activeDot={failedCalls > 0 ? { r: 4, strokeWidth: 0 } : false}
               />
             </ComposedChart>
           </ChartContainer>
@@ -267,21 +268,21 @@ export function VolumeChart({
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-4 w-2 rounded-sm border border-blue-500 bg-blue-500"
+                className="h-4 w-2 rounded-sm border border-blue-500/50 bg-blue-500/70"
               />
               <span>Calls by {bucketUnit} - bar series</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-3 w-5 rounded-sm border border-cyan-500 bg-cyan-500/20"
+                className="h-3 w-5 rounded-sm border border-slate-500 bg-slate-500/20"
               />
               <span>Minutes (right axis) - shaded area</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-px w-6 border-t-2 border-orange-500"
+                className={failedCalls > 0 ? "h-px w-6 border-t-2 border-red-500" : "h-px w-6 border-t-2 border-muted-foreground/60"}
               />
               <span>Failed calls - line series</span>
             </li>

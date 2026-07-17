@@ -97,7 +97,7 @@ export function RangeSwitcher({
             <ToggleGroupItem
               key={range.value}
               value={range.value}
-              className="h-8 flex-1 px-3 text-xs font-semibold text-muted-foreground data-[state=on]:bg-blue-600 data-[state=on]:text-white sm:flex-none"
+              className="h-8 flex-1 px-3 text-xs font-semibold text-muted-foreground data-[state=on]:bg-blue-500/80 data-[state=on]:text-white sm:flex-none"
             >
               {range.label}
             </ToggleGroupItem>

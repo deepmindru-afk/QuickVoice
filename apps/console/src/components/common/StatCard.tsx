@@ -6,10 +6,18 @@ type StatTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const toneStyles: Record<StatTone, string> = {
   neutral: "border-border bg-muted/35 text-muted-foreground",
-  success: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
-  warning: "border-amber-500/20 bg-amber-500/10 text-amber-500",
-  danger: "border-rose-500/20 bg-rose-500/10 text-rose-500",
-  info: "border-blue-500/20 bg-blue-500/10 text-blue-500",
+  success: "border-border bg-muted/35 text-muted-foreground",
+  warning: "border-border bg-muted/35 text-muted-foreground",
+  danger: "border-border bg-muted/35 text-muted-foreground",
+  info: "border-border bg-muted/35 text-muted-foreground",
+};
+
+const cardToneStyles: Record<StatTone, string> = {
+  neutral: "border-border",
+  success: "border-border",
+  warning: "border-amber-500/30",
+  danger: "border-red-500/30",
+  info: "border-border",
 };
 
 export function StatCard({
@@ -34,7 +42,8 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-lg border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/30 hover:shadow-md",
+        "relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-lg border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        cardToneStyles[tone],
         className
       )}
     >
@@ -67,7 +76,7 @@ export function StatCard({
       </div>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500/40 via-cyan-400/25 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-border/80"
       />
     </div>
   );

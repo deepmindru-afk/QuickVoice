@@ -249,3 +249,23 @@ test("dashboard empty and failure states cover permission, offline, partial data
   assert.match(recent, /Start with a test call/);
   assert.match(recent, /Connect number/);
 });
+
+
+test("dashboard styling uses a restrained semantic palette", () => {
+  const files = [
+    "src/components/common/StatCard.tsx",
+    "src/components/dashboard/AgentActivityList.tsx",
+    "src/components/dashboard/BreakdownCharts.tsx",
+    "src/components/dashboard/KpiCards.tsx",
+    "src/components/dashboard/RecentCallsTable.tsx",
+    "src/components/dashboard/VolumeChart.tsx",
+  ].map(read).join("\n");
+
+  assert.doesNotMatch(files, /cyan-|orange-|rose-|emerald-|violet-|purple-|bg-gradient|from-blue|to-cyan/);
+  assert.match(files, /text-blue-400/);
+  assert.match(files, /text-green-500/);
+  assert.match(files, /text-red-500/);
+  assert.match(files, /text-amber-500/);
+  assert.match(read("src/components/dashboard/VolumeChart.tsx"), /failedCalls > 0 \? "#ef4444" : "hsl\(var\(--muted-foreground\)\)"/);
+  assert.match(read("src/components/common/StatCard.tsx"), /h-px bg-border\/80/);
+});

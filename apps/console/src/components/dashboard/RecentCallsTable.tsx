@@ -42,7 +42,7 @@ function statusVariant(
 function statusClass(status: CallStatus) {
   switch (status) {
     case "COMPLETED":
-      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500";
+      return "border-green-500/20 bg-green-500/10 text-green-500";
     case "FAILED":
     case "NOT_ANSWERED":
       return "border-border bg-muted/40 text-muted-foreground";
@@ -121,7 +121,7 @@ function primaryNumber(call: CallLog, parties: ReturnType<typeof callParties>) {
 
 function directionClasses(direction: CallLog["direction"]) {
   if (direction === "inbound" || direction === "outbound") {
-    return "border-blue-500/20 bg-blue-500/10 text-blue-500";
+    return "border-border bg-muted/40 text-muted-foreground";
   }
   return "border-border bg-muted/40 text-muted-foreground";
 }
@@ -182,7 +182,7 @@ export function RecentCallsTable({
         </div>
         <Link
           href="/calls"
-          className={`inline-flex items-center gap-1 text-xs font-medium text-blue-500 hover:underline ${linkFocusClass}`}
+          className={`inline-flex items-center gap-1 text-xs font-medium text-blue-400 hover:underline ${linkFocusClass}`}
         >
           View call logs <ArrowRight className="size-3" />
         </Link>
@@ -340,7 +340,7 @@ export function RecentCallsTable({
                       key={call.callId}
                       className="border-b border-border/70 bg-card transition-colors hover:bg-muted/25"
                     >
-                      <TableCell className="h-13 pl-5 align-middle text-sm text-blue-500">
+                      <TableCell className="h-13 pl-5 align-middle text-sm text-muted-foreground">
                         <CallTimestamp call={call} />
                       </TableCell>
                       <TableCell className="align-middle">
@@ -349,7 +349,7 @@ export function RecentCallsTable({
                         </p>
                       </TableCell>
                       <TableCell className="max-w-[220px] align-middle">
-                        <p className="truncate text-sm text-blue-500">
+                        <p className="truncate text-sm text-muted-foreground">
                           {agentLabel}
                         </p>
                         <span className="sr-only">

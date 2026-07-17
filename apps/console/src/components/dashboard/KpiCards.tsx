@@ -135,8 +135,8 @@ function Trend({
       aria-label={accessibleCopy}
       className={
         good
-          ? "flex max-w-full items-start gap-1 text-emerald-500"
-          : "flex max-w-full items-start gap-1 text-muted-foreground"
+          ? "flex max-w-full items-start gap-1 text-green-500"
+          : "flex max-w-full items-start gap-1 text-red-500"
       }
     >
       <Icon className="mt-0.5 size-3 shrink-0" />
@@ -155,7 +155,7 @@ function InvestigationHint({
   return (
     <div className="flex flex-col gap-1">
       {children}
-      <span className="inline-flex items-center gap-1 text-blue-500">
+      <span className="inline-flex items-center gap-1 text-blue-400">
         {action} <ArrowRight className="size-3" />
       </span>
     </div>
@@ -250,7 +250,7 @@ export function KpiCards({
           }
           icon={Timer}
           loading={loading}
-          tone="warning"
+          tone="neutral"
           className="h-full"
         />
         <StatCard
@@ -295,7 +295,7 @@ export function KpiCards({
             }
             icon={AlertTriangle}
             loading={loading}
-            tone="danger"
+            tone={(totals?.failedCalls ?? 0) > 0 ? "danger" : "neutral"}
             className="h-full"
           />
         </Link>
@@ -322,7 +322,7 @@ export function KpiCards({
             }
             icon={Voicemail}
             loading={loading}
-            tone="warning"
+            tone={(totals?.missedCalls ?? 0) > 0 ? "warning" : "neutral"}
             className="h-full"
           />
         </Link>

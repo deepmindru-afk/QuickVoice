@@ -78,7 +78,7 @@ export function AgentActivityList({
         </div>
         <Link
           href="/agents"
-          className="inline-flex items-center gap-1 text-xs font-medium text-blue-500 hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-medium text-blue-400 hover:underline"
         >
           Manage <ArrowRight className="size-3" />
         </Link>
@@ -145,11 +145,11 @@ export function AgentActivityList({
               <Link
                 key={agent.agentId ?? "unknown"}
                 href={dashboardCallsHref({ range, agentId: agent.agentId, from: customFrom, to: customTo })}
-                className="group block rounded-lg border bg-background p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/35 hover:bg-muted/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="group block rounded-lg border bg-background p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-500/25 hover:bg-muted/30 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 aria-label={`View calls for ${agentName} in the selected dashboard range`}
               >
                 <div className="flex items-start gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-blue-500/10 text-xs font-semibold text-blue-500">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/40 text-xs font-semibold text-blue-400">
                     {index + 1}
                   </div>
                   <div className="min-w-0 flex-1 space-y-3">
@@ -172,7 +172,7 @@ export function AgentActivityList({
                       <div className="shrink-0 text-right text-xs text-muted-foreground">
                         <p className="font-semibold text-foreground">{agent.minutes}m</p>
                         <p>talk time</p>
-                        <p className="mt-1 inline-flex items-center gap-1 font-medium text-blue-500">
+                        <p className="mt-1 inline-flex items-center gap-1 font-medium text-blue-400">
                           View calls
                           <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
                         </p>
@@ -180,7 +180,7 @@ export function AgentActivityList({
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                        className="h-full rounded-full bg-blue-500/60"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
