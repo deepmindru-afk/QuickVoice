@@ -2,14 +2,7 @@
 
 import { useId } from "react";
 import Link from "next/link";
-import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { ArrowRight, PhoneCall } from "lucide-react";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/src/components/ui/chart";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { EmptyState } from "@/src/components/common/EmptyState";
@@ -19,29 +12,82 @@ import type {
   DashboardSummary,
 } from "@/src/lib/api/resources/dashboard";
 
-const statusConfig = {
-  count: { label: "Calls", color: "var(--chart-1)" },
-} satisfies ChartConfig;
-
-const directionConfig = {
-  inbound: { label: "Inbound", color: "var(--chart-2)" },
-  outbound: { label: "Outbound", color: "var(--chart-4)" },
-  unknown: { label: "Unknown", color: "var(--muted-foreground)" },
-} satisfies ChartConfig;
-
-const directionColors = {
-  inbound: "var(--color-inbound)",
-  outbound: "var(--color-outbound)",
-  unknown: "var(--color-unknown)",
+const directionStyles = {
+  inbound: {
+    label: "Inbound",
+    color: "#64748b",
+    accentClass: "bg-slate-500",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/25",
+  },
+  outbound: {
+    label: "Outbound",
+    color: "#3b82f6",
+    accentClass: "bg-blue-500/70",
+    textClass: "text-blue-400",
+    surfaceClass: "border-border bg-muted/25",
+  },
+  unknown: {
+    label: "Unknown",
+    color: "#64748b",
+    accentClass: "bg-slate-500",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/25",
+  },
 };
 
-const statusColors: Record<string, string> = {
-  COMPLETED: "#10b981",
-  FAILED: "var(--destructive)",
-  NOT_ANSWERED: "#f59e0b",
-  IN_PROGRESS: "var(--chart-1)",
-  SCHEDULED: "var(--chart-3)",
-  PROCESSED: "var(--chart-4)",
+const statusStyles: Record<
+  string,
+  {
+    label: string;
+    color: string;
+    accentClass: string;
+    textClass: string;
+    surfaceClass: string;
+  }
+> = {
+  COMPLETED: {
+    label: "Completed",
+    color: "#4ade80",
+    accentClass: "bg-green-400/55",
+    textClass: "text-green-400/80",
+    surfaceClass: "border-border bg-muted/25",
+  },
+  FAILED: {
+    label: "Failed",
+    color: "#f87171",
+    accentClass: "bg-red-400/55",
+    textClass: "text-red-400/80",
+    surfaceClass: "border-red-400/25 bg-red-400/8",
+  },
+  NOT_ANSWERED: {
+    label: "Missed",
+    color: "#f59e0b",
+    accentClass: "bg-amber-500/80",
+    textClass: "text-amber-500",
+    surfaceClass: "border-amber-500/25 bg-amber-500/5",
+  },
+  IN_PROGRESS: {
+    label: "In progress",
+    color: "#3b82f6",
+    accentClass: "bg-blue-500/70",
+    textClass: "text-blue-400",
+    surfaceClass: "border-border bg-muted/25",
+  },
+  SCHEDULED: {
+    label: "Scheduled",
+    color: "#64748b",
+    accentClass: "bg-slate-500",
+    textClass: "text-muted-foreground",
+    surfaceClass: "border-border bg-muted/25",
+  },
+  PROCESSED: {
+    label: "Processed",
+    color: "#3b82f6",
+    accentClass: "bg-blue-500/70",
+    textClass: "text-blue-400",
+    surfaceClass: "border-border bg-muted/25",
+  },
 };
 
 const statusPattern: Record<string, string> = {
@@ -60,7 +106,7 @@ const directionPattern = {
 };
 
 function labelStatus(status: string) {
-  return status.toLowerCase().replace("_", " ");
+  return statusStyles[status]?.label ?? status.toLowerCase().replace("_", " ");
 }
 
 function percent(count: number, total: number) {
@@ -71,10 +117,14 @@ export function BreakdownCharts({
   summary,
   range,
   loading,
+  customFrom,
+  customTo,
 }: {
   summary?: DashboardSummary;
   range: DashboardRange;
   loading?: boolean;
+  customFrom?: string;
+  customTo?: string;
 }) {
   const statusTitleId = useId();
   const statusSummaryId = useId();
@@ -98,29 +148,40 @@ export function BreakdownCharts({
     directionData.find((item) => item.direction === "inbound")?.count ?? 0;
   const outbound =
     directionData.find((item) => item.direction === "outbound")?.count ?? 0;
-  const directionTotal = inbound + outbound;
+  const directionTotal = directionData.reduce((sum, item) => sum + item.count, 0);
   const inboundPct = directionTotal
     ? Math.round((inbound / directionTotal) * 100)
     : 0;
+  const outboundPct = directionTotal
+    ? Math.round((outbound / directionTotal) * 100)
+    : 0;
+  const completedCalls =
+    statusData.find((item) => item.status === "COMPLETED")?.count ?? 0;
+  const completionPct = percent(completedCalls, totalStatus);
   const statusChartData = statusData.map((item) => ({
     ...item,
     label: labelStatus(item.status),
     pattern: statusPattern[item.status] ?? "solid bar",
     percentage: percent(item.count, totalStatus),
+    style: statusStyles[item.status] ?? statusStyles.PROCESSED,
   }));
   const directionChartData = directionData.map((item) => ({
     ...item,
-    label: item.direction,
+    label: directionStyles[item.direction].label,
     pattern: directionPattern[item.direction],
     percentage: percent(item.count, directionTotal),
+    style: directionStyles[item.direction],
   }));
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div className="border bg-card p-5" aria-labelledby={statusTitleId}>
-        <div className="mb-5 flex items-start justify-between gap-4">
+      <div
+        className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
+        aria-labelledby={statusTitleId}
+      >
+        <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Outcomes
             </p>
             <h3
@@ -130,97 +191,99 @@ export function BreakdownCharts({
               Call outcomes
             </h3>
             <p id={statusSummaryId} className="text-xs text-muted-foreground">
-              Status distribution for the selected range. X-axis shows calls;
-              Y-axis shows call status.
+              Status distribution for the selected range by count and share of
+              calls.
             </p>
           </div>
-          <div className="border bg-background px-3 py-2 text-right">
-            <p className="text-sm font-semibold text-foreground">{totalStatus}</p>
-            <p className="text-xs text-muted-foreground">tracked</p>
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-56">
+            <div className="border-r border-border/70 px-3 py-2.5">
+              <p className="font-semibold text-foreground tabular-nums">
+                {totalStatus}
+              </p>
+              <p className="text-muted-foreground">tracked</p>
+            </div>
+            <div className="px-3 py-2.5">
+              <p className="font-semibold text-green-400/80 tabular-nums">
+                {completionPct}%
+              </p>
+              <p className="text-muted-foreground">completed</p>
+            </div>
           </div>
         </div>
         {statusData.length ? (
-          <>
-            <ChartContainer
-              config={statusConfig}
-              className="h-64 w-full"
-              role="group"
-              aria-label="Call outcome status breakdown chart"
-            >
-              <BarChart
-                accessibilityLayer
-                data={statusChartData}
-                layout="vertical"
-                margin={{ top: 0, right: 16, left: 18, bottom: 24 }}
-                aria-label="Call outcome status breakdown chart"
-                aria-describedby={statusSummaryId}
-              >
-                <XAxis
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-muted-foreground"
-                  label={{
-                    value: "Calls",
-                    position: "insideBottom",
-                    offset: -12,
-                  }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="label"
-                  width={112}
-                  tickLine={false}
-                  axisLine={false}
-                  className="text-xs text-muted-foreground"
-                  label={{
-                    value: "Status",
-                    angle: -90,
-                    position: "insideLeft",
-                  }}
-                />
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Bar dataKey="count" name="Calls" barSize={18}>
-                  {statusData.map((item) => (
-                    <Cell
-                      key={item.status}
-                      fill={statusColors[item.status] ?? "var(--color-count)"}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {statusData.map((item) => (
+          <div
+            className="space-y-5 p-5"
+            role="group"
+            aria-label="Call outcome status breakdown chart"
+            aria-describedby={statusSummaryId}
+          >
+            <div className="rounded-xl border bg-background/60 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-muted-foreground">
+                  Outcome share
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {totalStatus} total
+                </span>
+              </div>
+              <div className="flex h-4 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                {statusChartData.map((item) => (
+                  <div
+                    key={item.status}
+                    className="h-full transition-all duration-500 motion-safe:animate-in motion-safe:fade-in-0"
+                    style={{
+                      width: `${item.percentage}%`,
+                      background: item.style.color,
+                    }}
+                    title={`${item.label}: ${item.percentage}%`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {statusChartData.map((item, index) => (
                 <Link
                   key={item.status}
-                  href={dashboardCallsHref({ range, status: item.status })}
-                  className="group flex items-center justify-between gap-3 border bg-background px-3 py-2 text-sm transition-colors hover:border-primary/35 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  href={dashboardCallsHref({ range, status: item.status, from: customFrom, to: customTo })}
+                  className={`group rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 ${item.style.surfaceClass}`}
+                  style={{ animationDelay: `${index * 60}ms` }}
                   aria-label={`Review ${labelStatus(item.status)} calls in the selected dashboard range`}
                 >
-                  <span className="min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span
-                        aria-hidden
-                        className="size-2 shrink-0"
-                        style={{
-                          background:
-                            statusColors[item.status] ?? "var(--color-count)",
-                        }}
-                      />
-                      <span className="truncate capitalize text-foreground">
-                        {labelStatus(item.status)}
-                      </span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          aria-hidden
+                          className={`size-2.5 shrink-0 rounded-full ${item.style.accentClass}`}
+                        />
+                        <span className="truncate text-sm font-semibold text-foreground">
+                          {item.label}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground tabular-nums">
+                        {item.count}
+                      </p>
+                    </div>
+                    <span className={`rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold shadow-xs ${item.style.textClass}`}>
+                      {item.percentage}%
                     </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {item.count} calls,{" "}
-                      {statusPattern[item.status] ?? "solid bar"}
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${item.style.accentClass}`}
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-muted-foreground">
+                      {item.pattern}
                     </span>
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
-                    Review
-                    <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
-                  </span>
+                    <span className={`inline-flex items-center gap-1 font-medium ${item.style.textClass}`}>
+                      Review
+                      <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -247,13 +310,13 @@ export function BreakdownCharts({
                 </tbody>
               </table>
             </div>
-          </>
+          </div>
         ) : (
           <EmptyState
             icon={PhoneCall}
             title="No outcomes yet"
             description="Place a test call to confirm completion, failed, and missed call states are flowing into reporting."
-            className="h-64 bg-background/40"
+            className="m-5 h-64 bg-background/40"
             action={
               <Button asChild size="sm">
                 <Link href="/outbound">Place a test call</Link>
@@ -263,12 +326,12 @@ export function BreakdownCharts({
         )}
       </div>
       <div
-        className="min-w-0 overflow-hidden border bg-card p-5"
+        className="min-w-0 overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
         aria-labelledby={directionTitleId}
       >
-        <div className="mb-5 flex min-w-0 items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-4 border-b bg-muted/20 p-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               Routing
             </p>
             <h3
@@ -282,80 +345,127 @@ export function BreakdownCharts({
               routed calls.
             </p>
           </div>
-          <div className="shrink-0 border bg-background px-3 py-2 text-right">
-            <p className="text-sm font-semibold text-foreground">{inboundPct}%</p>
-            <p className="text-xs text-muted-foreground">inbound</p>
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-56">
+            <div className="border-r border-border/70 px-3 py-2.5">
+              <p className="font-semibold tabular-nums text-muted-foreground">
+                {inboundPct}%
+              </p>
+              <p className="text-muted-foreground">inbound</p>
+            </div>
+            <div className="px-3 py-2.5">
+              <p className="font-semibold tabular-nums text-blue-400">
+                {outboundPct}%
+              </p>
+              <p className="text-muted-foreground">outbound</p>
+            </div>
           </div>
         </div>
         {directionData.length ? (
-          <div className="grid min-w-0 gap-4 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,200px)]">
-            <ChartContainer
-              config={directionConfig}
-              className="h-64 min-w-0 w-full max-w-full overflow-hidden"
-              role="group"
-              aria-label="Inbound and outbound direction mix chart"
-            >
-              <PieChart
-                accessibilityLayer
-                aria-label="Inbound and outbound direction mix chart"
-                aria-describedby={directionSummaryId}
-              >
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Pie
-                  data={directionChartData}
-                  dataKey="count"
-                  nameKey="label"
-                  innerRadius={54}
-                  outerRadius={92}
-                  paddingAngle={2}
-                >
-                  {directionData.map((item) => (
-                    <Cell
-                      key={item.direction}
-                      fill={directionColors[item.direction]}
-                    />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
-            <div className="grid min-w-0 w-full max-w-full gap-2 overflow-hidden">
-              {directionChartData.map((item) => (
-                <div
-                  key={item.direction}
-                  className="min-w-0 w-full max-w-full overflow-hidden border px-3 py-2 text-sm"
-                >
-                  <div className="flex min-w-0 items-center justify-between gap-2">
-                    <span className="min-w-0 truncate capitalize text-muted-foreground">
-                      {item.direction}
-                    </span>
-                    <span className="shrink-0 font-semibold text-foreground">
-                      {item.count}
-                    </span>
+          <div
+            className="space-y-5 p-5"
+            role="group"
+            aria-label="Inbound and outbound direction mix chart"
+            aria-describedby={directionSummaryId}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border bg-muted/25 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Inbound calls
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold tracking-tight text-muted-foreground tabular-nums">
+                      {inbound}
+                    </p>
                   </div>
-                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                    <span className="font-medium text-foreground">
-                      {item.percentage}%
-                    </span>{" "}
-                    <span className="break-words">
-                      of routed calls, {item.pattern}
-                    </span>
-                  </p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden bg-muted">
-                    <div
-                      className="h-full"
-                      style={{
-                        width: `${
-                          directionTotal
-                            ? Math.round((item.count / directionTotal) * 100)
-                            : 0
-                        }%`,
-                        background:
-                          directionColors[item.direction] ?? "var(--muted-foreground)",
-                      }}
-                    />
-                  </div>
+                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-xs">
+                    {inboundPct}%
+                  </span>
                 </div>
-              ))}
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
+                  <div
+                    className="h-full rounded-full bg-slate-500"
+                    style={{ width: `${inboundPct}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/25 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Outbound calls
+                    </p>
+                    <p className="mt-2 text-3xl font-semibold tracking-tight text-blue-400 tabular-nums">
+                      {outbound}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-background/70 px-2.5 py-1 text-xs font-semibold text-blue-400 shadow-xs">
+                    {outboundPct}%
+                  </span>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/70">
+                  <div
+                    className="h-full rounded-full bg-blue-500/70"
+                    style={{ width: `${outboundPct}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border bg-background/60 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-muted-foreground">
+                  Routed call share
+                </span>
+                <span className="font-semibold text-foreground tabular-nums">
+                  {directionTotal} total
+                </span>
+              </div>
+              <div className="flex h-4 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+                {directionChartData.map((item) => (
+                  <div
+                    key={item.direction}
+                    className="h-full transition-all duration-300"
+                    style={{
+                      width: `${item.percentage}%`,
+                      background: item.style.color,
+                    }}
+                    title={`${item.label}: ${item.percentage}%`}
+                  />
+                ))}
+              </div>
+              <div className="mt-4 grid gap-2">
+                {directionChartData.map((item) => (
+                  <div
+                    key={item.direction}
+                    className={`rounded-lg border p-3 ${item.style.surfaceClass}`}
+                  >
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden
+                          className={`size-2.5 shrink-0 rounded-full ${item.style.accentClass}`}
+                        />
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {item.label}
+                        </span>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-foreground tabular-nums">
+                          {item.count}
+                        </p>
+                        <p className={`text-xs font-medium ${item.style.textClass}`}>
+                          {item.percentage}%
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      Percentage of routed calls, {item.pattern}.
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="sr-only">
               <table aria-describedby={directionSummaryId}>
@@ -386,7 +496,7 @@ export function BreakdownCharts({
             icon={ArrowRight}
             title="No routing data yet"
             description="Connect a number or place a test call to see inbound and outbound routing mix."
-            className="h-64 bg-background/40"
+            className="m-5 h-64 bg-background/40"
             action={
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button asChild size="sm">

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { VoiceProfilePanel } from "@/src/components/agents/VoiceProfilePanel";
 import {
     Form,
     FormControl,
@@ -29,15 +30,15 @@ import {
 import {
     COMMON_TIMEZONES,
     buildVoiceOptionsFromCatalog,
-    getDefaultSttModelForLanguage,
-    getDefaultTtsModelForLanguage,
-    getDefaultVoiceForTtsModel,
     getSttModelsForLanguage,
     getTtsModelsForLanguage,
     getVoicesForTtsModel,
     LANGUAGES,
     LLM_MODELS,
     normalizeLanguageCode,
+    type LanguageAwareModelOption,
+    type ModelOption,
+    type Voice,
 } from "@/src/lib/data/voices";
 import { mergeConfig } from "@/src/lib/agents/config-defaults";
 
@@ -51,6 +52,87 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
+
+type UnknownModelKind = "STT" | "LLM" | "TTS";
+
+function trimProviderPrefix(value: string) {
+    return value.includes("/") ? value.split("/").at(-1) ?? value : value;
+}
+
+function humanizeModelId(value: string) {
+    return trimProviderPrefix(value)
+        .replace(/[:_.-]+/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function findModelOption<T extends ModelOption>(options: T[], value?: string) {
+    if (!value) return undefined;
+    return options.find(
+        (option) =>
+            option.id === value ||
+            trimProviderPrefix(option.id) === value ||
+            option.id.endsWith(`/${value}`)
+    );
+}
+
+function ensureSelectedModelOption<T extends ModelOption>(
+    options: T[],
+    value: string | undefined,
+    kind: UnknownModelKind
+): T[] {
+    if (!value || options.some((option) => option.id === value)) return options;
+
+    const matched = findModelOption(options, value);
+    const fallback = {
+        ...(matched ?? {
+            label: `Configured ${kind}: ${humanizeModelId(value)}`,
+            provider: "Configured",
+        }),
+        id: value,
+    } as T;
+
+    return [fallback, ...options];
+}
+
+function ensureSelectedLanguageModelOption(
+    options: LanguageAwareModelOption[],
+    value: string | undefined,
+    kind: Exclude<UnknownModelKind, "LLM">
+) {
+    if (!value || options.some((option) => option.id === value)) return options;
+
+    const matched = findModelOption(options, value);
+    const fallback: LanguageAwareModelOption = {
+        ...(matched ?? {
+            label: `Configured ${kind}: ${humanizeModelId(value)}`,
+            provider: "Configured",
+            languages: [],
+        }),
+        id: value,
+        languages: matched?.languages ?? [],
+    };
+
+    return [fallback, ...options];
+}
+
+function ensureSelectedVoiceOption(options: Voice[], value: string | undefined) {
+    if (!value || options.some((voice) => voice.id === value)) return options;
+
+    const fallback: Voice = {
+        id: value,
+        name: `Configured voice: ${humanizeModelId(value)}`,
+        provider: "Configured",
+        gender: "neutral",
+        locale: "",
+        accent: "",
+        languages: [],
+        ttsModels: [],
+        styles: ["Saved configuration"],
+        useCases: [],
+    };
+
+    return [fallback, ...options];
+}
 
 export function VoiceTab({ agentId }: { agentId: string }) {
     const { data: config, isLoading } = useAgentConfig(agentId);
@@ -92,9 +174,21 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         control: form.control,
         name: "agent_language",
     });
+    const selectedSttModel = useWatch({
+        control: form.control,
+        name: "sttModel",
+    });
+    const selectedLlmModel = useWatch({
+        control: form.control,
+        name: "llmModel",
+    });
     const selectedTtsModel = useWatch({
         control: form.control,
         name: "ttsModel",
+    });
+    const selectedVoiceId = useWatch({
+        control: form.control,
+        name: "voiceId",
     });
 
     const availableSttModels = useMemo(
@@ -109,42 +203,30 @@ export function VoiceTab({ agentId }: { agentId: string }) {
         () => getVoicesForTtsModel(selectedTtsModel, selectedLanguage, voiceOptions ?? undefined),
         [selectedLanguage, selectedTtsModel, voiceOptions]
     );
-
-    useEffect(() => {
-        const selectedStt = form.getValues("sttModel");
-        const selectedTts = form.getValues("ttsModel");
-
-        if (!availableSttModels.some((model) => model.id === selectedStt)) {
-            form.setValue("sttModel", getDefaultSttModelForLanguage(selectedLanguage, voiceOptions ?? undefined), {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-            });
-        }
-
-        if (!availableTtsModels.some((model) => model.id === selectedTts)) {
-            form.setValue("ttsModel", getDefaultTtsModelForLanguage(selectedLanguage, voiceOptions ?? undefined), {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-            });
-        }
-    }, [availableSttModels, availableTtsModels, form, selectedLanguage, voiceOptions]);
-
-    useEffect(() => {
-        const selectedVoice = form.getValues("voiceId");
-        if (availableVoices.some((voice) => voice.id === selectedVoice)) return;
-
-        form.setValue(
-            "voiceId",
-            getDefaultVoiceForTtsModel(selectedTtsModel, selectedLanguage, voiceOptions ?? undefined),
-            {
-                shouldDirty: true,
-                shouldTouch: true,
-                shouldValidate: true,
-            }
-        );
-    }, [availableVoices, form, selectedLanguage, selectedTtsModel, voiceOptions]);
+    const sttModelsWithConfiguredValue = useMemo(
+        () => ensureSelectedLanguageModelOption(availableSttModels, selectedSttModel, "STT"),
+        [availableSttModels, selectedSttModel]
+    );
+    const llmModelsWithConfiguredValue = useMemo(
+        () => ensureSelectedModelOption(llmModels, selectedLlmModel, "LLM"),
+        [llmModels, selectedLlmModel]
+    );
+    const ttsModelsWithConfiguredValue = useMemo(
+        () => ensureSelectedLanguageModelOption(availableTtsModels, selectedTtsModel, "TTS"),
+        [availableTtsModels, selectedTtsModel]
+    );
+    const voicesWithConfiguredValue = useMemo(
+        () => ensureSelectedVoiceOption(availableVoices, selectedVoiceId),
+        [availableVoices, selectedVoiceId]
+    );
+    const selectedVoice = useMemo(
+        () => voicesWithConfiguredValue.find((voice) => voice.id === selectedVoiceId),
+        [selectedVoiceId, voicesWithConfiguredValue]
+    );
+    const selectedLanguageLabel =
+        languages.find((language) => language.code === selectedLanguage)?.label ?? selectedLanguage;
+    const selectedTtsModelLabel =
+        ttsModelsWithConfiguredValue.find((model) => model.id === selectedTtsModel)?.label ?? selectedTtsModel;
 
     async function onSubmit(values: FormValues) {
         await save.mutateAsync(mergeConfig(config, values));
@@ -233,7 +315,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {availableSttModels.map((model) => (
+                                            {sttModelsWithConfiguredValue.map((model) => (
                                                 <SelectItem key={model.id} value={model.id}>
                                                     {model.label}
                                                 </SelectItem>
@@ -257,7 +339,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {llmModels.map((model) => (
+                                            {llmModelsWithConfiguredValue.map((model) => (
                                                 <SelectItem key={model.id} value={model.id}>
                                                     {model.label}
                                                 </SelectItem>
@@ -292,7 +374,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {availableTtsModels.map((model) => (
+                                            {ttsModelsWithConfiguredValue.map((model) => (
                                                 <SelectItem key={model.id} value={model.id}>
                                                     {model.label}
                                                 </SelectItem>
@@ -316,7 +398,7 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {availableVoices.map((voice) => (
+                                            {voicesWithConfiguredValue.map((voice) => (
                                                 <SelectItem key={voice.id} value={voice.id}>
                                                     {voice.name}
                                                 </SelectItem>
@@ -326,6 +408,13 @@ export function VoiceTab({ agentId }: { agentId: string }) {
                                     <FormMessage />
                                 </FormItem>
                             )}
+                        />
+                    </div>
+                    <div className="mt-5">
+                        <VoiceProfilePanel
+                            voice={selectedVoice}
+                            languageLabel={selectedLanguageLabel}
+                            ttsModelLabel={selectedTtsModelLabel}
                         />
                     </div>
                 </section>

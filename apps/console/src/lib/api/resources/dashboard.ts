@@ -1,7 +1,7 @@
 import { apiClient } from "@/src/lib/api/client";
 import type { ApiEnvelope, CallLog, CallStatus } from "@/src/lib/api/types";
 
-export type DashboardRange = "24h" | "7d" | "30d";
+export type DashboardRange = "24h" | "7d" | "30d" | "custom";
 
 export interface DashboardTotals {
   calls: number;
@@ -56,12 +56,18 @@ export interface DashboardSummary {
   recent: CallLog[];
 }
 
+export interface DashboardSummaryParams {
+  range: DashboardRange;
+  from?: string;
+  to?: string;
+}
+
 export async function getDashboardSummary(
-  range: DashboardRange
+  params: DashboardSummaryParams
 ): Promise<DashboardSummary> {
   const res = await apiClient.get<ApiEnvelope<DashboardSummary>>(
     "/dashboard/summary",
-    { params: { range } }
+    { params }
   );
   return res.data.data;
 }

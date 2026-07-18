@@ -107,6 +107,16 @@ export type Agent = Prisma.AgentModel
  */
 export type AgentConfiguration = Prisma.AgentConfigurationModel
 /**
+ * Model AgentWidget
+ *
+ */
+export type AgentWidget = Prisma.AgentWidgetModel
+/**
+ * Model AgentWidgetSession
+ *
+ */
+export type AgentWidgetSession = Prisma.AgentWidgetSessionModel
+/**
  * Model KnowledgeSource
  *
  */

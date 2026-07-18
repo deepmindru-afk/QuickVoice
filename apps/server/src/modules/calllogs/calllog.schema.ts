@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CallStatus,TelephonyProvider } from "../../../prisma/generated/prisma/client.js";
+import { CallStatus } from "../../../prisma/generated/prisma/client.js";
 
 export const transcriptSchema = z.object({
   messageId: z.string(),
@@ -41,9 +41,9 @@ export const callLogSchema = z.object({
   metadata: callLogMetadataSchema.optional(),
   recordingSid: z.string(),
   transcripts: z.array(transcriptSchema),
-  toNumber: z.string(),
-  fromNumber: z.string(),
-  provider: z.nativeEnum(TelephonyProvider),
+  toNumber: z.string().default(""),
+  fromNumber: z.string().default(""),
+  provider: z.string().trim().min(1).default("WEB_WIDGET"),
   extractedData: z.array(extractedDataSchema).default([]),
   evaluatedData: z.array(evaluatedDataSchema).default([]),
 });
@@ -71,6 +71,11 @@ export const listTranscriptsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(50),
   cursor: z.string().optional(),
 });
+export const endLiveCallSchema = z.object({
+  roomName: z.string().trim().min(1).max(256),
+});
+export type EndLiveCallInput = z.infer<typeof endLiveCallSchema>;
+
 export type ListTranscriptsQuery = z.infer<typeof listTranscriptsQuerySchema>;
 export type ListTranscriptsArgs = ListTranscriptsQuery & {
   organizationId: string;

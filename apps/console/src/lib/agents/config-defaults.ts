@@ -1,5 +1,6 @@
 import type { ConfigureAgentInput } from "@/src/lib/api/resources/agents";
 import type { AgentConfiguration } from "@/src/lib/api/types";
+import { normalizeAgentVariables } from "@/src/lib/agents/dynamic-variables";
 
 export const DEFAULT_SYSTEM_PROMPT = `You are a helpful voice assistant. Be concise, polite, and on-topic. Confirm details back to the caller before taking any action.`;
 export const DEFAULT_FIRST_MESSAGE = `Hi, thanks for calling. How can I help you today?`;
@@ -19,7 +20,13 @@ export function defaultConfig(): ConfigureAgentInput {
     initiation_webhook: null,
     post_call_webhook: null,
     preemptive_generation: false,
+    ivr_navigation_enabled: true,
     timezone: "UTC",
+    variables: {
+      firstMessage: [],
+      systemPrompt: [],
+      placeholders: {},
+    },
   };
 }
 
@@ -47,7 +54,9 @@ export function mergeConfig(
         post_call_webhook:
           current.post_call_webhook as ConfigureAgentInput["post_call_webhook"],
         preemptive_generation: current.preemptive_generation,
+        ivr_navigation_enabled: current.ivr_navigation_enabled ?? true,
         timezone: current.timezone,
+        variables: normalizeAgentVariables(current.variables),
       }
     : {};
   return { ...base, ...fromCurrent, ...patch };

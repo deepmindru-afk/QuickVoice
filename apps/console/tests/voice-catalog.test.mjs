@@ -80,3 +80,18 @@ test("buildVoiceOptionsFromCatalog maps AI catalog values to console dropdown op
   assert.equal(options.voices[0].id, "EXAVITQu4vr4xnSDxMaL");
   assert.deepEqual(plain(options.voices[0].ttsModels), ["elevenlabs/eleven_flash_v2_5"]);
 });
+
+test("voice tab keeps configured model and voice values visible after refresh", () => {
+  const source = readFileSync(join(root, "src/components/agents/tabs/VoiceTab.tsx"), "utf8");
+
+  assert.match(source, /ensureSelectedModelOption/);
+  assert.match(source, /ensureSelectedLanguageModelOption/);
+  assert.match(source, /ensureSelectedVoiceOption/);
+  assert.match(source, /llmModelsWithConfiguredValue/);
+  assert.match(source, /voicesWithConfiguredValue/);
+  assert.match(source, /Configured \${kind}/);
+  assert.match(source, /Configured voice/);
+  assert.doesNotMatch(source, /getDefaultVoiceForTtsModel/);
+  assert.doesNotMatch(source, /getDefaultSttModelForLanguage/);
+  assert.doesNotMatch(source, /getDefaultTtsModelForLanguage/);
+});

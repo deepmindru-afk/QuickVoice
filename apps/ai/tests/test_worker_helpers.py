@@ -8,12 +8,16 @@ sys.path.insert(0, ROOT)
 
 from handlers.worker_handler import (
     PREVIEW_TRANSCRIPT_TOPIC,
+    apply_initiation_webhook_metadata,
     apply_metadata_overrides,
     build_call_context,
     parse_metadata,
     parse_preview_user_transcript_packet,
     consume_preview_user_transcript_stream,
+    resolve_webhook_dynamic_variables,
     speak_first_message,
+    value_at_json_path,
+    webhook_body_values,
 )
 from livekit.agents import room_io
 
@@ -33,6 +37,10 @@ class WorkerHandlerTests(unittest.TestCase):
 
         self.assertIn("IVR navigation", instructions)
         self.assertIn("send_dtmf_events", instructions)
+        self.assertIn("outbound calls", instructions)
+        self.assertIn("remember it while you listen", instructions)
+        self.assertIn("match that goal to the menu option", instructions)
+        self.assertIn("Do not ask the human to press the key", instructions)
 
     def test_assistant_exposes_livekit_dtmf_tool_when_ivr_navigation_enabled(self):
         agent = Assistant(
@@ -174,6 +182,25 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(context["to_number"], "+15550001111")
         self.assertEqual(context["outbound_id"], "2b1f6d53-42f5-4cc7-9689-7b6f51a0c113")
 
+    def test_build_call_context_keeps_web_widget_room_out_of_phone_fields(self):
+        context = build_call_context(
+            room_name="widget_wgs_123",
+            metadata={
+                "source": "web_widget",
+                "agent_id": "agent_123",
+                "call_id": "widget_wgs_123",
+                "provider": "WEB_WIDGET",
+            },
+        )
+
+        self.assertEqual(context["direction"], "inbound")
+        self.assertEqual(context["call_id"], "widget_wgs_123")
+        self.assertIsNone(context["agent_number"])
+        self.assertIsNone(context["user_number"])
+        self.assertIsNone(context["from_number"])
+        self.assertIsNone(context["to_number"])
+        self.assertEqual(context["metadata"]["source"], "web_widget")
+
     def test_build_call_context_preserves_non_routing_metadata(self):
         context = build_call_context(
             room_name="outbound-room",
@@ -302,6 +329,25 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["system_prompt"], "Use the saved agent behavior in preview.")
         self.assertEqual(config["first_message"], "Default greeting.")
 
+    def test_apply_metadata_overrides_uses_widget_prompt_and_first_message(self):
+        config = {
+            "first_message": "Default greeting.",
+            "system_prompt": "Default prompt.",
+            "provider": "WEB_WIDGET",
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "mode": "widget",
+                "first_message": "Website hello.",
+                "system_prompt": "Help the website visitor.",
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Website hello.")
+        self.assertEqual(result["system_prompt"], "Help the website visitor.")
+
     def test_apply_metadata_overrides_uses_batch_language_voice_and_dynamic_variables(self):
         config = {
             "first_message": "Hi {{city}} customer.",
@@ -327,7 +373,145 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(result["voice"], "aura-2-athena-en")
         self.assertEqual(result["first_message"], "Hi Mumbai customer.")
         self.assertEqual(result["system_prompt"], "Ask about renewal.")
+        self.assertEqual(
+            result["dynamic_variables"],
+            {
+                "city": "Mumbai",
+                "other_dyn_variable": "renewal",
+            },
+        )
         self.assertEqual(config["first_message"], "Hi {{city}} customer.")
+
+    def test_apply_initiation_webhook_metadata_resolves_mapped_paths_before_call_values(self):
+        async def fake_fetch(webhook, metadata, call_context):
+            return {
+                "customer": {"city": "Webhook City"},
+                "account": {"tier": "Gold"},
+                "dynamic_variables": {"plan": "Webhook Plan"},
+            }
+
+        result = asyncio.run(
+            apply_initiation_webhook_metadata(
+                {
+                    "initiation_webhook": {
+                        "webhook_url": "https://example.com/init",
+                        "method": "POST",
+                        "dynamic_variables": {
+                            "city": "customer.city",
+                            "tier": "account.tier",
+                            "missing": "account.missing",
+                        },
+                    }
+                },
+                {
+                    "direction": "outbound",
+                    "dynamic_variables": {
+                        "city": "Call City",
+                    },
+                },
+                {"call_id": "call_123"},
+                fetch_json=fake_fetch,
+            )
+        )
+
+        self.assertEqual(
+            result["dynamic_variables"],
+            {
+                "city": "Call City",
+                "tier": "Gold",
+            },
+        )
+
+    def test_resolve_webhook_dynamic_variables_supports_json_paths(self):
+        payload = {
+            "customer": {"name": "Avery"},
+            "items": [{"total": 125.4}],
+            "account.balance_due": "legacy-flat-key",
+        }
+
+        self.assertEqual(value_at_json_path(payload, "customer.name"), "Avery")
+        self.assertEqual(value_at_json_path(payload, "$.items[0].total"), 125.4)
+        self.assertEqual(value_at_json_path(payload, "account.balance_due"), "legacy-flat-key")
+        self.assertEqual(
+            resolve_webhook_dynamic_variables(
+                payload,
+                {
+                    "customer_name": "customer.name",
+                    "balance_due": "$.items[0].total",
+                    "missing": "items[1].total",
+                },
+            ),
+            {
+                "customer_name": "Avery",
+                "balance_due": 125.4,
+            },
+        )
+        self.assertEqual(
+            webhook_body_values(
+                {
+                    "tenant": {"value": "acme", "type": "Value"},
+                    "empty": {"value": "", "type": "Value"},
+                    "plain": "kept",
+                }
+            ),
+            {"tenant": "acme", "plain": "kept"},
+        )
+
+    def test_apply_metadata_overrides_uses_placeholders_as_dynamic_variable_fallbacks(self):
+        config = {
+            "first_message": "Hi {{ city }} {{name}}.",
+            "system_prompt": "Plan {{plan}} for {{missing}}.",
+            "variables": {
+                "firstMessage": ["city", "name"],
+                "systemPrompt": ["plan", "missing"],
+                "placeholders": {
+                    "city": "Dallas",
+                    "plan": "Starter",
+                },
+            },
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "direction": "outbound",
+                "dynamic_variables": {
+                    "city": "Austin",
+                    "name": "Ada",
+                },
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Hi Austin Ada.")
+        self.assertEqual(result["system_prompt"], "Plan Starter for {{missing}}.")
+
+    def test_apply_metadata_overrides_renders_inbound_dynamic_variables(self):
+        config = {
+            "first_message": "Hi {{name}}.",
+            "system_prompt": "Use {{plan}}.",
+            "variables": {
+                "firstMessage": ["name"],
+                "systemPrompt": ["plan"],
+                "placeholders": {
+                    "name": "Fallback Name",
+                    "plan": "Starter",
+                },
+            },
+        }
+
+        result = apply_metadata_overrides(
+            config,
+            {
+                "direction": "inbound",
+                "first_message": "Override {{name}}.",
+                "dynamic_variables": {
+                    "name": "Inbound Ada",
+                },
+            },
+        )
+
+        self.assertEqual(result["first_message"], "Hi Inbound Ada.")
+        self.assertEqual(result["system_prompt"], "Use Starter.")
 
 
 if __name__ == "__main__":

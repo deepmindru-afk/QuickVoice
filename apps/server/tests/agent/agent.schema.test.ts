@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   createAgentSchema,
   updateAgentSchema,
+  configureAgentSchema,
 } from "../../src/modules/agent/agent.schema.js";
 
 test("createAgentSchema accepts console template slugs", () => {
@@ -52,4 +53,26 @@ test("createAgentSchema rejects unknown template strings", () => {
 test("updateAgentSchema accepts partial template slug updates", () => {
   const parsed = updateAgentSchema.parse({ templateId: "business" });
   assert.equal(parsed.templateId, "business");
+});
+
+
+test("configureAgentSchema defaults IVR navigation on", () => {
+  const parsed = configureAgentSchema.parse({
+    agent_language: "en",
+    firstMessage: "Hello from the agent.",
+    systemPrompt: "You are a helpful assistant.",
+    llmModel: "gpt-4o-mini",
+    sttModel: "nova-3",
+    ttsModel: "aura-2",
+    use_rag: false,
+    voiceId: "aura-2-asteria-en",
+    data_needed: [],
+    data_evaluation: [],
+    initiation_webhook: null,
+    post_call_webhook: null,
+    preemptive_generation: false,
+    timezone: "UTC",
+  });
+
+  assert.equal(parsed.ivr_navigation_enabled, true);
 });

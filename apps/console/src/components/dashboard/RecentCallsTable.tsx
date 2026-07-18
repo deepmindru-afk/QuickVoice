@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, PhoneCall } from "lucide-react";
+import { AlertTriangle, ArrowRight, MoreHorizontal, PhoneCall, PhoneIncoming, PhoneOutgoing } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -27,11 +27,10 @@ function statusVariant(
 ): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "COMPLETED":
+    case "IN_PROGRESS":
       return "default";
     case "FAILED":
     case "NOT_ANSWERED":
-      return "destructive";
-    case "IN_PROGRESS":
     case "SCHEDULED":
     case "PROCESSED":
       return "secondary";
@@ -43,14 +42,14 @@ function statusVariant(
 function statusClass(status: CallStatus) {
   switch (status) {
     case "COMPLETED":
-      return "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300";
+      return "border-green-400/20 bg-green-400/8 text-green-400/80";
     case "FAILED":
     case "NOT_ANSWERED":
-      return "border-destructive/25 bg-destructive/10 text-destructive";
+      return "border-border bg-muted/40 text-muted-foreground";
     case "IN_PROGRESS":
-      return "border-sky-500/25 bg-sky-500/10 text-sky-600 dark:text-sky-300";
+      return "border-sky-500/20 bg-sky-500/10 text-sky-500";
     default:
-      return "border-border bg-muted/50 text-muted-foreground";
+      return "border-border bg-muted/40 text-muted-foreground";
   }
 }
 
@@ -65,16 +64,17 @@ function formatAbsoluteTimestamp(iso: string | null) {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    second: "2-digit",
-    timeZoneName: "short",
   }).format(date);
 }
 
 function formatDuration(seconds: number | null) {
   if (seconds === null) return "Unknown";
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return m ? `${m}m ${s}s` : `${s}s`;
+  const safeSeconds = Math.max(0, seconds);
+  const h = Math.floor(safeSeconds / 3600);
+  const m = Math.floor((safeSeconds % 3600) / 60);
+  const s = safeSeconds % 60;
+  if (h) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function formatStatus(status: string) {
@@ -112,6 +112,18 @@ function callParties(call: CallLog) {
 
 function shortId(id: string) {
   return id.length > 8 ? id.slice(0, 8) : id;
+}
+
+function primaryNumber(call: CallLog, parties: ReturnType<typeof callParties>) {
+  if (call.direction === "outbound") return parties.callee;
+  return parties.caller;
+}
+
+function directionClasses(direction: CallLog["direction"]) {
+  if (direction === "inbound" || direction === "outbound") {
+    return "border-border bg-muted/40 text-muted-foreground";
+  }
+  return "border-border bg-muted/40 text-muted-foreground";
 }
 
 function resolveAgentLabel({
@@ -155,10 +167,10 @@ export function RecentCallsTable({
     agentsError && Boolean(summary?.recent.some((call) => call.agentId));
 
   return (
-    <div className="border bg-card">
-      <div className="flex items-center justify-between border-b px-5 py-4">
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b bg-muted/20 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Recent activity
           </p>
           <h3 className="mt-1 text-base font-semibold text-foreground">
@@ -170,7 +182,7 @@ export function RecentCallsTable({
         </div>
         <Link
           href="/calls"
-          className={`inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline ${linkFocusClass}`}
+          className={`inline-flex items-center gap-1 text-xs font-medium text-blue-400 hover:underline ${linkFocusClass}`}
         >
           View call logs <ArrowRight className="size-3" />
         </Link>
@@ -179,7 +191,7 @@ export function RecentCallsTable({
         <div
           role="status"
           aria-live="polite"
-          className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-5 py-3 text-xs text-amber-800 dark:text-amber-200"
+          className="flex items-start gap-2 border-b bg-muted/40 px-5 py-3 text-xs text-muted-foreground"
         >
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
           <span>
@@ -279,21 +291,35 @@ export function RecentCallsTable({
             })}
           </ul>
 
-          <div className="hidden md:block">
-            <Table className="min-w-[920px]">
+          <div className="hidden overflow-x-auto md:block">
+            <Table className="min-w-[1120px] border-collapse">
               <TableCaption className="sr-only">
-                Recent call logs with absolute timestamps, caller, callee,
-                assigned agent, duration, and status.
+                Recent call logs with absolute timestamps, phone number,
+                assigned agent, duration, direction, status, and actions.
               </TableCaption>
               <TableHeader>
-                <TableRow className="border-b bg-muted/20 hover:bg-muted/20">
-                  <TableHead className="pl-5">Started</TableHead>
-                  <TableHead>Caller</TableHead>
-                  <TableHead>Callee</TableHead>
-                  <TableHead>Agent</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="pr-5 text-right">Details</TableHead>
+                <TableRow className="border-b bg-background/70 hover:bg-background/70">
+                  <TableHead className="h-11 pl-5 text-xs font-semibold text-foreground">
+                    Start Time
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-foreground">
+                    Number
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-foreground">
+                    Agent
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-foreground">
+                    Duration
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-foreground">
+                    Direction
+                  </TableHead>
+                  <TableHead className="text-xs font-semibold text-foreground">
+                    Status
+                  </TableHead>
+                  <TableHead className="pr-5 text-right text-xs font-semibold text-foreground">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -305,54 +331,57 @@ export function RecentCallsTable({
                     agentsLoading,
                     agentsError,
                   });
+                  const number = primaryNumber(call, parties);
+                  const DirectionIcon =
+                    call.direction === "inbound" ? PhoneIncoming : PhoneOutgoing;
 
                   return (
-                    <TableRow key={call.callId} className="hover:bg-muted/30">
-                      <TableCell className="pl-5 align-top text-sm text-muted-foreground">
+                    <TableRow
+                      key={call.callId}
+                      className="border-b border-border/70 bg-card transition-colors hover:bg-muted/25"
+                    >
+                      <TableCell className="h-13 pl-5 align-middle text-sm text-muted-foreground">
                         <CallTimestamp call={call} />
-                        <p className="mt-1 text-xs capitalize">
-                          {call.direction ?? "unknown"}
+                      </TableCell>
+                      <TableCell className="align-middle">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {number}
                         </p>
                       </TableCell>
-                      <TableCell className="max-w-[180px] whitespace-normal align-top">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {parties.caller}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">Caller</p>
-                      </TableCell>
-                      <TableCell className="max-w-[180px] whitespace-normal align-top">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {parties.callee}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">Callee</p>
-                      </TableCell>
-                      <TableCell className="max-w-[180px] whitespace-normal align-top">
-                        <p className="truncate text-sm font-medium text-foreground">
+                      <TableCell className="max-w-[220px] align-middle">
+                        <p className="truncate text-sm text-muted-foreground">
                           {agentLabel}
                         </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <span className="sr-only">
                           {call.agentId ? `ID ${shortId(call.agentId)}` : "No agent assigned"}
-                        </p>
+                        </span>
                       </TableCell>
-                      <TableCell className="align-top text-sm">
+                      <TableCell className="align-middle text-sm font-semibold tabular-nums text-foreground">
                         {formatDuration(call.durationSeconds)}
                       </TableCell>
-                      <TableCell className="align-top">
+                      <TableCell className="align-middle">
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium capitalize ${directionClasses(call.direction)}`}
+                        >
+                          <DirectionIcon className="size-3.5" aria-hidden="true" />
+                          {call.direction ?? "unknown"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="align-middle">
                         <Badge
                           variant={statusVariant(call.status)}
-                          className={`w-fit shrink-0 capitalize ${statusClass(call.status)}`}
+                          className={`w-fit shrink-0 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${statusClass(call.status)}`}
                         >
-                          {formatStatus(call.status)}
+                          {call.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="pr-5 text-right align-top">
+                      <TableCell className="pr-5 text-right align-middle">
                         <Link
                           href={`/calls/${call.callId}`}
                           aria-label={`Open call ${call.callId}: ${parties.caller} to ${parties.callee}`}
-                          className={`group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline ${linkFocusClass}`}
+                          className={`inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${linkFocusClass}`}
                         >
-                          Open
-                          <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+                          <MoreHorizontal className="size-4" aria-hidden="true" />
                         </Link>
                       </TableCell>
                     </TableRow>

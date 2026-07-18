@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createLocalAudioTrack,
   Room,
@@ -31,8 +31,17 @@ import {
   SheetTitle,
 } from "@/src/components/ui/sheet";
 import { Badge } from "@/src/components/ui/badge";
-import { useCreateAgentPreviewSession } from "@/src/hooks/queries/agents";
+import { DynamicVariableInputs } from "@/src/components/agents/DynamicVariableInputs";
+import {
+  useAgentConfig,
+  useCreateAgentPreviewSession,
+} from "@/src/hooks/queries/agents";
 import type { AgentPreviewSession } from "@/src/lib/api/types";
+import {
+  dynamicVariablePayload,
+  normalizeAgentVariables,
+  uniqueDynamicVariableNames,
+} from "@/src/lib/agents/dynamic-variables";
 import { cn } from "@/src/lib/utils";
 
 type PreviewState =
@@ -56,37 +65,6 @@ type ConversationMessage = {
   pending?: boolean;
 };
 
-type SpeechRecognitionResultLike = {
-  isFinal: boolean;
-  [index: number]: { transcript: string };
-};
-
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: {
-    length: number;
-    [index: number]: SpeechRecognitionResultLike;
-  };
-};
-
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
-
-type PreviewWindow = Window & {
-  SpeechRecognition?: SpeechRecognitionConstructor;
-  webkitSpeechRecognition?: SpeechRecognitionConstructor;
-};
-
 type AgentPreviewPanelProps = {
   agentId: string;
   agentName: string;
@@ -103,9 +81,6 @@ const statusCopy: Record<PreviewState, string> = {
   error: "Needs attention",
 };
 
-const PREVIEW_TRANSCRIPT_TOPIC = "quickvoice.preview.transcript";
-const PREVIEW_TRANSCRIPT_TYPE = "preview_user_transcript";
-
 export function AgentPreviewPanel({
   agentId,
   agentName,
@@ -113,9 +88,9 @@ export function AgentPreviewPanel({
   onOpenChange,
 }: AgentPreviewPanelProps) {
   const createPreview = useCreateAgentPreviewSession(agentId);
+  const { data: config } = useAgentConfig(agentId);
   const roomRef = useRef<Room | null>(null);
   const localTrackRef = useRef<LocalAudioTrack | null>(null);
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const remoteAudioRef = useRef<HTMLDivElement | null>(null);
   const [preview, setPreview] = useState<AgentPreviewSession | null>(null);
   const [state, setState] = useState<PreviewState>("idle");
@@ -126,6 +101,18 @@ export function AgentPreviewPanel({
     ConversationMessage[]
   >([]);
   const [interimTranscript, setInterimTranscript] = useState("");
+  const [previewVariableValues, setPreviewVariableValues] = useState<
+    Record<string, string>
+  >({});
+
+  const agentVariables = useMemo(
+    () => normalizeAgentVariables(config?.variables),
+    [config?.variables],
+  );
+  const previewVariableNames = useMemo(
+    () => uniqueDynamicVariableNames(agentVariables),
+    [agentVariables],
+  );
 
   const addEvent = useCallback((label: string, detail: string) => {
     setEvents((current) =>
@@ -155,93 +142,6 @@ export function AgentPreviewPanel({
     },
     [],
   );
-
-  const publishPreviewTranscript = useCallback(
-    async (text: string) => {
-      const room = roomRef.current;
-      const trimmedText = text.trim();
-      if (!room || !trimmedText) return;
-
-      try {
-        await room.localParticipant.sendText(
-          JSON.stringify({
-            type: PREVIEW_TRANSCRIPT_TYPE,
-            text: trimmedText,
-          }),
-          { topic: PREVIEW_TRANSCRIPT_TOPIC },
-        );
-      } catch {
-        addConversationMessage(
-          "system",
-          "Could not send browser transcript to the preview agent.",
-        );
-      }
-    },
-    [addConversationMessage],
-  );
-
-  const stopSpeechRecognition = useCallback(() => {
-    recognitionRef.current?.stop();
-    recognitionRef.current = null;
-    setInterimTranscript("");
-  }, []);
-
-  const startSpeechRecognition = useCallback(() => {
-    const SpeechRecognition =
-      (window as PreviewWindow).SpeechRecognition ??
-      (window as PreviewWindow).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      addConversationMessage(
-        "system",
-        "Live captions are not available in this browser.",
-      );
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    recognition.onresult = (event) => {
-      let interim = "";
-      let finalText = "";
-
-      for (
-        let index = event.resultIndex;
-        index < event.results.length;
-        index += 1
-      ) {
-        const result = event.results[index];
-        const transcript = result?.[0]?.transcript?.trim() ?? "";
-        if (!transcript) continue;
-        if (result.isFinal) {
-          finalText = `${finalText} ${transcript}`.trim();
-        } else {
-          interim = `${interim} ${transcript}`.trim();
-        }
-      }
-
-      if (finalText) {
-        addConversationMessage("user", finalText);
-        void publishPreviewTranscript(finalText);
-      }
-      setInterimTranscript(interim);
-    };
-    recognition.onerror = () => {
-      addConversationMessage("system", "Browser captions stopped listening.");
-    };
-    recognition.onend = () => {
-      recognitionRef.current = null;
-    };
-
-    try {
-      recognition.start();
-      recognitionRef.current = recognition;
-    } catch {
-      addConversationMessage("system", "Browser captions could not start.");
-    }
-  }, [addConversationMessage, publishPreviewTranscript]);
 
   const handleLiveKitTranscript = useCallback(
     (segments: unknown, participant?: { identity?: string }) => {
@@ -312,13 +212,12 @@ export function AgentPreviewPanel({
   }, []);
 
   const disconnectPreview = useCallback(() => {
-    stopSpeechRecognition();
     localTrackRef.current?.stop();
     localTrackRef.current = null;
     cleanupAudioElements();
     roomRef.current?.disconnect();
     roomRef.current = null;
-  }, [cleanupAudioElements, stopSpeechRecognition]);
+  }, [cleanupAudioElements]);
 
   const endPreview = useCallback(async () => {
     disconnectPreview();
@@ -354,7 +253,12 @@ export function AgentPreviewPanel({
     addEvent("Microphone", "Waiting for browser permission.");
 
     try {
-      const session = await createPreview.mutateAsync();
+      const session = await createPreview.mutateAsync({
+        dynamicVariables: dynamicVariablePayload(
+          agentVariables,
+          previewVariableValues,
+        ),
+      });
       setPreview(session);
       setState("connecting");
       addEvent("Session", "Temporary LiveKit room created.");
@@ -405,7 +309,6 @@ export function AgentPreviewPanel({
       localTrackRef.current = localTrack;
       await room.localParticipant.publishTrack(localTrack);
       setState("live");
-      startSpeechRecognition();
       addEvent("Live", "Speak naturally. The agent can hear your microphone.");
     } catch (err) {
       await endPreview();
@@ -542,6 +445,19 @@ export function AgentPreviewPanel({
                     ? `Temporary preview access expires around ${expiresAt}.`
                     : "Starts a temporary 3-hour LiveKit preview room."}
                 </p>
+              </div>
+
+              <div className="mt-4">
+                <DynamicVariableInputs
+                  variableNames={previewVariableNames}
+                  values={previewVariableValues}
+                  placeholders={agentVariables.placeholders}
+                  title="Preview variables"
+                  description="Values entered here are used for this preview session and override saved fallback values."
+                  disabled={isBusy}
+                  idPrefix="preview-variable"
+                  onValuesChange={setPreviewVariableValues}
+                />
               </div>
             </div>
           ) : (

@@ -7,24 +7,40 @@ import test from "node:test";
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (path) => readFileSync(join(root, path), "utf8");
 
-test("dashboard exposes freshness, reporting window, and stale/offline state", () => {
+test("dashboard keeps top chrome minimal and supports custom ranges", () => {
   const page = read("src/app/(app)/dashboard/page.tsx");
-  const freshness = read("src/components/dashboard/DashboardFreshness.tsx");
+  const switcher = read("src/components/dashboard/RangeSwitcher.tsx");
+  const api = read("src/lib/api/resources/dashboard.ts");
 
-  assert.match(page, /DashboardFreshness/);
-  assert.match(page, /dataUpdatedAt/);
-  assert.match(page, /isStale/);
-  assert.match(page, /isFetching/);
+  assert.doesNotMatch(page, /<PageHeader/);
+  assert.doesNotMatch(page, /<DashboardFreshness/);
+  assert.match(page, /<RangeSwitcher/);
+  assert.match(page, /customFrom=\{customFrom\}/);
+  assert.match(page, /customTo=\{customTo\}/);
+  assert.match(page, /useDashboardSummary\(\{ range, from: customFrom, to: customTo \}\)/);
 
-  assert.match(freshness, /Reporting window/);
-  assert.match(freshness, /Last updated/);
-  assert.match(freshness, /Refresh dashboard/);
-  assert.match(freshness, /aria-busy=\{isFetching\}/);
-  assert.match(freshness, /navigator\.onLine/);
-  assert.match(freshness, /You are offline/);
-  assert.match(freshness, /Dashboard data is stale/);
-  assert.match(freshness, /summary\.period\.from/);
-  assert.match(freshness, /summary\.period\.to/);
+  assert.match(switcher, /value: "custom"/);
+  assert.match(switcher, /type="date"/);
+  assert.match(switcher, /Apply/);
+  assert.match(switcher, /next\.set\("from", from\)/);
+  assert.match(switcher, /next\.set\("to", to\)/);
+  assert.match(switcher, /Select an end date after the start date/);
+
+  assert.match(api, /"24h" \| "7d" \| "30d" \| "custom"/);
+  assert.match(api, /DashboardSummaryParams/);
+});
+
+test("dashboard removes the hero command center and prioritizes analytics", () => {
+  const page = read("src/app/(app)/dashboard/page.tsx");
+
+  assert.doesNotMatch(page, /DashboardCommandCenter/);
+  assert.doesNotMatch(page, /DashboardSignal/);
+  assert.doesNotMatch(page, /DashboardInsightCard/);
+  assert.doesNotMatch(page, /DashboardActionLink/);
+  assert.doesNotMatch(page, /Operations health/);
+  assert.doesNotMatch(page, /Start outbound call/);
+  assert.match(page, /<KpiCards[\s\S]*summary=\{data\}/);
+  assert.match(page, /<VolumeChart[\s\S]*summary=\{data\}/);
 });
 
 test("dashboard KPI deltas use unit-aware copy and a named previous period", () => {
@@ -61,7 +77,7 @@ test("dashboard KPI cards reserve stable rows for aligned helper content", () =>
   assert.doesNotMatch(kpis, /xl:col-span/);
   assert.match(kpis, /className="h-full"/);
 
-  assert.match(statCard, /flex h-full min-h-\[168px\] flex-col/);
+  assert.match(statCard, /flex h-full min-h-\[148px\] flex-col/);
   assert.match(statCard, /flex min-w-0 flex-1 flex-col/);
   assert.match(statCard, /min-h-\[2.5rem\]/);
   assert.match(statCard, /mt-auto min-h-\[2.75rem\]/);
@@ -84,6 +100,8 @@ test("dashboard exception signals link to filtered calls views with range contex
   assert.match(helper, /params\.set\("range", range\)/);
   assert.match(helper, /params\.set\("status", status\)/);
   assert.match(helper, /params\.set\("agentId", agentId\)/);
+  assert.match(helper, /params\.set\("from", from\)/);
+  assert.match(helper, /params\.set\("to", to\)/);
   assert.match(helper, /return `\/calls\?\$\{params\.toString\(\)\}`/);
 
   assert.match(page, /<KpiCards[\s\S]*range=\{range\}/);
@@ -105,12 +123,22 @@ test("dashboard exception signals link to filtered calls views with range contex
   assert.match(agents, /View calls/);
 });
 
+test("dashboard removes secondary performance graph cards", () => {
+  const page = read("src/app/(app)/dashboard/page.tsx");
+
+  assert.doesNotMatch(page, /<PerformanceGraphs/);
+  assert.doesNotMatch(page, /Success trend/);
+  assert.doesNotMatch(page, /Exception pressure/);
+  assert.doesNotMatch(page, /Conversation efficiency/);
+});
+
 test("dashboard charts expose accessible summaries, unit labels, and data tables", () => {
   const volume = read("src/components/dashboard/VolumeChart.tsx");
   const breakdown = read("src/components/dashboard/BreakdownCharts.tsx");
 
+  assert.match(volume, /accessibilityLayer/);
+
   for (const source of [volume, breakdown]) {
-    assert.match(source, /accessibilityLayer/);
     assert.match(source, /aria-label=/);
     assert.match(source, /<table/);
     assert.match(source, /<caption/);
@@ -126,8 +154,10 @@ test("dashboard charts expose accessible summaries, unit labels, and data tables
 
   assert.match(breakdown, /aria-label="Call outcome status breakdown chart"/);
   assert.match(breakdown, /aria-label="Inbound and outbound direction mix chart"/);
-  assert.match(breakdown, /statusPattern/);
-  assert.match(breakdown, /directionPattern/);
+  assert.match(breakdown, /statusStyles/);
+  assert.match(breakdown, /directionStyles/);
+  assert.match(breakdown, /motion-safe:animate-in/);
+  assert.match(breakdown, /Outcome share/);
   assert.match(breakdown, /Percentage of routed calls/);
 });
 
@@ -135,13 +165,14 @@ test("dashboard range switching is labelled, responsive, and exposes loading sta
   const page = read("src/app/(app)/dashboard/page.tsx");
   const source = read("src/components/dashboard/RangeSwitcher.tsx");
 
-  assert.match(page, /<RangeSwitcher current=\{range\} loading=\{isFetching\}/);
+  assert.match(page, /<RangeSwitcher[\s\S]*current=\{range\}/);
   assert.match(source, /aria-label="Dashboard date range"/);
   assert.match(source, /aria-busy=\{busy\}/);
   assert.match(source, /role="status"/);
   assert.match(source, /aria-live="polite"/);
   assert.match(source, /Updating dashboard range/);
-  assert.match(source, /w-full[^"]*sm:w-auto/);
+  assert.match(source, /value: "custom"/);
+  assert.match(source, /type="date"/);
   assert.match(source, /flex-1[^"]*sm:flex-none/);
 });
 
@@ -217,4 +248,24 @@ test("dashboard empty and failure states cover permission, offline, partial data
   assert.match(recent, /Partial call log data/);
   assert.match(recent, /Start with a test call/);
   assert.match(recent, /Connect number/);
+});
+
+
+test("dashboard styling uses a restrained semantic palette", () => {
+  const files = [
+    "src/components/common/StatCard.tsx",
+    "src/components/dashboard/AgentActivityList.tsx",
+    "src/components/dashboard/BreakdownCharts.tsx",
+    "src/components/dashboard/KpiCards.tsx",
+    "src/components/dashboard/RecentCallsTable.tsx",
+    "src/components/dashboard/VolumeChart.tsx",
+  ].map(read).join("\n");
+
+  assert.doesNotMatch(files, /cyan-|orange-|rose-|emerald-|violet-|purple-|bg-gradient|from-blue|to-cyan|text-green-500|text-red-500/);
+  assert.match(files, /text-blue-400/);
+  assert.match(files, /text-green-400\/80/);
+  assert.match(files, /text-red-400\/80/);
+  assert.match(files, /text-amber-500/);
+  assert.match(read("src/components/dashboard/VolumeChart.tsx"), /failedCalls > 0 \? "#f87171" : "hsl\(var\(--muted-foreground\)\)"/);
+  assert.match(read("src/components/common/StatCard.tsx"), /h-px bg-border\/80/);
 });

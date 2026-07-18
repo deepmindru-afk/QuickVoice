@@ -22,6 +22,7 @@ const EMPTY_PARAM: ToolParam = {
   description: "",
   allowedValues: [],
   required: false,
+  value: null,
 };
 
 interface ParamEditorProps {
@@ -115,6 +116,23 @@ function ParamCard({
 }) {
   const set = <K extends keyof ToolParam>(key: K, val: ToolParam[K]) =>
     onChange({ ...param, [key]: val });
+  const usesConfiguredValue = param.valueType !== "LLM Prompt";
+  const configuredValue = param.value == null ? "" : String(param.value);
+  const configuredValueLabel =
+    param.valueType === "Dynamic Variable" ? "Dynamic variable key" : "Static value";
+  const configuredValuePlaceholder =
+    param.valueType === "Dynamic Variable"
+      ? "e.g., accountId"
+      : "Value sent with every tool call";
+
+  function updateValueType(value: string) {
+    const nextValueType = value as ToolParam["valueType"];
+    onChange({
+      ...param,
+      valueType: nextValueType,
+      value: nextValueType === "LLM Prompt" ? null : param.value ?? "",
+    });
+  }
 
   return (
     <div className="space-y-3 border bg-muted/20 p-4">
@@ -141,7 +159,7 @@ function ParamCard({
           <Label className="text-xs text-muted-foreground">Value Type</Label>
           <Select
             value={param.valueType}
-            onValueChange={(v) => set("valueType", v as ToolParam["valueType"])}
+            onValueChange={updateValueType}
             disabled={disabled}
           >
             <SelectTrigger className="h-9 text-xs">
@@ -180,6 +198,24 @@ function ParamCard({
           disabled={disabled}
         />
       </div>
+
+      {usesConfiguredValue && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">{configuredValueLabel}</Label>
+          <Input
+            value={configuredValue}
+            onChange={(e) => set("value", e.target.value)}
+            placeholder={configuredValuePlaceholder}
+            className="h-9 font-mono text-xs"
+            disabled={disabled}
+          />
+          {param.valueType === "Dynamic Variable" && (
+            <p className="text-[11px] text-muted-foreground">
+              Uses the matching runtime dynamic variable value when available.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Allowed Values */}
       <div className="space-y-1.5">

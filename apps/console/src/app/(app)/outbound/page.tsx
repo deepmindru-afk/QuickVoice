@@ -2,6 +2,8 @@
 
 import { PageHeader } from "@/src/components/common/PageHeader";
 import { BatchCallForm } from "@/src/components/outbound/BatchCallForm";
+import { CampaignsPanel } from "@/src/components/outbound/CampaignsPanel";
+import { OutboundCallsPanel } from "@/src/components/outbound/OutboundCallsPanel";
 import { QuickCallForm } from "@/src/components/outbound/QuickCallForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
@@ -15,13 +17,20 @@ export default function OutboundPage() {
       <Tabs defaultValue="quick" className="w-full">
         <TabsList>
           <TabsTrigger value="quick">Quick call</TabsTrigger>
-          <TabsTrigger value="batch">Batch calls</TabsTrigger>
+          <TabsTrigger value="batch">Batch campaigns</TabsTrigger>
+          <TabsTrigger value="calls">Outbound calls</TabsTrigger>
         </TabsList>
         <TabsContent value="quick" className="mt-4">
           <QuickCallForm />
         </TabsContent>
         <TabsContent value="batch" className="mt-4">
-          <BatchCallForm />
+          <div className="space-y-4">
+            <BatchCallForm />
+            <CampaignsPanel />
+          </div>
+        </TabsContent>
+        <TabsContent value="calls" className="mt-4">
+          <OutboundCallsPanel />
         </TabsContent>
       </Tabs>
     </div>

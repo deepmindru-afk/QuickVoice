@@ -51,7 +51,12 @@ export interface ConfigureAgentInput {
     placeholders?: Record<string, string>;
   };
   preemptive_generation: boolean;
+  ivr_navigation_enabled: boolean;
   timezone: string;
+}
+
+export interface CreatePreviewSessionInput {
+  dynamicVariables?: Record<string, string>;
 }
 
 export interface WebhookInit {
@@ -101,9 +106,13 @@ export const agentsApi = {
     );
     return res.data.data;
   },
-  createPreviewSession: async (id: string): Promise<AgentPreviewSession> => {
+  createPreviewSession: async (
+    id: string,
+    input?: CreatePreviewSessionInput,
+  ): Promise<AgentPreviewSession> => {
     const res = await apiClient.post<ApiEnvelope<AgentPreviewSession>>(
       `/agents/${id}/preview-session`,
+      input ?? {},
     );
     return res.data.data;
   },

@@ -3,13 +3,13 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   getDashboardSummary,
-  type DashboardRange,
+  type DashboardSummaryParams,
 } from "@/src/lib/api/resources/dashboard";
 import { queryKeys } from "@/src/lib/query-keys";
 
-export function useDashboardSummary(range: DashboardRange) {
+export function useDashboardSummary(params: DashboardSummaryParams) {
   return useQuery({
-    queryKey: queryKeys.dashboard.summary(range),
-    queryFn: () => getDashboardSummary(range),
+    queryKey: queryKeys.dashboard.summary(params),
+    queryFn: () => getDashboardSummary(params),
   });
 }

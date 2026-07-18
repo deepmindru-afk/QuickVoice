@@ -11,6 +11,7 @@ import {
   storeSecretReferences,
 } from "../secrets/secret-store.service.js";
 import * as agentRepository from "./agent.repository.js";
+import { templateConfigFor } from "./agent.templates.js";
 import type {
   ConfigureAgentArgs,
   CreateAgentArgs,
@@ -41,6 +42,8 @@ type PreviewConfigSource = {
   voiceId: string;
   firstMessage: string;
   systemPrompt: string;
+  variables?: unknown;
+  dynamicVariables?: unknown;
 };
 
 export type AgentPreviewSessionPayload = {
@@ -53,15 +56,23 @@ export type AgentPreviewSessionPayload = {
     llm: { model: string };
     tts: { model: string; voice: string };
   };
-  metadata: {
-    mode: "preview";
-    agent_id: string;
-    organization_id: string;
-    first_message: string;
-    system_prompt: string;
-    retention: "ephemeral";
-  };
+  metadata: VoiceSessionMetadata;
   ttl_seconds: number;
+};
+
+export type VoiceSessionMetadata = {
+  mode: "preview" | "widget" | "session";
+  agent_id: string;
+  organization_id: string;
+  first_message?: string;
+  system_prompt?: string;
+  dynamic_variables?: Record<string, string>;
+  retention?: "ephemeral" | "configured";
+  [key: string]: unknown;
+};
+
+export type VoiceSessionPayload = Omit<AgentPreviewSessionPayload, "metadata"> & {
+  metadata: VoiceSessionMetadata;
 };
 
 export type AgentPreviewSession = {
@@ -93,10 +104,20 @@ export const createAgent = async (args: CreateAgentArgs) => {
     );
   }
 
-  return agentRepository.createAgent({
+  const createInput = {
     ...args,
     agentSlug,
-  });
+  };
+  const templateConfig = templateConfigFor(args.templateId);
+
+  if (templateConfig) {
+    return agentRepository.createAgentWithConfiguration(
+      createInput,
+      templateConfig
+    );
+  }
+
+  return agentRepository.createAgent(createInput);
 };
 
 export const getAgents = async (organizationId: string) => {
@@ -120,6 +141,7 @@ export const getVoiceCatalog = async (): Promise<VoiceCatalog> => {
 export const createAgentPreviewSession = async (
   organizationId: string,
   agentId: string,
+  dynamicVariables?: unknown,
 ): Promise<AgentPreviewSession> => {
   const configuration = await getAgentConfig(organizationId, agentId);
   return requestAgentPreviewSession(
@@ -134,6 +156,8 @@ export const createAgentPreviewSession = async (
       voiceId: configuration.voiceId,
       firstMessage: configuration.firstMessage,
       systemPrompt: configuration.systemPrompt,
+      variables: configuration.variables,
+      dynamicVariables,
     }),
   );
 };
@@ -142,6 +166,19 @@ export const buildAgentPreviewSessionPayload = (
   configuration: PreviewConfigSource,
 ): AgentPreviewSessionPayload => {
   const suffix = randomUUID().replace(/-/g, "").slice(0, 12);
+  const dynamicVariables = {
+    ...previewDynamicVariables(configuration.variables),
+    ...previewDynamicVariableOverrides(configuration.dynamicVariables),
+  };
+  const firstMessage = renderPreviewDynamicVariables(
+    configuration.firstMessage,
+    dynamicVariables,
+  );
+  const systemPrompt = renderPreviewDynamicVariables(
+    configuration.systemPrompt,
+    dynamicVariables,
+  );
+
   return {
     room: { name: `preview-${suffix}` },
     participant: {
@@ -162,16 +199,71 @@ export const buildAgentPreviewSessionPayload = (
       mode: "preview",
       agent_id: configuration.agentId,
       organization_id: configuration.organizationId,
-      first_message: configuration.firstMessage,
-      system_prompt: configuration.systemPrompt,
+      first_message: firstMessage,
+      system_prompt: systemPrompt,
+      ...(Object.keys(dynamicVariables).length > 0
+        ? { dynamic_variables: dynamicVariables }
+        : {}),
       retention: "ephemeral",
     },
     ttl_seconds: PREVIEW_SESSION_TTL_SECONDS,
   };
 };
 
-export const requestAgentPreviewSession = async (
-  payload: AgentPreviewSessionPayload,
+function renderPreviewDynamicVariables(
+  template: string,
+  variables: Record<string, string>,
+): string {
+  return template.replace(
+    /\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}/g,
+    (match, key) => {
+      const value = variables[key];
+      return value?.trim() ? value : match;
+    },
+  );
+}
+
+function previewDynamicVariables(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const placeholders = (value as { placeholders?: unknown }).placeholders;
+  if (
+    !placeholders ||
+    typeof placeholders !== "object" ||
+    Array.isArray(placeholders)
+  ) {
+    return {};
+  }
+
+  const variables: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(
+    placeholders as Record<string, unknown>,
+  )) {
+    const name = key.trim();
+    if (!name || typeof entry !== "string") continue;
+    const variableValue = entry.trim();
+    if (variableValue) variables[name] = variableValue;
+  }
+  return variables;
+}
+
+function previewDynamicVariableOverrides(
+  value: unknown,
+): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const variables: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    const name = key.trim();
+    if (!name || typeof entry !== "string") continue;
+    const variableValue = entry.trim();
+    if (variableValue) variables[name] = variableValue;
+  }
+  return variables;
+}
+
+export const requestVoiceSession = async (
+  payload: VoiceSessionPayload,
+  unavailableMessage = "Voice session is unavailable",
 ): Promise<AgentPreviewSession> => {
   const aiApiUrl = process.env.AI_API_URL ?? "http://localhost:5555";
   const internalApiKey = process.env.INTERNAL_API_KEY ?? "";
@@ -188,7 +280,7 @@ export const requestAgentPreviewSession = async (
   );
 
   if (!response.ok) {
-    throw new CustomApiError("Agent preview is unavailable", 503);
+    throw new CustomApiError(unavailableMessage, 503);
   }
 
   const body = (await response.json()) as {
@@ -226,6 +318,11 @@ export const requestAgentPreviewSession = async (
     expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
   };
 };
+
+export const requestAgentPreviewSession = async (
+  payload: AgentPreviewSessionPayload,
+): Promise<AgentPreviewSession> =>
+  requestVoiceSession(payload, "Agent preview is unavailable");
 
 export const updateAgent = async (
   organizationId: string,

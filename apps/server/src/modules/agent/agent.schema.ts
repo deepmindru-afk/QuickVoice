@@ -108,6 +108,7 @@ export const configureAgentSchema = z.object({
     placeholders: z.record(z.string(), z.string()).optional(),
   }).optional(),
   preemptive_generation: z.boolean(),
+  ivr_navigation_enabled: z.boolean().default(true),
   timezone: z.string().min(1, "Timezone is required"),
   // use_flash_call: z.boolean().default(false),
   // tts_output_format: z.string().default("mp3"),

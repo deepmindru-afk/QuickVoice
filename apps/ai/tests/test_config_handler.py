@@ -30,6 +30,7 @@ class ConfigHandlerTests(unittest.TestCase):
                 "data_evaluation": [{"id": "tone", "name": "Tone"}],
                 "post_call_webhook": {"webhook_url": "https://example.com/hook", "method": "POST"},
                 "preemptive_generation": True,
+                "ivr_navigation_enabled": False,
                 "timezone": "America/New_York",
             }
         )
@@ -52,6 +53,7 @@ class ConfigHandlerTests(unittest.TestCase):
         self.assertEqual(config["data_evaluation"], [{"id": "tone", "name": "Tone"}])
         self.assertEqual(config["post_call_webhook"]["webhook_url"], "https://example.com/hook")
         self.assertTrue(config["preemptive_generation"])
+        self.assertFalse(config["ivr_navigation_enabled"])
         self.assertEqual(config["timezone"], "America/New_York")
 
     def test_normalize_config_maps_runtime_privacy_controls(self):
@@ -188,6 +190,17 @@ class ConfigHandlerTests(unittest.TestCase):
             "http://server.test/api/v1/agents/internal-config/8d55565f-1111-4111-8111-f95fd03f0df2",
         )
         self.assertEqual(headers["Authorization"], "Bearer internal-secret")
+
+
+    def test_normalize_config_defaults_ivr_navigation_on(self):
+        config = normalize_config({"agentId": "agent_123"})
+
+        self.assertTrue(config["ivr_navigation_enabled"])
+
+    def test_normalize_config_parses_string_ivr_navigation_boolean(self):
+        config = normalize_config({"agentId": "agent_123", "ivr_navigation_enabled": "false"})
+
+        self.assertFalse(config["ivr_navigation_enabled"])
 
 
 if __name__ == "__main__":

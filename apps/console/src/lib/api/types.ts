@@ -75,6 +75,7 @@ export interface AgentConfiguration {
   post_call_webhook: WebhookConfig | null;
   variables: Record<string, unknown> | null;
   preemptive_generation: boolean;
+  ivr_navigation_enabled: boolean;
   timezone: string;
 }
 
@@ -123,6 +124,65 @@ export interface AgentPreviewSession {
     dispatchId: string;
   };
   expiresAt: string;
+}
+
+export type AgentWidgetPosition =
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left";
+export type AgentWidgetLauncherSize = "compact" | "comfortable" | "large";
+
+export interface AgentWidgetTheme {
+  primaryColor: string;
+  accentColor: string;
+  surfaceColor: string;
+  textColor: string;
+  mutedTextColor: string;
+  buttonTextColor: string;
+  borderColor: string;
+  position: AgentWidgetPosition;
+  launcherSize: AgentWidgetLauncherSize;
+  panelWidth: number;
+  borderRadius: number;
+  defaultOpen: boolean;
+  showAvatar: boolean;
+  avatarImageUrl: string | null;
+  avatarOrbColor1: string;
+  avatarOrbColor2: string;
+  brandName: string;
+  actionText: string;
+  welcomeText: string;
+  startButtonText: string;
+  endButtonText: string;
+  connectingText: string;
+  listeningText: string;
+  speakingText: string;
+  endedText: string;
+  whiteLabel: boolean;
+}
+
+export interface AgentWidget {
+  widgetId: string;
+  organizationId: string;
+  agentId: string;
+  name: string;
+  enabled: boolean;
+  allowedOrigins: string[];
+  theme: AgentWidgetTheme;
+  consentRequired: boolean;
+  consentText: string;
+  createdAt: string;
+  updatedAt: string;
+  agent: {
+    agentId: string;
+    name: string;
+    isConfigured: boolean;
+  };
+  embed: {
+    scriptUrl: string;
+    snippet: string;
+  };
 }
 
 export interface WebhookConfig {
@@ -204,13 +264,16 @@ export interface KnowledgeSource {
 
 export interface KVPair {
   key: string;
-  value: string;
+  value: string | null;
+  type?: "Value" | "Secret";
+  redacted?: boolean;
 }
 
 export interface ToolParam {
   name: string;
   type: "String" | "Number" | "Boolean";
   valueType: "LLM Prompt" | "Static Value" | "Dynamic Variable";
+  value?: string | number | boolean | null;
   description: string;
   allowedValues: string[];
   required: boolean;
@@ -234,6 +297,16 @@ export interface Tool {
   createdAt: string;
   updatedAt: string;
   agent: { agentId: string; name: string }[];
+}
+
+export interface Secret {
+  secretId: string;
+  organizationId: string;
+  userId: string | null;
+  name: string;
+  reference: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type McpConnectionStatus =

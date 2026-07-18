@@ -41,6 +41,20 @@ router.get(
 );
 
 router.get(
+  "/live",
+  authMiddleware,
+  requirePermission({ callLogs: ["read"] }),
+  calllogController.listLiveCalls
+);
+
+router.post(
+  "/live/end",
+  authMiddleware,
+  requirePermission({ callLogs: ["delete"] }),
+  calllogController.endLiveCall
+);
+
+router.get(
   "/:callId",
   authMiddleware,
   requirePermission({ callLogs: ["read"] }),

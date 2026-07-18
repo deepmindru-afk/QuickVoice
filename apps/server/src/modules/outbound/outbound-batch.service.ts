@@ -28,6 +28,7 @@ type BatchRepository = {
   getCampaignForDispatch: typeof outboundCallRepository.getCampaignForDispatch;
   markCampaignActive: typeof outboundCallRepository.markCampaignActive;
   markCampaignCompleted: typeof outboundCallRepository.markCampaignCompleted;
+  markCampaignCancelled: typeof outboundCallRepository.markCampaignCancelled;
   listScheduledOutboundIdsForCampaign: typeof outboundCallRepository.listScheduledOutboundIdsForCampaign;
 };
 
@@ -80,6 +81,13 @@ type ListBatchCampaignsDeps = {
 
 type GetBatchCampaignDeps = {
   repository?: Pick<BatchRepository, "getBatchCampaignDetail">;
+};
+
+type CancelBatchCampaignDeps = {
+  repository?: Pick<
+    BatchRepository,
+    "getBatchCampaignDetail" | "markCampaignCancelled"
+  >;
 };
 
 export async function createBatchUploadUrl(
@@ -148,6 +156,23 @@ export async function getBatchCampaignDetail(
 ) {
   const repository = deps.repository ?? outboundCallRepository;
   return repository.getBatchCampaignDetail(args);
+}
+
+export async function cancelBatchCampaign(
+  args: { organizationId: string; campaignId: string },
+  deps: CancelBatchCampaignDeps = {}
+) {
+  const repository = deps.repository ?? outboundCallRepository;
+  const campaign = await repository.getBatchCampaignDetail(args);
+  if (!campaign) {
+    throw new BadRequestError("Batch campaign not found");
+  }
+
+  if (campaign.status !== CampaignStatus.SCHEDULED && campaign.status !== CampaignStatus.PROCESSED) {
+    throw new BadRequestError("Only scheduled campaigns can be cancelled");
+  }
+
+  return repository.markCampaignCancelled(args);
 }
 
 export async function importBatchCampaignRecipients(

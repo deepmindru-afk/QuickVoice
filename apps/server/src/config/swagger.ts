@@ -132,6 +132,7 @@ export const swaggerSpec = {
           "initiation_webhook",
           "post_call_webhook",
           "preemptive_generation",
+          "ivr_navigation_enabled",
           "timezone",
         ],
         properties: {
@@ -166,6 +167,7 @@ export const swaggerSpec = {
           },
           variables: { $ref: "#/components/schemas/AgentVariables" },
           preemptive_generation: { type: "boolean", example: true },
+          ivr_navigation_enabled: { type: "boolean", example: true },
           timezone: { type: "string", example: "Asia/Calcutta" },
         },
         example: {
@@ -187,6 +189,7 @@ export const swaggerSpec = {
             placeholders: {},
           },
           preemptive_generation: true,
+          ivr_navigation_enabled: true,
           timezone: "Asia/Calcutta",
         },
       },
@@ -654,7 +657,23 @@ export const swaggerSpec = {
           {
             name: "range",
             in: "query",
-            schema: { type: "string", enum: ["24h", "7d", "30d"], default: "7d" },
+            schema: {
+              type: "string",
+              enum: ["24h", "7d", "30d", "custom"],
+              default: "7d",
+            },
+          },
+          {
+            name: "from",
+            in: "query",
+            description: "Required when range is custom. Inclusive start date.",
+            schema: { type: "string", format: "date" },
+          },
+          {
+            name: "to",
+            in: "query",
+            description: "Required when range is custom. Inclusive end date.",
+            schema: { type: "string", format: "date" },
           },
         ],
         responses: {

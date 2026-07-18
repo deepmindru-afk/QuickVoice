@@ -17,6 +17,7 @@ export const quickOutboundCallSchema = z.object({
   firstMessage: z.string().optional(),
   systemPrompt: z.string().optional(),
   username: z.string().optional(),
+  dynamicVariables: z.record(z.string(), z.string()).optional(),
   provider: providerSchema.optional(),
   sid: z.string().min(1, "Provider SID is required").optional(),
 });

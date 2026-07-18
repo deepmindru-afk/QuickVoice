@@ -28,26 +28,68 @@ const STATUSES = [
   CallStatus.PROCESSED,
 ];
 
-function rangeConfig(range: DashboardRange) {
-  const now = new Date();
-  if (range === "24h") {
-    const end = floorHour(now);
+function diffDays(start: Date, end: Date) {
+  return Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+  );
+}
+
+function rangeConfig(args: DashboardSummaryArgs) {
+  const currentTime = new Date();
+
+  if (args.range === "custom" && args.from && args.to) {
+    const start = floorDay(args.from);
+    const inclusiveEnd = floorDay(args.to);
+    const end = new Date(inclusiveEnd);
+    end.setDate(end.getDate() + 1);
+    const queryEnd = end > currentTime ? currentTime : end;
+    const days = diffDays(start, end);
+    const previousStart = new Date(start);
+    previousStart.setDate(previousStart.getDate() - days);
+
+    return {
+      now: queryEnd,
+      start,
+      end,
+      previousStart,
+      bucket: "day" as const,
+      count: days,
+    };
+  }
+
+  if (args.range === "24h") {
+    const end = floorHour(currentTime);
     end.setHours(end.getHours() + 1);
     const start = new Date(end);
     start.setHours(start.getHours() - 24);
     const previousStart = new Date(start);
     previousStart.setHours(previousStart.getHours() - 24);
-    return { now, start, end, previousStart, bucket: "hour" as const, count: 24 };
+    return {
+      now: currentTime,
+      start,
+      end,
+      previousStart,
+      bucket: "hour" as const,
+      count: 24,
+    };
   }
 
-  const days = range === "7d" ? 7 : 30;
-  const start = floorDay(now);
+  const days = args.range === "7d" ? 7 : 30;
+  const start = floorDay(currentTime);
   start.setDate(start.getDate() - (days - 1));
-  const end = new Date(floorDay(now));
+  const end = new Date(floorDay(currentTime));
   end.setDate(end.getDate() + 1);
   const previousStart = new Date(start);
   previousStart.setDate(previousStart.getDate() - days);
-  return { now, start, end, previousStart, bucket: "day" as const, count: days };
+  return {
+    now: currentTime,
+    start,
+    end,
+    previousStart,
+    bucket: "day" as const,
+    count: days,
+  };
 }
 
 function floorHour(date: Date) {
@@ -186,7 +228,7 @@ function buildTopAgents(calls: AnalyticsCall[]) {
 }
 
 export const getDashboardSummary = async (args: DashboardSummaryArgs) => {
-  const range = rangeConfig(args.range);
+  const range = rangeConfig(args);
   const [analyticsCalls, recent] = await Promise.all([
     dashboardRepository.listAnalyticsCalls({
       organizationId: args.organizationId,

@@ -86,3 +86,27 @@ test("inbound call callerId uses the external caller number", () => {
 
   assert.equal(callerId, "+15551230000");
 });
+
+test("web widget call identity does not invent a caller id", () => {
+  const parsed = callLogSchema.parse({
+    ...baseInput,
+    direction: "inbound",
+    fromNumber: "",
+    toNumber: "",
+    provider: "WEB_WIDGET",
+    metadata: {
+      summary: "",
+      intent: "",
+      outboundId: null,
+      source: "web_widget",
+      widgetId: "wgt_123",
+    },
+  });
+  const { callerId, metadata } = buildCallLogIdentityFields(parsed, true);
+
+  assert.equal(callerId, null);
+  assert.equal(metadata.fromNumber, "");
+  assert.equal(metadata.toNumber, "");
+  assert.equal(metadata.provider, "WEB_WIDGET");
+  assert.equal(metadata.source, "web_widget");
+});

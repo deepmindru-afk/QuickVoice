@@ -5,15 +5,19 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 type StatTone = "neutral" | "success" | "warning" | "danger" | "info";
 
 const toneStyles: Record<StatTone, string> = {
-  neutral: "border-border bg-card text-primary",
-  success:
-    "border-emerald-500/20 bg-emerald-500/5 text-emerald-500 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300",
-  warning:
-    "border-amber-500/20 bg-amber-500/5 text-amber-600 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300",
-  danger:
-    "border-destructive/20 bg-destructive/5 text-destructive dark:bg-destructive/10",
-  info:
-    "border-sky-500/20 bg-sky-500/5 text-sky-600 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-300",
+  neutral: "border-border bg-muted/35 text-muted-foreground",
+  success: "border-border bg-muted/35 text-muted-foreground",
+  warning: "border-border bg-muted/35 text-muted-foreground",
+  danger: "border-border bg-muted/35 text-muted-foreground",
+  info: "border-border bg-muted/35 text-muted-foreground",
+};
+
+const cardToneStyles: Record<StatTone, string> = {
+  neutral: "border-border",
+  success: "border-border",
+  warning: "border-amber-500/30",
+  danger: "border-red-400/25",
+  info: "border-border",
 };
 
 export function StatCard({
@@ -38,14 +42,15 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "relative flex h-full min-h-[168px] flex-col overflow-hidden border bg-card p-5 shadow-xs transition-colors hover:border-primary/35",
+        "relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-lg border bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        cardToneStyles[tone],
         className
       )}
     >
       <div className="flex h-full items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="min-h-[2.5rem] space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase text-muted-foreground">
               {label}
             </p>
             {eyebrow ? (
@@ -55,7 +60,7 @@ export function StatCard({
           {loading ? (
             <Skeleton className="mt-4 h-8 w-24" />
           ) : (
-            <p className="mt-4 text-3xl font-semibold leading-none text-foreground">
+            <p className="mt-4 text-3xl font-semibold leading-none tracking-tight text-foreground tabular-nums">
               {value}
             </p>
           )}
@@ -64,14 +69,14 @@ export function StatCard({
           </div>
         </div>
         {Icon ? (
-          <div className={cn("shrink-0 border p-2.5", toneStyles[tone])}>
+          <div className={cn("shrink-0 rounded-md p-2.5", toneStyles[tone])}>
             <Icon className="size-4" />
           </div>
         ) : null}
       </div>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-border/80"
       />
     </div>
   );

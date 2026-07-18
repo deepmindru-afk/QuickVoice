@@ -19,12 +19,15 @@ from handlers.calllog_handler import flush_call_log_queue
 from handlers.config_handler import get_config
 from handlers.finalization_handler import CallFinalizer
 from handlers.livekit_handler import recording_path as build_recording_path, start_recording
+from handlers.live_transcript_publisher import LiveTranscriptPublisher
+from handlers.http_tool_handler import build_http_tool_instructions, call_http_tool, parse_http_tool_arguments
 from handlers.mcp_handler import build_mcp_tool_instructions, call_mcp_tool, parse_arguments_json
 from handlers.privacy_handler import should_store_call_audio
 from handlers.rag_handler import RagRetrievalError, get_rag_context
 from handlers.transcript_collector import TranscriptCollector
 from handlers.worker_handler import (
     PREVIEW_TRANSCRIPT_TOPIC,
+    apply_initiation_webhook_metadata,
     apply_metadata_overrides,
     build_call_context,
     consume_preview_user_transcript_stream,
@@ -66,9 +69,18 @@ RAG_TOOL_INSTRUCTIONS = (
 )
 IVR_TOOL_INSTRUCTIONS = (
     "\n\nIVR navigation is available through send_dtmf_events. "
-    "When you hear an automated phone menu, wait for the relevant option, "
-    "then send only the needed DTMF events such as digits, star, or pound. "
-    "Do not send tones when you are unsure which menu option applies."
+    "This is for outbound calls where you, the AI agent, call a phone system "
+    "and the remote side plays an automated menu. Listen to the full menu "
+    "or enough of it to know the mapping, for example appointments equals 1, "
+    "orders equals 2, returns equals 3. If the human says their goal before "
+    "the menu finishes, remember it while you listen for the matching option. "
+    "When the human tells you their goal, such as I want appointments, match "
+    "that goal to the menu option and call "
+    "send_dtmf_events with only the matching digit, star, or pound. Do not ask "
+    "the human to press the key. Do not wait for the human to press digits. "
+    "If the menu option is clear, send the tone immediately. If the mapping is "
+    "not clear yet, keep listening until it is clear. Never send tones when you "
+    "are unsure which menu option applies."
 )
 
 
@@ -102,8 +114,10 @@ def build_agent_instructions(config: dict) -> str:
     metadata_instructions = build_metadata_collection_instructions(config)
     if metadata_instructions:
         instructions += f"\n\n{metadata_instructions}"
+    instructions += build_http_tool_instructions(config.get("tools") or [])
     instructions += build_mcp_tool_instructions(config.get("mcp_connections") or [])
     return instructions
+
 
 
 def build_room_options() -> room_io.RoomOptions:
@@ -127,6 +141,13 @@ def build_room_options() -> room_io.RoomOptions:
         ),
         text_output=room_io.TextOutputOptions(sync_transcription=False),
     )
+
+
+def _transcription_chunk_text(chunk) -> str:
+    text = getattr(chunk, "text", None)
+    if text is not None:
+        return str(text)
+    return str(chunk or "")
 
 
 def provider_section(value: str | None):
@@ -240,7 +261,13 @@ def run_combined_server() -> int:
 
 
 class Assistant(Agent):
-    def __init__(self, system_prompt: str, config: dict, call_context: dict):
+    def __init__(
+        self,
+        system_prompt: str,
+        config: dict,
+        call_context: dict,
+        transcript_collector: TranscriptCollector | None = None,
+    ):
         super().__init__(
             instructions=system_prompt,
             tools=build_agent_tools(config, call_context),
@@ -248,6 +275,7 @@ class Assistant(Agent):
         self._config = config
         self._call_context = call_context
         self._metadata_collector = CallMetadataCollector(config)
+        self._transcript_collector = transcript_collector
 
     def _rag_enabled(self) -> bool:
         return bool(self._config.get("use_rag"))
@@ -303,6 +331,22 @@ class Assistant(Agent):
         )
         logger.info(f"[rag] injected context for agent={agent_id}")
 
+    async def transcription_node(self, text, model_settings):
+        chunks: list[str] = []
+        output = Agent.default.transcription_node(self, text, model_settings)
+        if output is None:
+            return
+        async for chunk in output:
+            chunk_text = _transcription_chunk_text(chunk)
+            if chunk_text:
+                chunks.append(chunk_text)
+            yield chunk
+        if self._transcript_collector is not None:
+            self._transcript_collector.on_agent_transcription_final(
+                "".join(chunks),
+                datetime.now(timezone.utc),
+            )
+
     @function_tool
     async def record_call_extracted_data(self, field: str, value: str) -> str:
         """
@@ -352,6 +396,24 @@ class Assistant(Agent):
         return context or "No matching knowledge base context found."
 
     @function_tool
+    async def call_http_tool(self, tool_name: str, arguments_json: str = "{}") -> str:
+        """
+        Call an attached HTTP tool configured for this agent.
+
+        Args:
+            tool_name: The exact HTTP tool name from the attached HTTP tools list.
+            arguments_json: A JSON object string containing the tool arguments.
+        """
+        arguments = parse_http_tool_arguments(arguments_json)
+        result = await call_http_tool(
+            tool_name=tool_name,
+            arguments=arguments,
+            config=self._config,
+            call_context=self._call_context,
+        )
+        return json.dumps(result.get("data", result), ensure_ascii=False)
+
+    @function_tool
     async def call_mcp_tool(self, connection_id: str, tool_name: str, arguments_json: str = "{}") -> str:
         """
         Call an attached MCP tool using a connected MCP connection.
@@ -379,7 +441,7 @@ async def entrypoint(ctx: JobContext):
     raw_metadata = ctx.job.metadata or ""
     if is_voice_session_metadata(raw_metadata):
         voice_metadata = parse_voice_session_metadata(raw_metadata)
-        metadata = voice_metadata.client_metadata
+        metadata = {**voice_metadata.client_metadata, "mode": voice_metadata.mode}
         preview_mode = voice_metadata.mode == "preview"
         call_context = build_call_context(ctx.room.name, metadata)
         if not call_context.get("agent_id") and metadata.get("agent_id"):
@@ -389,6 +451,7 @@ async def entrypoint(ctx: JobContext):
             agent_number=call_context.get("agent_number"),
             allow_default_config=True,
         )
+        metadata = await apply_initiation_webhook_metadata(config, metadata, call_context)
         config = apply_metadata_overrides(config, metadata)
         config["voice_config"] = voice_metadata.config
         config["agent_language"] = voice_metadata.config["language"]
@@ -411,6 +474,7 @@ async def entrypoint(ctx: JobContext):
             call_context.get("agent_id"),
             agent_number=call_context.get("agent_number"),
         )
+        metadata = await apply_initiation_webhook_metadata(config, metadata, call_context)
         config = apply_metadata_overrides(config, metadata)
         config = attach_resolved_voice_config(config)
     logger.info("Config loaded for agent: {}", redact_sensitive(config.get("agent_id")))
@@ -450,12 +514,23 @@ async def entrypoint(ctx: JobContext):
         ivr_detection=config["ivr_navigation_enabled"],
         preemptive_generation=config.get("preemptive_generation", True),
     )
-    transcript_collector = TranscriptCollector().attach(session)
+    call_start_time = datetime.now(timezone.utc)
+    live_transcript_publisher = LiveTranscriptPublisher(
+        config=config,
+        call_context=call_context,
+        room_name=ctx.room.name,
+    )
+    if not preview_mode:
+        await live_transcript_publisher.start(call_start_time)
+    transcript_collector = TranscriptCollector(
+        on_item=live_transcript_publisher.publish_transcript
+    ).attach(session)
     system_prompt = build_agent_instructions(config)
     agent = Assistant(
         system_prompt=system_prompt,
         config=config,
         call_context=call_context,
+        transcript_collector=transcript_collector,
     )
 
     @ctx.room.on("data_received")
@@ -495,14 +570,17 @@ async def entrypoint(ctx: JobContext):
             on_preview_text_stream,
         )
 
-    await session.start(
-        room=ctx.room,
-        agent=agent,
-        room_options=build_room_options(),
-    )
+    try:
+        await session.start(
+            room=ctx.room,
+            agent=agent,
+            room_options=build_room_options(),
+        )
+    except Exception:
+        await live_transcript_publisher.close(reason="session_start_failed")
+        raise
     speak_first_message(session, config)
 
-    call_start_time = datetime.now(timezone.utc)
     recording_id = None
     if should_store_call_audio(config):
         recording_id = await start_recording(ctx)
@@ -518,8 +596,18 @@ async def entrypoint(ctx: JobContext):
         recording_path=recording_path,
         transcript_reader=transcript_collector.read,
     )
+    shutdown_reason = "session_shutdown"
 
     async def unified_shutdown_hook():
+        try:
+            await live_transcript_publisher.close(reason=shutdown_reason)
+        except Exception as error:
+            logger.warning(
+                "[LIVE_TRANSCRIPT] Failed to close publisher: {}",
+                redact_sensitive(str(error)),
+            )
+        if preview_mode:
+            return
         try:
             await call_finalizer.finalize()
         except Exception as error:
@@ -530,11 +618,12 @@ async def entrypoint(ctx: JobContext):
 
     @ctx.room.on("participant_disconnected")
     def on_participant_disconnected(participant):
-        nonlocal shutdown_started
+        nonlocal shutdown_started, shutdown_reason
         logger.info("[HANGUP] Participant disconnected: {}", redact_sensitive(getattr(participant, "identity", "")))
         if shutdown_started:
             return
         shutdown_started = True
+        shutdown_reason = "participant_disconnected"
         asyncio.create_task(unified_shutdown_hook())
 
 

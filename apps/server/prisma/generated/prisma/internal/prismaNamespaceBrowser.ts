@@ -64,6 +64,8 @@ export const ModelName = {
   PhoneNumber: 'PhoneNumber',
   Agent: 'Agent',
   AgentConfiguration: 'AgentConfiguration',
+  AgentWidget: 'AgentWidget',
+  AgentWidgetSession: 'AgentWidgetSession',
   KnowledgeSource: 'KnowledgeSource',
   CallLog: 'CallLog',
   CallTranscript: 'CallTranscript',
@@ -334,10 +336,53 @@ export const AgentConfigurationScalarFieldEnum = {
   post_call_webhook: 'post_call_webhook',
   variables: 'variables',
   preemptive_generation: 'preemptive_generation',
+  ivr_navigation_enabled: 'ivr_navigation_enabled',
   timezone: 'timezone'
 } as const
 
 export type AgentConfigurationScalarFieldEnum = (typeof AgentConfigurationScalarFieldEnum)[keyof typeof AgentConfigurationScalarFieldEnum]
+
+
+export const AgentWidgetScalarFieldEnum = {
+  widgetId: 'widgetId',
+  organizationId: 'organizationId',
+  agentId: 'agentId',
+  name: 'name',
+  enabled: 'enabled',
+  allowedOrigins: 'allowedOrigins',
+  theme: 'theme',
+  consentRequired: 'consentRequired',
+  consentText: 'consentText',
+  createdByUserId: 'createdByUserId',
+  updatedByUserId: 'updatedByUserId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgentWidgetScalarFieldEnum = (typeof AgentWidgetScalarFieldEnum)[keyof typeof AgentWidgetScalarFieldEnum]
+
+
+export const AgentWidgetSessionScalarFieldEnum = {
+  sessionId: 'sessionId',
+  widgetId: 'widgetId',
+  organizationId: 'organizationId',
+  agentId: 'agentId',
+  roomName: 'roomName',
+  callId: 'callId',
+  participantIdentity: 'participantIdentity',
+  dispatchId: 'dispatchId',
+  origin: 'origin',
+  status: 'status',
+  endTokenHash: 'endTokenHash',
+  expiresAt: 'expiresAt',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  metadata: 'metadata'
+} as const
+
+export type AgentWidgetSessionScalarFieldEnum = (typeof AgentWidgetSessionScalarFieldEnum)[keyof typeof AgentWidgetSessionScalarFieldEnum]
 
 
 export const KnowledgeSourceScalarFieldEnum = {
@@ -581,6 +626,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

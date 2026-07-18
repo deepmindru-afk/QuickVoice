@@ -6,6 +6,7 @@ import type {
   ListCallLogsArgs,
   ListTranscriptsArgs,
 } from "./calllog.schema.js";
+import { widgetRoomBelongsToOrg } from "../widgets/widget.repository.js";
 
 // Create a CallLog, its CallTranscript children, and — best-effort — link the
 // originating OutboundCall in one transaction. The OutboundCall linkage is
@@ -72,7 +73,9 @@ export function buildCallLogIdentityFields(input: IngestCallLogArgs, redactPii: 
   // caller; on outbound it's the callee. Keep structured phone fields raw so
   // call-log tables and details can show the actual number; redact only
   // free-form text that may contain incidental PII.
-  const callerId = input.direction === "inbound" ? input.fromNumber : input.toNumber;
+  const callerId =
+    (input.direction === "inbound" ? input.fromNumber : input.toNumber) ||
+    null;
   const summary = input.metadata?.summary ?? "";
   const intent = input.metadata?.intent ?? "";
   const baseMetadata = (redactPii
@@ -158,6 +161,43 @@ export const getTranscriptsByCallId = async (args: ListTranscriptsArgs) => {
     orderBy: { timestamp: "asc" },
     take: limit + 1,
     ...(cursor && { cursor: { callTransId: cursor }, skip: 1 }),
+  });
+};
+
+export const liveRoomBelongsToOrg = async (
+  organizationId: string,
+  roomName: string
+) => {
+  if (roomName.startsWith("widget_")) {
+    return widgetRoomBelongsToOrg(organizationId, roomName);
+  }
+
+  if (roomName.startsWith("outbound_")) {
+    const outboundId = roomName.slice("outbound_".length);
+    const count = await prisma.outboundCall.count({
+      where: { outboundId, organizationId },
+    });
+    return count > 0;
+  }
+
+  const numbers = await prisma.phoneNumber.findMany({
+    where: { organizationId },
+    select: { number: true },
+  });
+  return numbers.some((number) => roomName.includes(number.number));
+};
+
+export const listAgentNamesForOrg = async (
+  organizationId: string,
+  agentIds: string[]
+) => {
+  if (agentIds.length === 0) return [];
+  return prisma.agent.findMany({
+    where: {
+      organizationId,
+      agentId: { in: agentIds },
+    },
+    select: { agentId: true, name: true },
   });
 };
 

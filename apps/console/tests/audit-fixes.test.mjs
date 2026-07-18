@@ -170,5 +170,42 @@ test("sidebar exposes a direct theme toggle and transcript bubbles keep readable
   assert.match(sidebar, /<ThemeToggle \/>/);
 
   assert.doesNotMatch(transcript, /bg-\[#0f2142\] text-foreground/);
-  assert.match(transcript, /bg-\[#0f2142\] text-white/);
+  assert.match(transcript, /bg-background text-foreground/);
+  assert.match(transcript, /bg-blue-600 text-white/);
+});
+
+
+test("call transcript drawer uses a wide review layout", () => {
+  const sheet = read("src/components/calls/CallTranscriptSheet.tsx");
+  const audio = read("src/components/calls/AudioPlayer.tsx");
+  const transcript = read("src/components/calls/Transcript.tsx");
+
+  assert.match(sheet, /data-\[side=right\]:sm:w-\[min\(92vw,1040px\)\]/);
+  assert.match(sheet, /data-\[side=right\]:sm:max-w-none/);
+  assert.match(sheet, /data-\[side=right\]:xl:w-\[1040px\]/);
+  assert.match(sheet, /lg:grid-cols-\[340px_minmax\(0,1fr\)\]/);
+  assert.match(sheet, /Review tip/);
+  assert.match(audio, /rounded-2xl border bg-background p-5/);
+  assert.match(transcript, /sm:max-w-\[76%\]/);
+});
+
+
+test("phone numbers page supports filtering and a roomier buy flow", () => {
+  const page = read("src/app/(app)/numbers/page.tsx");
+  const drawer = read("src/components/numbers/BuyNumberDrawer.tsx");
+
+  assert.match(page, /searchTerm/);
+  assert.match(page, /providerFilter/);
+  assert.match(page, /routingFilter/);
+  assert.match(page, /filteredNumbers/);
+  assert.match(page, /Search number, name, provider, or SID/);
+  assert.match(page, /No numbers match these filters/);
+  assert.match(page, /Clear filters/);
+
+  assert.match(drawer, /data-\[side=right\]:sm:w-\[min\(94vw,940px\)\]/);
+  assert.match(drawer, /data-\[side=right\]:sm:max-w-none/);
+  assert.match(drawer, /Search criteria/);
+  assert.match(drawer, /lg:grid-cols-\[260px_minmax\(0,1fr\)\]/);
+  assert.match(drawer, /xl:grid-cols-2/);
+  assert.match(drawer, /Buy this number/);
 });

@@ -40,9 +40,9 @@ def build_call_log_payload(
         "metadata": metadata,
         "recordingSid": recording_path or "",
         "transcripts": [_normalize_transcript_item(item, index) for index, item in enumerate(transcripts)],
-        "toNumber": _required(call_context, "to_number"),
-        "fromNumber": _required(call_context, "from_number"),
-        "provider": call_context.get("provider") or config.get("provider") or "TWILIO",
+        "toNumber": _optional_string(call_context, "to_number"),
+        "fromNumber": _optional_string(call_context, "from_number"),
+        "provider": call_context.get("provider") or config.get("provider") or "WEB_WIDGET",
         "extractedData": build_transcript_extracted_data(config, transcripts, metadata),
         "evaluatedData": _as_list(config.get("data_evaluated")),
     }
@@ -207,6 +207,13 @@ def _required(source: dict[str, Any], key: str) -> str:
     value = source.get(key)
     if value is None or value == "":
         raise ValueError(f"{key} is required")
+    return str(value)
+
+
+def _optional_string(source: dict[str, Any], key: str) -> str:
+    value = source.get(key)
+    if value is None:
+        return ""
     return str(value)
 
 

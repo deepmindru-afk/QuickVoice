@@ -2,10 +2,11 @@
 
 import { FormEvent, useMemo, useRef, useState } from "react";
 import {
+  Braces,
   CalendarClock,
-  CheckCircle2,
   Clock,
   Copy,
+  Download,
   FileSpreadsheet,
   Loader2,
   RefreshCw,
@@ -25,18 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { useAgents } from "@/src/hooks/queries/agents";
+import { useAgentConfig, useAgents } from "@/src/hooks/queries/agents";
 import { useNumbers } from "@/src/hooks/queries/numbers";
-import {
-  useBatchCampaigns,
-  useCreateBatchCampaign,
-} from "@/src/hooks/queries/outbound";
+import { useCreateBatchCampaign } from "@/src/hooks/queries/outbound";
 import { outboundApi } from "@/src/lib/api/resources/outbound";
 import type { Agent, PhoneNumber } from "@/src/lib/api/types";
 import {
-  BATCH_TEMPLATE_HEADER,
   batchCampaignSchema,
+  buildBatchTemplateCsv,
+  buildBatchTemplateHeader,
 } from "@/src/models/outbound/campaign";
+import {
+  normalizeAgentVariables,
+  uniqueDynamicVariableNames,
+} from "@/src/lib/agents/dynamic-variables";
 
 const ACCEPT_STRING = ".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -59,19 +62,18 @@ function contentTypeFor(file: File) {
   return "application/octet-stream";
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "Instant";
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+function templateFileName(agentName: string | undefined) {
+  const base = (agentName ?? "quickvoice")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${base || "quickvoice"}-recipients-template.csv`;
 }
 
 export function BatchCallForm() {
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useAgents();
   const { data: numbers = [], isLoading: numbersLoading, refetch: refetchNumbers } = useNumbers();
   const createBatch = useCreateBatchCampaign();
-  const { data: campaigns = [], isLoading: campaignsLoading } = useBatchCampaigns();
   const dialableAgents = useMemo(
     () => asDialableAgents(agents, numbers),
     [agents, numbers]
@@ -97,6 +99,23 @@ export function BatchCallForm() {
   )
     ? requestedFromNumber
     : selectedAgent?.numbers[0]?.number ?? "";
+  const { data: selectedAgentConfig } = useAgentConfig(agentId);
+  const selectedAgentVariables = useMemo(
+    () => normalizeAgentVariables(selectedAgentConfig?.variables),
+    [selectedAgentConfig?.variables]
+  );
+  const dynamicVariableNames = useMemo(
+    () => uniqueDynamicVariableNames(selectedAgentVariables),
+    [selectedAgentVariables]
+  );
+  const templateHeader = useMemo(
+    () => buildBatchTemplateHeader(dynamicVariableNames),
+    [dynamicVariableNames]
+  );
+  const templateCsv = useMemo(
+    () => buildBatchTemplateCsv(dynamicVariableNames),
+    [dynamicVariableNames]
+  );
 
   const isLoading = agentsLoading || numbersLoading;
   const isBusy = createBatch.isPending;
@@ -124,8 +143,18 @@ export function BatchCallForm() {
   }
 
   async function copyHeader() {
-    await navigator.clipboard.writeText(BATCH_TEMPLATE_HEADER);
+    await navigator.clipboard.writeText(templateHeader);
     toast.success("Template header copied");
+  }
+
+  function downloadTemplate() {
+    const blob = new Blob([templateCsv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = templateFileName(selectedAgent?.name);
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -190,10 +219,7 @@ export function BatchCallForm() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="h-[620px] animate-pulse border bg-card" />
-        <div className="h-80 animate-pulse border bg-card" />
-      </div>
+      <div className="h-[620px] animate-pulse border bg-card" />
     );
   }
 
@@ -213,191 +239,174 @@ export function BatchCallForm() {
   }
 
   return (
-    <div className="grid gap-4 pb-20 xl:grid-cols-[minmax(0,1fr)_360px] xl:pb-0">
-      <form onSubmit={onSubmit} className="border bg-card">
-        <div className="flex flex-col gap-2 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold text-foreground">Batch calls</h2>
-          <Badge variant="outline">CSV, XLS, XLSX</Badge>
-        </div>
+    <form onSubmit={onSubmit} className="border bg-card">
+      <div className="flex flex-col gap-2 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-semibold text-foreground">Batch campaigns</h2>
+        <Badge variant="outline">CSV, XLSX</Badge>
+      </div>
 
-        <div className="grid gap-5 p-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="batchName">Campaign</Label>
-              <Input
-                id="batchName"
-                placeholder="June renewals"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="ringTimeout">Ring timeout</Label>
-              <Input
-                id="ringTimeout"
-                type="number"
-                min={10}
-                max={180}
-                value={ringingTimeoutSeconds}
-                onChange={(event) => setRingingTimeoutSeconds(Number(event.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="grid gap-2">
-              <Label htmlFor="batchAgent">Agent</Label>
-              <Select value={agentId} onValueChange={selectAgent}>
-                <SelectTrigger id="batchAgent" className="w-full">
-                  <SelectValue placeholder="Select agent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dialableAgents.map((agent) => (
-                    <SelectItem key={agent.agentId} value={agent.agentId}>
-                      {agent.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="batchFromNumber">From</Label>
-              <Select value={fromNumber} onValueChange={setRequestedFromNumber}>
-                <SelectTrigger id="batchFromNumber" className="w-full">
-                  <SelectValue placeholder="Select caller ID" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(selectedAgent?.numbers ?? []).map((number) => (
-                    <SelectItem key={number.phId} value={number.number}>
-                      {number.number}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
+      <div className="grid gap-5 p-5">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-2">
-              <Label>Recipient file</Label>
-              <Button type="button" variant="ghost" size="sm" onClick={copyHeader}>
-                <Copy /> Copy header
-              </Button>
-            </div>
-            <button
-              type="button"
-              className="flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 border border-dashed bg-background px-4 py-6 text-center transition-colors hover:border-primary/60 hover:bg-muted/30"
-              onClick={() => fileRef.current?.click()}
-            >
-              <UploadCloud className="size-8 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">
-                {file ? file.name : "Select recipient file"}
-              </span>
-              <span className="max-w-full break-all font-mono text-xs text-muted-foreground">
-                {BATCH_TEMPLATE_HEADER}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                language and voice_id can be blank to use the agent defaults
-              </span>
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept={ACCEPT_STRING}
-              className="hidden"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            <Label htmlFor="batchName">Campaign</Label>
+            <Input
+              id="batchName"
+              placeholder="June renewals"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
             />
           </div>
 
-          <div className="grid gap-3">
-            <Label>Schedule</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={scheduleMode === "instant" ? "default" : "outline"}
-                onClick={() => setScheduleMode("instant")}
-              >
-                <Clock /> Instant
-              </Button>
-              <Button
-                type="button"
-                variant={scheduleMode === "later" ? "default" : "outline"}
-                onClick={() => setScheduleMode("later")}
-              >
-                <CalendarClock /> Later
-              </Button>
-            </div>
-            {scheduleMode === "later" ? (
-              <Input
-                type="datetime-local"
-                value={scheduledAt}
-                onChange={(event) => setScheduledAt(event.target.value)}
-              />
-            ) : null}
-          </div>
-
-          {formError ? (
-            <p className="text-sm text-destructive">{formError}</p>
-          ) : null}
-
-          {createdCampaignName ? (
-            <div
-              aria-live="polite"
-              className="border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
-            >
-              Queued {createdCampaignName}.
-            </div>
-          ) : null}
-
-          <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="outline" onClick={refresh}>
-              <RefreshCw /> Refresh
-            </Button>
-            <Button type="submit" disabled={!canSubmit}>
-              {isBusy ? <Loader2 className="animate-spin" /> : <UploadCloud />}
-              Queue batch
-            </Button>
+          <div className="grid gap-2">
+            <Label htmlFor="ringTimeout">Ring timeout</Label>
+            <Input
+              id="ringTimeout"
+              type="number"
+              min={10}
+              max={180}
+              value={ringingTimeoutSeconds}
+              onChange={(event) => setRingingTimeoutSeconds(Number(event.target.value))}
+            />
           </div>
         </div>
-      </form>
 
-      <aside className="border bg-card p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <CheckCircle2 className="size-4 text-emerald-500" />
-          Batch queue
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="batchAgent">Agent</Label>
+            <Select value={agentId} onValueChange={selectAgent}>
+              <SelectTrigger id="batchAgent" className="w-full">
+                <SelectValue placeholder="Select agent" />
+              </SelectTrigger>
+              <SelectContent>
+                {dialableAgents.map((agent) => (
+                  <SelectItem key={agent.agentId} value={agent.agentId}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="batchFromNumber">From</Label>
+            <Select value={fromNumber} onValueChange={setRequestedFromNumber}>
+              <SelectTrigger id="batchFromNumber" className="w-full">
+                <SelectValue placeholder="Select caller ID" />
+              </SelectTrigger>
+              <SelectContent>
+                {(selectedAgent?.numbers ?? []).map((number) => (
+                  <SelectItem key={number.phId} value={number.number}>
+                    {number.number}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="mt-4 space-y-3">
-          {campaignsLoading ? (
-            <div className="h-24 animate-pulse border bg-background" />
-          ) : campaigns.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No batch campaigns yet.</p>
-          ) : (
-            campaigns.slice(0, 8).map((campaign) => (
-              <div key={campaign.campaignId} className="border-b pb-3 last:border-0 last:pb-0">
-                <div className="flex min-w-0 items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {campaign.name}
-                  </p>
-                  <Badge variant="secondary">{campaign.status}</Badge>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {campaign.validRecipients}/{campaign.totalRecipients} valid
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {formatDate(campaign.scheduledAt)}
-                </p>
-                {campaign.sourceFileName ? (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {campaign.sourceFileName}
-                  </p>
-                ) : null}
+
+        <div className="grid gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <Label>Recipient file</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={copyHeader}>
+                <Copy /> Copy header
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={downloadTemplate}>
+                <Download /> Download CSV
+              </Button>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 border border-dashed bg-background px-4 py-6 text-center transition-colors hover:border-primary/60 hover:bg-muted/30"
+            onClick={() => fileRef.current?.click()}
+          >
+            <UploadCloud className="size-8 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
+              {file ? file.name : "Select recipient file"}
+            </span>
+            <span className="max-w-full break-all font-mono text-xs text-muted-foreground">
+              {templateHeader}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              language and voice_id can be blank to use the agent defaults
+            </span>
+          </button>
+          {dynamicVariableNames.length > 0 ? (
+            <div className="border border-dashed bg-muted/20 p-4">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-medium">
+                <Braces className="size-4 text-muted-foreground" />
+                Template variables
+                <Badge variant="outline">{dynamicVariableNames.length}</Badge>
               </div>
-            ))
-          )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {dynamicVariableNames.map((name) => (
+                  <Badge key={name} variant="secondary">
+                    {`{{${name}}}`}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <input
+            ref={fileRef}
+            type="file"
+            accept={ACCEPT_STRING}
+            className="hidden"
+            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+          />
         </div>
-      </aside>
-    </div>
+
+        <div className="grid gap-3">
+          <Label>Schedule</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={scheduleMode === "instant" ? "default" : "outline"}
+              onClick={() => setScheduleMode("instant")}
+            >
+              <Clock /> Instant
+            </Button>
+            <Button
+              type="button"
+              variant={scheduleMode === "later" ? "default" : "outline"}
+              onClick={() => setScheduleMode("later")}
+            >
+              <CalendarClock /> Later
+            </Button>
+          </div>
+          {scheduleMode === "later" ? (
+            <Input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(event) => setScheduledAt(event.target.value)}
+            />
+          ) : null}
+        </div>
+
+        {formError ? (
+          <p className="text-sm text-destructive">{formError}</p>
+        ) : null}
+
+        {createdCampaignName ? (
+          <div
+            aria-live="polite"
+            className="border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          >
+            Queued {createdCampaignName}.
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <Button type="button" variant="outline" onClick={refresh}>
+            <RefreshCw /> Refresh
+          </Button>
+          <Button type="submit" disabled={!canSubmit}>
+            {isBusy ? <Loader2 className="animate-spin" /> : <UploadCloud />}
+            Queue batch
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

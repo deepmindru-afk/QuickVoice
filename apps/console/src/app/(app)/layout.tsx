@@ -7,7 +7,9 @@ import {
 import { AppSidebar } from "@/src/components/shell/AppSidebar";
 import { Topbar } from "@/src/components/shell/Topbar";
 import { PageActionsProvider } from "@/src/components/shell/PageActionsSlot";
+import { LiveCallsDock } from "@/src/components/calls/LiveCallsDock";
 import { requireSession } from "@/src/lib/server-session";
+import { LiveCallsProvider } from "@/src/providers/live-calls-provider";
 
 export default async function AppLayout({
   children,
@@ -32,8 +34,14 @@ export default async function AppLayout({
       />
       <SidebarInset>
         <PageActionsProvider>
-          <Topbar />
-          <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">{children}</div>
+          <LiveCallsProvider
+            key={session.activeOrganizationId}
+            organizationId={session.activeOrganizationId}
+          >
+            <Topbar />
+            <div className="flex flex-1 flex-col gap-4 p-4 lg:p-6">{children}</div>
+            <LiveCallsDock organizationId={session.activeOrganizationId} />
+          </LiveCallsProvider>
         </PageActionsProvider>
       </SidebarInset>
     </SidebarProvider>

@@ -68,6 +68,8 @@ function codeFromStatus(statusCode: number) {
       return "FORBIDDEN";
     case StatusCodes.NOT_FOUND:
       return "NOT_FOUND";
+    case StatusCodes.TOO_MANY_REQUESTS:
+      return "RATE_LIMITED";
     default:
       return "INTERNAL_SERVER_ERROR";
   }

@@ -28,9 +28,18 @@ import type {
 } from "@/src/lib/api/resources/dashboard";
 
 const config = {
-  calls: { label: "Calls", color: "var(--chart-1)" },
-  minutes: { label: "Minutes", color: "#10b981" },
-  failed: { label: "Failed", color: "var(--destructive)" },
+  calls: {
+    label: "Calls",
+    color: "#3b82f6",
+  },
+  minutes: {
+    label: "Minutes",
+    color: "#64748b",
+  },
+  failed: {
+    label: "Failed",
+    color: "#f87171",
+  },
 } satisfies ChartConfig;
 
 function formatTick(iso: string, range: DashboardRange) {
@@ -63,7 +72,7 @@ export function VolumeChart({
 
   if (loading) {
     return (
-      <div className="border bg-card p-5">
+      <div className="rounded-lg border bg-card p-5 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <div className="space-y-2">
             <Skeleton className="h-5 w-40" />
@@ -80,12 +89,16 @@ export function VolumeChart({
   const peak = data.reduce((max, point) => Math.max(max, point.calls), 0);
   const calls = totalFor(data, "calls");
   const minutes = totalFor(data, "minutes");
+  const failedCalls = totalFor(data, "failed");
 
   return (
-    <div className="border bg-card" aria-labelledby={titleId}>
-      <div className="flex flex-col gap-4 border-b p-5 xl:flex-row xl:items-end xl:justify-between">
+    <div
+      className="overflow-hidden rounded-xl border bg-card shadow-sm ring-1 ring-border/50"
+      aria-labelledby={titleId}
+    >
+      <div className="flex flex-col gap-4 border-b bg-muted/20 p-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase text-muted-foreground">
             Traffic timeline
           </p>
           <h3
@@ -99,17 +112,17 @@ export function VolumeChart({
             calls and failed calls; right axis shows minutes.
           </p>
         </div>
-        <div className="grid grid-cols-3 border bg-background text-center text-xs sm:min-w-96">
-          <div className="border-r px-3 py-2">
-            <p className="font-semibold text-foreground">{calls}</p>
+        <div className="grid grid-cols-3 overflow-hidden rounded-xl border bg-background/80 text-center text-xs shadow-sm backdrop-blur sm:min-w-96">
+          <div className="border-r border-border/70 px-3 py-2.5">
+            <p className="font-semibold text-blue-400 tabular-nums">{calls}</p>
             <p className="text-muted-foreground">calls</p>
           </div>
-          <div className="border-r px-3 py-2">
-            <p className="font-semibold text-foreground">{minutes}</p>
+          <div className="border-r border-border/70 px-3 py-2.5">
+            <p className="font-semibold text-foreground tabular-nums">{minutes}</p>
             <p className="text-muted-foreground">minutes</p>
           </div>
-          <div className="px-3 py-2">
-            <p className="font-semibold text-foreground">{peak}</p>
+          <div className="px-3 py-2.5">
+            <p className="font-semibold text-muted-foreground tabular-nums">{peak}</p>
             <p className="text-muted-foreground">peak</p>
           </div>
         </div>
@@ -157,18 +170,18 @@ export function VolumeChart({
                   <stop
                     offset="0%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.34}
+                    stopOpacity={0.2}
                   />
                   <stop
                     offset="100%"
                     stopColor="var(--color-minutes)"
-                    stopOpacity={0.02}
+                    stopOpacity={0.03}
                   />
                 </linearGradient>
               </defs>
               <CartesianGrid
-                strokeDasharray="3 3"
-                className="stroke-border"
+                strokeDasharray="4 6"
+                className="stroke-border/70"
                 vertical={false}
               />
               <XAxis
@@ -224,7 +237,7 @@ export function VolumeChart({
                 dataKey="minutes"
                 name="Minutes (right axis)"
                 stroke="var(--color-minutes)"
-                strokeWidth={2}
+                strokeWidth={2.5}
                 fill="url(#dashboard-minutes-fill)"
               />
               <Bar
@@ -232,16 +245,19 @@ export function VolumeChart({
                 dataKey="calls"
                 name={`Calls by ${bucketUnit}`}
                 fill="var(--color-calls)"
-                barSize={16}
+                fillOpacity={0.72}
+                barSize={18}
+                radius={[6, 6, 2, 2]}
               />
               <Line
                 yAxisId="left"
                 type="monotone"
                 dataKey="failed"
                 name="Failed calls"
-                stroke="var(--color-failed)"
-                strokeWidth={2}
+                stroke={failedCalls > 0 ? "#f87171" : "hsl(var(--muted-foreground))"}
+                strokeWidth={2.5}
                 dot={false}
+                activeDot={failedCalls > 0 ? { r: 4, strokeWidth: 0 } : false}
               />
             </ComposedChart>
           </ChartContainer>
@@ -252,21 +268,21 @@ export function VolumeChart({
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-4 w-2 border border-primary bg-primary"
+                className="h-4 w-2 rounded-sm border border-blue-500/50 bg-blue-500/70"
               />
               <span>Calls by {bucketUnit} - bar series</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-3 w-5 border border-emerald-500 bg-emerald-500/20"
+                className="h-3 w-5 rounded-sm border border-slate-500 bg-slate-500/20"
               />
               <span>Minutes (right axis) - shaded area</span>
             </li>
             <li className="flex items-center gap-2">
               <span
                 aria-hidden
-                className="h-px w-6 border-t-2 border-destructive"
+                className={failedCalls > 0 ? "h-px w-6 border-t-2 border-red-400/70" : "h-px w-6 border-t-2 border-muted-foreground/60"}
               />
               <span>Failed calls - line series</span>
             </li>

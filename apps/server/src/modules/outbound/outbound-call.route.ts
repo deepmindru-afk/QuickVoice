@@ -14,6 +14,7 @@ import {
   quickOutboundCallSchema,
 } from "./outbound-call.schema.js";
 import {
+  cancelBatchCampaign,
   createBatchCampaign,
   createBatchUploadUrl,
   getBatchCampaignDetail,
@@ -33,6 +34,7 @@ type ListOutboundCalls = typeof listOutboundCalls;
 type GetOutboundCall = typeof getOutboundCall;
 type CancelOutboundCall = typeof cancelOutboundCall;
 type RetryOutboundCall = typeof retryOutboundCall;
+type CancelBatchCampaign = typeof cancelBatchCampaign;
 type CreateBatchCampaign = typeof createBatchCampaign;
 type CreateBatchUploadUrl = typeof createBatchUploadUrl;
 type ListBatchCampaigns = typeof listBatchCampaigns;
@@ -48,6 +50,7 @@ type OutboundCallRouterDeps = {
   getOutboundCall?: GetOutboundCall;
   cancelOutboundCall?: CancelOutboundCall;
   retryOutboundCall?: RetryOutboundCall;
+  cancelBatchCampaign?: CancelBatchCampaign;
   createBatchCampaign?: CreateBatchCampaign;
   createBatchUploadUrl?: CreateBatchUploadUrl;
   listBatchCampaigns?: ListBatchCampaigns;
@@ -68,6 +71,7 @@ export function createOutboundCallRouter(deps: OutboundCallRouterDeps = {}) {
   const fetchOutboundCall = deps.getOutboundCall ?? getOutboundCall;
   const cancelOutbound = deps.cancelOutboundCall ?? cancelOutboundCall;
   const retryOutbound = deps.retryOutboundCall ?? retryOutboundCall;
+  const cancelBatch = deps.cancelBatchCampaign ?? cancelBatchCampaign;
   const createBatch = deps.createBatchCampaign ?? createBatchCampaign;
   const createUploadUrl = deps.createBatchUploadUrl ?? createBatchUploadUrl;
   const listBatches = deps.listBatchCampaigns ?? listBatchCampaigns;
@@ -212,6 +216,27 @@ export function createOutboundCallRouter(deps: OutboundCallRouterDeps = {}) {
         res.status(StatusCodes.OK).json({
           success: true,
           message: "Batch campaign fetched successfully",
+          data,
+        });
+      } catch (error) {
+        next(error);
+      }
+    }
+  );
+
+  router.post(
+    "/batches/:campaignId/cancel",
+    authenticate,
+    authorizeDelete,
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const { organizationId } = getRequiredAuth(req);
+        const campaignId = getCampaignId(req);
+        const data = await cancelBatch({ organizationId, campaignId });
+
+        res.status(StatusCodes.OK).json({
+          success: true,
+          message: "Batch campaign cancelled successfully",
           data,
         });
       } catch (error) {

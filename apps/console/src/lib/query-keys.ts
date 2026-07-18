@@ -1,5 +1,5 @@
 import type { CallListParams } from "@/src/lib/api/resources/calls";
-import type { DashboardRange } from "@/src/lib/api/resources/dashboard";
+import type { DashboardSummaryParams } from "@/src/lib/api/resources/dashboard";
 
 export const queryKeys = {
   agents: {
@@ -10,6 +10,8 @@ export const queryKeys = {
     previewSession: (id: string) =>
       [...queryKeys.agents.all, "previewSession", id] as const,
     voiceCatalog: () => [...queryKeys.agents.all, "voiceCatalog"] as const,
+    widgets: (agentId: string) =>
+      [...queryKeys.agents.all, "widgets", agentId] as const,
   },
   numbers: {
     all: ["numbers"] as const,
@@ -24,6 +26,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.calls.all, "detail", id] as const,
     transcript: (id: string) =>
       [...queryKeys.calls.all, "transcript", id] as const,
+    live: () => [...queryKeys.calls.all, "live"] as const,
   },
   outbound: {
     all: ["outbound"] as const,
@@ -38,8 +41,8 @@ export const queryKeys = {
   },
   dashboard: {
     all: ["dashboard"] as const,
-    summary: (range: DashboardRange) =>
-      [...queryKeys.dashboard.all, "summary", range] as const,
+    summary: (params: DashboardSummaryParams) =>
+      [...queryKeys.dashboard.all, "summary", params] as const,
   },
   org: {
     all: ["org"] as const,
@@ -61,6 +64,10 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.tools.all, "detail", id] as const,
     agentTools: (agentId: string) =>
       [...queryKeys.tools.all, "agent", agentId] as const,
+  },
+  secrets: {
+    all: ["secrets"] as const,
+    list: () => [...queryKeys.secrets.all, "list"] as const,
   },
   mcp: {
     all: ["mcp"] as const,

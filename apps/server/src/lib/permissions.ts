@@ -10,6 +10,7 @@ const statement = {
   ...defaultStatements,
   agent: ["create", "read", "update", "delete"],
   agentConfiguration: ["create", "read", "update", "delete"],
+  agentWidget: ["create", "read", "update", "delete"],
   phoneNumber: ["create", "read", "update", "delete"],
   knowledgeSource: ["create", "read", "delete"],
   callLogs: ["read", "delete"],
@@ -25,6 +26,7 @@ const ac = createAccessControl(statement);
 const owner = ac.newRole({
   agent: ["create", "read", "update", "delete"],
   agentConfiguration: ["create", "read", "update", "delete"],
+  agentWidget: ["create", "read", "update", "delete"],
   phoneNumber: ["create", "read", "update", "delete"],
   knowledgeSource: ["create", "read", "delete"],
   callLogs: ["read", "delete"],
@@ -39,6 +41,7 @@ const owner = ac.newRole({
 const admin = ac.newRole({
   agent: ["create", "read", "update", "delete"],
   agentConfiguration: ["create", "read", "update", "delete"],
+  agentWidget: ["create", "read", "update", "delete"],
   phoneNumber: ["create", "read", "update", "delete"],
   knowledgeSource: ["create", "read", "delete"],
   callLogs: ["read", "delete"],
@@ -53,6 +56,7 @@ const admin = ac.newRole({
 const member = ac.newRole({
   agent: ["read"],
   agentConfiguration: ["read"],
+  agentWidget: ["read"],
   phoneNumber: ["read"],
   knowledgeSource: ["read"],
   callLogs: ["read"],

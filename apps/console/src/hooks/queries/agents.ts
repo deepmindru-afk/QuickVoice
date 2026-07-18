@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   agentsApi,
   type ConfigureAgentInput,
+  type CreatePreviewSessionInput,
   type CreateAgentInput,
   type UpdateAgentInput,
 } from "@/src/lib/api/resources/agents";
@@ -46,7 +47,8 @@ export function useVoiceCatalog() {
 export function useCreateAgentPreviewSession(agentId: string) {
   return useMutation({
     mutationKey: queryKeys.agents.previewSession(agentId),
-    mutationFn: () => agentsApi.createPreviewSession(agentId),
+    mutationFn: (input?: CreatePreviewSessionInput) =>
+      agentsApi.createPreviewSession(agentId, input),
     onError: (err: Error) => {
       toast.error(err.message || "Could not start preview");
     },
@@ -98,8 +100,11 @@ export function useSaveAgentConfig(id: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: ConfigureAgentInput) => agentsApi.saveConfig(id, input),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.agents.config(id) });
+    onSuccess: (config, input) => {
+      qc.setQueryData(queryKeys.agents.config(id), {
+        ...config,
+        ivr_navigation_enabled: input.ivr_navigation_enabled,
+      });
       qc.invalidateQueries({ queryKey: queryKeys.agents.list() });
       toast.success("Saved");
     },

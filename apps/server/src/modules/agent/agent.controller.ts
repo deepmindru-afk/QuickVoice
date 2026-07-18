@@ -54,6 +54,7 @@ export const createAgentPreviewSession = authorized(async (req, res) => {
   const session = await agentService.createAgentPreviewSession(
     req.auth.activeOrganizationId,
     agentId,
+    req.body?.dynamicVariables,
   );
 
   res.status(StatusCodes.OK).json({

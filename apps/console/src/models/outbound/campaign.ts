@@ -1,7 +1,26 @@
 import { z } from "zod";
 
-export const BATCH_TEMPLATE_HEADER =
-  "phone_number,language,voice_id,first_message,prompt,city,other_dyn_variable";
+export const BATCH_TEMPLATE_BASE_COLUMNS = [
+  "phone_number",
+  "language",
+  "voice_id",
+  "first_message",
+  "prompt",
+] as const;
+
+export function buildBatchTemplateHeader(variableNames: string[] = []) {
+  return [...BATCH_TEMPLATE_BASE_COLUMNS, ...uniqueColumns(variableNames)].join(",");
+}
+
+export function buildBatchTemplateCsv(variableNames: string[] = []) {
+  return `${buildBatchTemplateHeader(variableNames)}\n`;
+}
+
+export const BATCH_TEMPLATE_HEADER = buildBatchTemplateHeader();
+
+function uniqueColumns(values: string[]) {
+  return [...new Set(values.filter((value) => value.trim().length > 0))];
+}
 
 export const batchCampaignSchema = z
   .object({

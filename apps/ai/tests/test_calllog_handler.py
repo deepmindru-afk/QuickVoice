@@ -80,6 +80,34 @@ class CallLogHandlerTests(unittest.TestCase):
 
         self.assertEqual(payload["transcripts"][0]["timestamp"], "2024-01-01T00:00:00Z")
 
+    def test_build_call_log_payload_allows_web_widget_without_phone_numbers(self):
+        payload = build_call_log_payload(
+            config={
+                "agent_id": "agent_123",
+                "organization_id": "org_123",
+            },
+            call_context={
+                "call_id": "widget_wgs_123",
+                "direction": "inbound",
+                "provider": "WEB_WIDGET",
+                "metadata": {
+                    "source": "web_widget",
+                    "widget_id": "wgt_123",
+                    "origin": "https://example.com",
+                },
+            },
+            started_at=datetime(2026, 7, 17, 12, 0, 0, tzinfo=timezone.utc),
+            ended_at=datetime(2026, 7, 17, 12, 2, 0, tzinfo=timezone.utc),
+            recording_path=None,
+            transcripts=[],
+        )
+
+        self.assertEqual(payload["provider"], "WEB_WIDGET")
+        self.assertEqual(payload["fromNumber"], "")
+        self.assertEqual(payload["toNumber"], "")
+        self.assertEqual(payload["metadata"]["source"], "web_widget")
+        self.assertEqual(payload["metadata"]["widget_id"], "wgt_123")
+
     def test_build_call_log_payload_uses_collected_metadata_and_results(self):
         payload = build_call_log_payload(
             config={

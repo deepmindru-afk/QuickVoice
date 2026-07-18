@@ -8,6 +8,8 @@ import phoneRouter from "./modules/numbers/phone.route.js";
 import outboundCallRouter from "./modules/outbound/outbound-call.route.js";
 import toolRouter from "./modules/tools/tool.route.js";
 import mcpRouter from "./modules/mcp/mcp.route.js";
+import secretRouter from "./modules/secrets/secret.route.js";
+import widgetRouter from "./modules/widgets/widget.route.js";
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use("/kb", kbRouter);
 router.use("/outbound-calls", outboundCallRouter);
 router.use("/tools", toolRouter);
 router.use("/mcp", mcpRouter);
+router.use("/secrets", secretRouter);
+router.use("/", widgetRouter);
 
 export default router;

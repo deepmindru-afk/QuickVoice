@@ -10,7 +10,6 @@ import {
   OfflineState,
   PermissionState,
 } from "@/src/components/common/EmptyState";
-import { PageHeader } from "@/src/components/common/PageHeader";
 import { RetryButton } from "@/src/components/common/RetryButton";
 import { RangeSwitcher } from "@/src/components/dashboard/RangeSwitcher";
 import { KpiCards } from "@/src/components/dashboard/KpiCards";
@@ -18,7 +17,6 @@ import { VolumeChart } from "@/src/components/dashboard/VolumeChart";
 import { BreakdownCharts } from "@/src/components/dashboard/BreakdownCharts";
 import { RecentCallsTable } from "@/src/components/dashboard/RecentCallsTable";
 import { AgentActivityList } from "@/src/components/dashboard/AgentActivityList";
-import { DashboardFreshness } from "@/src/components/dashboard/DashboardFreshness";
 import { useDashboardSummary } from "@/src/hooks/queries/dashboard";
 import type {
   DashboardRange,
@@ -35,8 +33,30 @@ const MISSING_SECTION_FORMAT = new Intl.ListFormat("en-US", {
 });
 
 function resolveRange(param: string | null): DashboardRange {
-  if (param === "24h" || param === "7d" || param === "30d") return param;
+  if (
+    param === "24h" ||
+    param === "7d" ||
+    param === "30d" ||
+    param === "custom"
+  ) {
+    return param;
+  }
   return "7d";
+}
+
+function formatDateInput(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultCustomRange() {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 6);
+  return { from: formatDateInput(from), to: formatDateInput(to) };
+}
+
+function resolveDateParam(value: string | null) {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined;
 }
 
 function useOnlineStatus() {
@@ -73,15 +93,21 @@ function getMissingDashboardSections(summary?: DashboardSummary) {
   if (!summary || (summary.totals?.calls ?? 0) === 0) return [];
 
   const missingSections: string[] = [];
-  if (collectionSize(summary.series) === 0) missingSections.push("traffic timeline");
+  if (collectionSize(summary.series) === 0) {
+    missingSections.push("traffic timeline");
+  }
   if (collectionSize(summary.statusBreakdown) === 0) {
     missingSections.push("outcome breakdown");
   }
   if (collectionSize(summary.directionBreakdown) === 0) {
     missingSections.push("routing mix");
   }
-  if (collectionSize(summary.topAgents) === 0) missingSections.push("agent activity");
-  if (collectionSize(summary.recent) === 0) missingSections.push("recent calls");
+  if (collectionSize(summary.topAgents) === 0) {
+    missingSections.push("agent activity");
+  }
+  if (collectionSize(summary.recent) === 0) {
+    missingSections.push("recent calls");
+  }
   return missingSections;
 }
 
@@ -92,7 +118,7 @@ function DashboardPartialDataNotice({ sections }: { sections: string[] }) {
     <div
       role="status"
       aria-live="polite"
-      className="flex flex-col gap-3 border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200 sm:flex-row sm:items-start sm:justify-between"
+      className="flex flex-col gap-3 border bg-muted/40 p-4 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between"
     >
       <div className="flex gap-3">
         <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -115,20 +141,24 @@ function DashboardPartialDataNotice({ sections }: { sections: string[] }) {
 export default function DashboardPage() {
   const params = useSearchParams();
   const range = resolveRange(params.get("range"));
+  const defaultCustom = defaultCustomRange();
+  const customFrom =
+    range === "custom"
+      ? resolveDateParam(params.get("from")) ?? defaultCustom.from
+      : undefined;
+  const customTo =
+    range === "custom"
+      ? resolveDateParam(params.get("to")) ?? defaultCustom.to
+      : undefined;
   const isOnline = useOnlineStatus();
   const {
     data,
-    dataUpdatedAt,
     error,
     isLoading,
     isError,
     isFetching,
-    isStale,
     refetch,
-  } = useDashboardSummary(range);
-  const successPct = Math.round((data?.totals.successRate ?? 0) * 100);
-  const exceptionCalls =
-    (data?.totals.failedCalls ?? 0) + (data?.totals.missedCalls ?? 0);
+  } = useDashboardSummary({ range, from: customFrom, to: customTo });
   const showBlockingError = isError && !data;
   const dashboardHasPermissionError =
     showBlockingError && isPermissionError(error);
@@ -150,9 +180,7 @@ export default function DashboardPage() {
     <RetryButton
       onClick={() => refetch()}
       isRetrying={isFetching}
-      disabled={
-        dashboardErrorState?.kind === "offline" && !isOnline
-      }
+      disabled={dashboardErrorState?.kind === "offline" && !isOnline}
     >
       Retry
     </RetryButton>
@@ -171,20 +199,16 @@ export default function DashboardPage() {
     );
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Dashboard"
-        description="A compact view of call volume, outcomes, routing, and agent performance."
-        actions={<RangeSwitcher current={range} loading={isFetching} />}
-      />
-      <DashboardFreshness
-        summary={data}
-        loading={isLoading}
-        dataUpdatedAt={dataUpdatedAt}
-        isFetching={isFetching}
-        isStale={isStale}
-        onRefresh={() => refetch()}
-      />
+    <div className="flex flex-col gap-5 rounded-lg border bg-muted/25 p-4 shadow-[inset_0_1px_0_hsl(var(--background))] sm:p-5">
+      <div className="flex justify-end">
+        <RangeSwitcher
+          key={`${range}-${customFrom ?? ""}-${customTo ?? ""}`}
+          current={range}
+          customFrom={customFrom}
+          customTo={customTo}
+          loading={isFetching}
+        />
+      </div>
       {dashboardErrorState?.kind === "offline" ? (
         <OfflineState
           title={dashboardErrorState.title}
@@ -207,44 +231,17 @@ export default function DashboardPage() {
       ) : (
         <>
           <DashboardPartialDataNotice sections={missingDashboardSections} />
-          <div className="grid gap-4 border bg-card p-5 lg:grid-cols-[1fr_340px] lg:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Operations snapshot
-              </p>
-              <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-                {isLoading
-                  ? "Loading call performance"
-                  : `${data?.totals.calls ?? 0} calls at ${successPct}% success`}
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Monitor traffic shape, service quality, and agent load from one
-                place.
-              </p>
-            </div>
-            <div className="grid grid-cols-3 border bg-background text-center text-xs">
-              <div className="border-r px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {data?.totals.minutes ?? 0}
-                </p>
-                <p className="text-muted-foreground">minutes</p>
-              </div>
-              <div className="border-r px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {exceptionCalls}
-                </p>
-                <p className="text-muted-foreground">exceptions</p>
-              </div>
-              <div className="px-3 py-3">
-                <p className="text-lg font-semibold text-foreground">
-                  {data?.topAgents.length ?? 0}
-                </p>
-                <p className="text-muted-foreground">agents</p>
-              </div>
-            </div>
-          </div>
-          <KpiCards summary={data} range={range} loading={isLoading} />
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <KpiCards
+            summary={data}
+            range={range}
+            loading={isLoading}
+            customFrom={customFrom}
+            customTo={customTo}
+          />
+          <section
+            className="grid grid-cols-1 gap-4 rounded-lg border bg-background/60 p-3 shadow-sm xl:grid-cols-3"
+            aria-label="Traffic and agent performance"
+          >
             <div className="xl:col-span-2">
               <VolumeChart summary={data} range={range} loading={isLoading} />
             </div>
@@ -252,9 +249,17 @@ export default function DashboardPage() {
               summary={data}
               range={range}
               loading={isLoading}
+              customFrom={customFrom}
+              customTo={customTo}
             />
-          </div>
-          <BreakdownCharts summary={data} range={range} loading={isLoading} />
+          </section>
+          <BreakdownCharts
+            summary={data}
+            range={range}
+            loading={isLoading}
+            customFrom={customFrom}
+            customTo={customTo}
+          />
           <RecentCallsTable summary={data} loading={isLoading} />
         </>
       )}

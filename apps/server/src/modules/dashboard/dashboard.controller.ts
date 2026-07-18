@@ -7,6 +7,8 @@ export const getDashboardSummary = authorized(async (req, res) => {
   const summary = await dashboardService.getDashboardSummary({
     organizationId: req.auth.activeOrganizationId,
     range: query.range,
+    from: query.from,
+    to: query.to,
   });
 
   res.status(200).json({
