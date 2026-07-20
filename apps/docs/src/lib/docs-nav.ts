@@ -15,6 +15,7 @@ export const docsNav: DocsNavGroup[] = [
     items: [
       { title: "Docs home", href: "/", description: "QuickVoice documentation entry point." },
       { title: "MCP overview", href: "/mcp", description: "What QuickVoice MCP connects and enables." },
+      { title: "API reference", href: "/api-reference", description: "REST routes, auth, schemas, and responses." },
       { title: "Quickstart", href: "/mcp/quickstart", description: "Connect an MCP client in minutes." },
       { title: "API keys", href: "/mcp/api-keys", description: "Create least-privilege keys for MCP clients." },
     ],

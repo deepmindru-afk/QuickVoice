@@ -11,6 +11,7 @@ export function DocsShell({ children }: Readonly<{ children: React.ReactNode }>)
             <span>QuickVoice Docs</span>
           </Link>
           <nav className="hidden items-center gap-5 text-sm text-[var(--qv-muted)] md:flex">
+            <Link className="transition hover:text-[var(--qv-ink)]" href="/api-reference">API Reference</Link>
             <Link className="transition hover:text-[var(--qv-ink)]" href="/mcp/tools">Tools</Link>
             <Link className="transition hover:text-[var(--qv-ink)]" href="/mcp/resources">Resources</Link>
             <Link className="rounded-lg border border-[var(--qv-border)] px-3 py-1.5 font-medium text-[var(--qv-ink)] transition hover:border-[var(--qv-blue)] hover:text-[var(--qv-blue)]" href="/mcp/quickstart">Quickstart</Link>

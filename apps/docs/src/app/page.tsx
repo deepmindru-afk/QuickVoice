@@ -13,6 +13,9 @@ export default function DocsHomePage() {
           <a className="border border-[#002FA7] bg-[#002FA7] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#001f70]" href="/mcp">
             Start with MCP
           </a>
+          <a className="border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:border-slate-950" href="/api-reference">
+            API reference
+          </a>
           <a className="border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:border-slate-950" href="/mcp/tools">
             View tools
           </a>
