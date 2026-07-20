@@ -20,7 +20,7 @@ const riskLabel: Record<string, string> = {
 export function ReferenceCard({ item, kind }: Readonly<{ item: ReferenceItem; kind: "tool" | "resource" }>) {
   const risk = item.risk ?? (kind === "resource" ? "read" : "write");
   return (
-    <article className="rounded-2xl border border-[var(--qv-border)] bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+    <article id={item.name} className="scroll-mt-24 rounded-2xl border border-[var(--qv-border)] bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--qv-blue)]">{kind}</p>
