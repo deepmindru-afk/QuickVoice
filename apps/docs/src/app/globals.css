@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --qv-blue: #002fa7;
+  --qv-blue-ink: #001f70;
+  --qv-bg: #ffffff;
+  --qv-bg-muted: #f7f7f8;
+  --qv-ink: #0f172a;
+  --qv-muted: #5f6b7a;
+  --qv-border: #dfe3ea;
+  --qv-card: #ffffff;
+  --qv-code: #0b1220;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--qv-bg);
+  color: var(--qv-ink);
+  font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--qv-blue) 18%, white);
+}
+
+.qv-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.prose-qv {
+  --tw-prose-body: var(--qv-ink);
+  --tw-prose-headings: var(--qv-ink);
+  --tw-prose-links: var(--qv-blue);
+  --tw-prose-bold: var(--qv-ink);
+  --tw-prose-counters: var(--qv-muted);
+  --tw-prose-bullets: var(--qv-blue);
+  --tw-prose-hr: var(--qv-border);
+  --tw-prose-quotes: var(--qv-ink);
+  --tw-prose-quote-borders: var(--qv-blue);
+  --tw-prose-captions: var(--qv-muted);
+  --tw-prose-code: var(--qv-ink);
+  --tw-prose-pre-code: #e5edff;
+  --tw-prose-pre-bg: var(--qv-code);
+  --tw-prose-th-borders: var(--qv-border);
+  --tw-prose-td-borders: var(--qv-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
