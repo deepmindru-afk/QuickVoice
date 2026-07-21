@@ -19,6 +19,19 @@ class VoiceConfigResolutionTests(unittest.TestCase):
         self.assertTrue(config["llm"]["streaming"])
         self.assertEqual(config["tts"]["provider"], "elevenlabs")
 
+    def test_resolve_voice_config_accepts_deepgram_aura_2_selection(self):
+        config = resolve_voice_config(
+            {
+                "language": "en",
+                "tts": {"provider": "deepgram", "model": "aura-2", "voice": "aura-2-asteria-en"},
+            },
+            load_voice_catalog(),
+        )
+
+        self.assertEqual(config["tts"]["provider"], "deepgram")
+        self.assertEqual(config["tts"]["model"], "aura-2")
+        self.assertEqual(config["tts"]["voice"], "aura-2-asteria-en")
+
     def test_resolve_voice_config_accepts_sarvam_hindi_selection(self):
         config = resolve_voice_config(
             {

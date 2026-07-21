@@ -74,18 +74,22 @@ class WorkerHandlerTests(unittest.TestCase):
         self.assertEqual(provider_section("bedrock/us.amazon.nova-micro-v1:0"), {"provider": "bedrock", "model": "us.amazon.nova-micro-v1:0"})
         self.assertIsNone(provider_section("google/gemini-2.5-flash"))
 
-    def test_attach_resolved_voice_config_preserves_existing_inference_config_when_unsupported(self):
+    def test_attach_resolved_voice_config_resolves_deepgram_aura_2(self):
         config = attach_resolved_voice_config(
             {
                 "agent_language": "en-US",
                 "stt_model": "deepgram/nova-3",
-                "llm_model": "google/gemini-2.5-flash",
+                "llm_model": "bedrock/us.amazon.nova-micro-v1:0",
                 "tts_model": "deepgram/aura-2",
                 "voice": "asteria",
             }
         )
 
-        self.assertNotIn("voice_config", config)
+        self.assertEqual(config["voice_config"]["tts"], {
+            "provider": "deepgram",
+            "model": "aura-2",
+            "voice": "aura-2-asteria-en",
+        })
 
     def test_build_session_provider_kwargs_uses_existing_inference_without_voice_config(self):
         from unittest.mock import patch

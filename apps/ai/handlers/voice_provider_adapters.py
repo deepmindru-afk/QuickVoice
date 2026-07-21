@@ -86,6 +86,11 @@ def _build_tts(config: dict[str, Any], language: str):
             language=_elevenlabs_language(language),
             api_key=_required_env("ELEVENLABS_API_KEY"),
         )
+    if provider == "deepgram":
+        return deepgram.TTS(
+            model=voice or model,
+            api_key=_required_env("DEEPGRAM_API_KEY"),
+        )
     if provider == "sarvam":
         return sarvam.TTS(
             model=model,

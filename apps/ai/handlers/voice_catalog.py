@@ -60,6 +60,13 @@ STATIC_VOICE_CATALOG = {
         },
         {
             "provider": "bedrock",
+            "id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "label": "Claude Sonnet 4.5",
+            "runtime_model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "streaming": True,
+        },
+        {
+            "provider": "bedrock",
             "id": "us.amazon.nova-micro-v1:0",
             "label": "Amazon Nova Micro",
             "runtime_model": "us.amazon.nova-micro-v1:0",
@@ -74,6 +81,13 @@ STATIC_VOICE_CATALOG = {
         },
     ],
     "tts_models": [
+        {
+            "provider": "deepgram",
+            "id": "aura-2",
+            "label": "Deepgram Aura-2",
+            "languages": ["en"],
+            "runtime_model": "aura-2",
+        },
         {
             "provider": "elevenlabs",
             "id": "eleven_flash_v2_5",
@@ -97,6 +111,38 @@ STATIC_VOICE_CATALOG = {
         },
     ],
     "voices": [
+        {
+            "provider": "deepgram",
+            "id": "aura-2-asteria-en",
+            "label": "Asteria",
+            "languages": ["en"],
+            "tts_models": ["aura-2"],
+            "runtime_voice": "aura-2-asteria-en",
+        },
+        {
+            "provider": "deepgram",
+            "id": "aura-2-athena-en",
+            "label": "Athena",
+            "languages": ["en"],
+            "tts_models": ["aura-2"],
+            "runtime_voice": "aura-2-athena-en",
+        },
+        {
+            "provider": "deepgram",
+            "id": "aura-2-apollo-en",
+            "label": "Apollo",
+            "languages": ["en"],
+            "tts_models": ["aura-2"],
+            "runtime_voice": "aura-2-apollo-en",
+        },
+        {
+            "provider": "deepgram",
+            "id": "aura-2-thalia-en",
+            "label": "Thalia",
+            "languages": ["en"],
+            "tts_models": ["aura-2"],
+            "runtime_voice": "aura-2-thalia-en",
+        },
         {
             "provider": "elevenlabs",
             "id": "EXAVITQu4vr4xnSDxMaL",

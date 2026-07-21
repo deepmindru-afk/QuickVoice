@@ -316,6 +316,7 @@ export const LLM_MODELS: ModelOption[] = [
 
   // Anthropic
   { id: "claude-haiku-4.5", label: "Claude Haiku 4.5", provider: "Anthropic" },
+  { id: "claude-sonnet-4.5", label: "Claude Sonnet 4.5", provider: "Anthropic" },
   { id: "claude-sonnet-4", label: "Claude Sonnet 4", provider: "Anthropic" },
   { id: "claude-opus-4", label: "Claude Opus 4", provider: "Anthropic" },
 

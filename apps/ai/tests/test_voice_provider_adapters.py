@@ -50,6 +50,21 @@ class VoiceProviderAdapterTests(unittest.TestCase):
         self.assertEqual(adapters.summary["llm_provider"], "bedrock")
         self.assertEqual(adapters.summary["tts_provider"], "elevenlabs")
 
+    def test_build_voice_provider_adapters_uses_deepgram_aura_2_voice_model(self):
+        config = {
+            **self.config,
+            "tts": {
+                "provider": "deepgram",
+                "model": "aura-2",
+                "voice": "aura-2-asteria-en",
+            },
+        }
+        with patch.dict(os.environ, {"DEEPGRAM_API_KEY": "d"}, clear=True):
+            with patch("handlers.voice_provider_adapters.deepgram.TTS") as tts:
+                build_voice_provider_adapters(config)
+
+        tts.assert_called_once_with(model="aura-2-asteria-en", api_key="d")
+
     def test_build_voice_provider_adapters_rejects_partial_static_aws_credentials(self):
         with patch.dict(
             os.environ,
