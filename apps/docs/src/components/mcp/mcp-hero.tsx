@@ -27,8 +27,8 @@ export function McpHero() {
           <a className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[var(--qv-blue)] px-6 text-sm font-semibold text-white shadow-lg shadow-blue-950/10 transition hover:-translate-y-0.5 hover:bg-[var(--qv-blue-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--qv-blue)]/30" href="#setup">
             Connect to MCP Server <ArrowRight aria-hidden="true" className="size-4" />
           </a>
-          <Link className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--qv-border)] bg-white px-6 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--qv-blue)] hover:text-[var(--qv-blue)] focus:outline-none focus:ring-2 focus:ring-[var(--qv-blue)]/25" href="/mcp/tools">
-            View API docs
+          <Link className="inline-flex min-h-12 items-center justify-center rounded-full border border-[var(--qv-border)] bg-white px-6 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--qv-blue)] hover:text-[var(--qv-blue)] focus:outline-none focus:ring-2 focus:ring-[var(--qv-blue)]/25" href="/api-reference">
+            View API reference
           </Link>
         </div>
         <div className="mcp-reveal mt-7 flex flex-wrap justify-center gap-3 text-sm text-slate-600">

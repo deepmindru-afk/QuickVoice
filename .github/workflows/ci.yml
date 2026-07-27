@@ -13,7 +13,7 @@ permissions:
 jobs:
   workspace-config:
     name: Workspace Config
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout code
@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
@@ -40,7 +40,7 @@ jobs:
 
   root-tests:
     name: Root Node Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout code
@@ -52,7 +52,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
@@ -64,7 +64,7 @@ jobs:
 
   console:
     name: Console Lint, Types, Build, Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - name: Checkout code
@@ -76,7 +76,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
@@ -97,7 +97,7 @@ jobs:
 
   web:
     name: Web Lint, Types, Build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - name: Checkout code
@@ -109,7 +109,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
@@ -125,9 +125,9 @@ jobs:
       - name: Build web
         run: pnpm --filter web build
 
-  server:
-    name: Server Lint, Types, Build, Tests
-    runs-on: self-hosted
+  docs:
+    name: Docs Lint, Types, Build
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - name: Checkout code
@@ -139,12 +139,49 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: "pnpm-lock.yaml"
 
       - name: Install Node dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint docs
+        run: pnpm --filter docs lint
+
+      - name: Typecheck docs
+        run: pnpm --filter docs check-types
+
+      - name: Build docs
+        run: pnpm --filter docs build
+
+  server:
+    name: Server Lint, Types, Build, Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: "pnpm-lock.yaml"
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter server exec prisma generate
+        env:
+          # Prisma config requires a syntactically valid URL during generation,
+          # but `prisma generate` does not connect to the database.
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quickvoice_ci
 
       - name: Lint server
         run: pnpm --filter server lint
@@ -160,7 +197,7 @@ jobs:
 
   ai-python:
     name: AI Python Tests
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -186,55 +223,58 @@ jobs:
 
   docker-server:
     name: Server Docker Validate
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build server image target
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/server/Dockerfile
-          target: build
-          push: false
-          load: true
-          tags: quickvoice-server:ci
-          cache-from: type=gha,scope=server-ci
-          cache-to: type=gha,scope=server-ci,mode=max,ignore-error=true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if docker build \
+              --target build \
+              --tag quickvoice-server:ci \
+              --file apps/server/Dockerfile \
+              .; then
+              exit 0
+            fi
+            echo "Docker server build failed on attempt ${attempt}; retrying after transient registry/network failure..."
+            sleep $((attempt * 20))
+          done
+          exit 1
 
   docker-ai:
     name: AI Docker Validate
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build AI image
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/ai
-          file: apps/ai/Dockerfile
-          push: false
-          load: true
-          tags: quickvoice-ai:ci
-          build-args: |
-            PREINSTALL_CPU_TORCH=true
-            SKIP_MODEL_DOWNLOAD=true
-          cache-from: type=gha,scope=ai-ci
-          cache-to: type=gha,scope=ai-ci,mode=max,ignore-error=true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if docker build \
+              --build-arg PREINSTALL_CPU_TORCH=true \
+              --build-arg SKIP_MODEL_DOWNLOAD=true \
+              --tag quickvoice-ai:ci \
+              --file apps/ai/Dockerfile \
+              apps/ai; then
+              exit 0
+            fi
+            echo "Docker AI build failed on attempt ${attempt}; retrying after transient registry/network failure..."
+            sleep $((attempt * 20))
+          done
+          exit 1
 
   quality-summary:
     name: Quality Summary
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: always()
     needs:
@@ -242,6 +282,7 @@ jobs:
       - root-tests
       - console
       - web
+      - docs
       - server
       - ai-python
       - docker-server
@@ -255,6 +296,7 @@ jobs:
             echo "- Root tests: ${{ needs.root-tests.result }}"
             echo "- Console: ${{ needs.console.result }}"
             echo "- Web: ${{ needs.web.result }}"
+            echo "- Docs: ${{ needs.docs.result }}"
             echo "- Server: ${{ needs.server.result }}"
             echo "- AI Python: ${{ needs.ai-python.result }}"
             echo "- Server Docker: ${{ needs.docker-server.result }}"
@@ -269,6 +311,7 @@ jobs:
             "${{ needs.root-tests.result }}" \
             "${{ needs.console.result }}" \
             "${{ needs.web.result }}" \
+            "${{ needs.docs.result }}" \
             "${{ needs.server.result }}" \
             "${{ needs.ai-python.result }}" \
             "${{ needs.docker-server.result }}" \

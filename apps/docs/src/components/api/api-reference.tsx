@@ -24,7 +24,7 @@ const methodClass: Record<ApiMethod, string> = {
 
 export function ApiReference() {
   return (
-    <main className="min-h-screen bg-[#070a12] text-slate-100">
+    <main className="api-reference-surface min-h-screen bg-[#070a12] text-slate-100">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(0,47,167,0.28),transparent_32rem),radial-gradient(circle_at_85%_20%,rgba(14,165,233,0.12),transparent_28rem)]" />
       <div className="relative mx-auto grid max-w-[1500px] grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="hidden min-h-dvh border-r border-white/10 bg-[#090d16]/80 px-5 py-6 backdrop-blur-xl lg:block">

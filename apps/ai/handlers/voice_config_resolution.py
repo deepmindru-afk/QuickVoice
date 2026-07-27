@@ -126,7 +126,7 @@ def _find_voice(
     language: str,
 ) -> dict[str, Any]:
     for voice in voices:
-        if voice["provider"] != provider or voice["id"] != voice_id:
+        if voice["provider"] != provider or not _voice_id_matches(voice, voice_id):
             continue
         if tts_model_id not in voice.get("tts_models", []):
             raise VoiceConfigValidationError(f"voice {voice_id} is not compatible with {tts_model_id}")
@@ -134,3 +134,12 @@ def _find_voice(
             raise VoiceConfigValidationError(f"voice {voice_id} does not support language {language}")
         return voice
     raise VoiceConfigValidationError(f"voice is not supported: {provider}/{voice_id}")
+
+
+def _voice_id_matches(voice: dict[str, Any], requested_voice_id: str) -> bool:
+    candidates = {str(voice.get("id", "")), str(voice.get("runtime_voice", ""))}
+    for value in list(candidates):
+        lower = value.lower()
+        if lower.startswith("aura-2-") and lower.endswith("-en"):
+            candidates.add(value[len("aura-2-") : -len("-en")])
+    return requested_voice_id in candidates

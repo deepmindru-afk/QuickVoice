@@ -1,6 +1,8 @@
+import { DocsShell } from "@/components/docs-shell";
 export default function ApiKeysPage() {
   return (
-    <article className="prose prose-qv max-w-4xl">
+    <DocsShell>
+      <article className="prose prose-qv mx-auto max-w-4xl">
       <h1>API keys and authentication</h1>
       <p>The remote MCP endpoint must not be public. QuickVoice MCP uses a bearer token gate before forwarding requests to the existing QuickVoice API layer.</p>
       <h2>Required environment</h2>
@@ -16,6 +18,7 @@ export default function ApiKeysPage() {
         <li>Update client configuration and verify the MCP handshake.</li>
         <li>Remove the old token after all clients are migrated.</li>
       </ol>
-    </article>
+      </article>
+    </DocsShell>
   );
 }

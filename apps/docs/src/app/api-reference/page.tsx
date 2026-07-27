@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { ApiReference } from "@/components/api/api-reference";
+import { ScalarApiReference } from "@/components/api/scalar-api-reference";
 
 export const metadata: Metadata = {
   title: "API Reference",
-  description: "QuickVoice REST API reference for agents, calls, numbers, widgets, tools, MCP integrations, and operations.",
+  description: "Interactive QuickVoice REST API reference powered by Scalar and OpenAPI.",
 };
 
 export default function ApiReferencePage() {
-  return <ApiReference />;
+  return <ScalarApiReference />;
 }

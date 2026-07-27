@@ -3,6 +3,7 @@ import Link from "next/link";
 const links = [
   { href: "#overview", label: "Overview" },
   { href: "#features", label: "Features" },
+  { href: "#architecture", label: "Architecture" },
   { href: "#setup", label: "Setup" },
   { href: "#clients", label: "Clients" },
   { href: "#faq", label: "FAQ" },
@@ -23,7 +24,7 @@ export function McpPageNav() {
             </a>
           ))}
         </nav>
-        <Link className="inline-flex min-h-10 items-center rounded-full bg-[var(--qv-blue)] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--qv-blue-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--qv-blue)]/30" href="/mcp/tools">
+        <Link className="inline-flex min-h-10 items-center rounded-full bg-[var(--qv-blue)] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--qv-blue-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--qv-blue)]/30" href="/api-reference">
           API docs
         </Link>
       </div>

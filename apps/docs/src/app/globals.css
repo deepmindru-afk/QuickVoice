@@ -2,6 +2,22 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  color-scheme: dark;
+  --qv-blue: #6ea8ff;
+  --qv-blue-ink: #9dc2ff;
+  --qv-bg: #070a12;
+  --qv-bg-muted: #0d1320;
+  --qv-ink: #f8fafc;
+  --qv-muted: #a8b3c5;
+  --qv-border: rgba(148, 163, 184, 0.22);
+  --qv-card: #0b1020;
+  --qv-card-soft: #111827;
+  --qv-code: #050816;
+  --qv-shadow: rgba(0, 0, 0, 0.36);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
   --qv-blue: #002fa7;
   --qv-blue-ink: #001f70;
   --qv-bg: #ffffff;
@@ -10,7 +26,9 @@
   --qv-muted: #5f6b7a;
   --qv-border: #dfe3ea;
   --qv-card: #ffffff;
+  --qv-card-soft: #f8fafc;
   --qv-code: #0b1220;
+  --qv-shadow: rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -30,14 +48,16 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--qv-blue) 18%, white);
+  background: color-mix(in srgb, var(--qv-blue) 28%, transparent);
 }
 
 .qv-grid-bg {
+  background-color: var(--qv-bg);
   background-image:
-    linear-gradient(to right, rgba(15, 23, 42, 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.055) 1px, transparent 1px);
-  background-size: 40px 40px;
+    linear-gradient(to right, color-mix(in srgb, var(--qv-border) 64%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--qv-border) 64%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--qv-blue) 13%, transparent), transparent 34rem);
+  background-size: 40px 40px, 40px 40px, auto;
 }
 
 .prose-qv {
@@ -56,6 +76,154 @@ body {
   --tw-prose-pre-bg: var(--qv-code);
   --tw-prose-th-borders: var(--qv-border);
   --tw-prose-td-borders: var(--qv-border);
+}
+
+
+/* Theme compatibility layer for existing Tailwind utility-heavy docs pages. */
+.bg-white,
+.bg-\[var\(--qv-bg\)\] {
+  background-color: var(--qv-card) !important;
+}
+.bg-\[var\(--qv-bg-muted\)\],
+.bg-slate-50,
+.bg-slate-100 {
+  background-color: var(--qv-bg-muted) !important;
+}
+.bg-white\/90 {
+  background-color: color-mix(in srgb, var(--qv-card) 90%, transparent) !important;
+}
+.bg-white\/80 {
+  background-color: color-mix(in srgb, var(--qv-card) 80%, transparent) !important;
+}
+.text-slate-950,
+.text-slate-900,
+.text-slate-800,
+.text-\[var\(--qv-ink\)\] {
+  color: var(--qv-ink) !important;
+}
+.text-slate-700,
+.text-slate-600,
+.text-slate-500,
+.text-slate-400,
+.text-\[var\(--qv-muted\)\] {
+  color: var(--qv-muted) !important;
+}
+.border-slate-300,
+.border-\[var\(--qv-border\)\] {
+  border-color: var(--qv-border) !important;
+}
+.shadow-sm,
+.shadow-md,
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  --tw-shadow-color: var(--qv-shadow) !important;
+}
+.ring-\[var\(--qv-border\)\] {
+  --tw-ring-color: var(--qv-border) !important;
+}
+
+:root[data-theme="dark"] .hover\:bg-white:hover {
+  background-color: var(--qv-card-soft) !important;
+}
+:root[data-theme="dark"] .hover\:border-slate-950:hover {
+  border-color: var(--qv-blue) !important;
+}
+:root[data-theme="dark"] .prose-qv code:not(pre code) {
+  background: color-mix(in srgb, var(--qv-blue) 12%, transparent);
+  border: 1px solid var(--qv-border);
+  border-radius: 0.45rem;
+  padding: 0.12rem 0.32rem;
+}
+
+:root[data-theme="light"] .qv-grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.055) 1px, transparent 1px);
+}
+
+
+.api-reference-surface {
+  background: var(--qv-bg) !important;
+  color: var(--qv-ink) !important;
+}
+:root[data-theme="light"] .api-reference-surface .bg-\[\#070a12\],
+:root[data-theme="light"] .api-reference-surface .bg-\[\#090d16\]\/80,
+:root[data-theme="light"] .api-reference-surface .bg-\[\#0c111d\],
+:root[data-theme="light"] .api-reference-surface .bg-white\/\[0\.035\],
+:root[data-theme="light"] .api-reference-surface .bg-white\/\[0\.025\],
+:root[data-theme="light"] .api-reference-surface .bg-black\/20 {
+  background-color: var(--qv-card) !important;
+}
+:root[data-theme="light"] .api-reference-surface .border-white\/10,
+:root[data-theme="light"] .api-reference-surface .border-slate-500\/30 {
+  border-color: var(--qv-border) !important;
+}
+:root[data-theme="light"] .api-reference-surface .text-white,
+:root[data-theme="light"] .api-reference-surface .text-slate-100,
+:root[data-theme="light"] .api-reference-surface .text-slate-200,
+:root[data-theme="light"] .api-reference-surface .text-slate-300 {
+  color: var(--qv-ink) !important;
+}
+:root[data-theme="light"] .api-reference-surface .text-slate-400,
+:root[data-theme="light"] .api-reference-surface .text-slate-500,
+:root[data-theme="light"] .api-reference-surface .text-slate-600 {
+  color: var(--qv-muted) !important;
+}
+:root[data-theme="light"] .api-reference-surface figure,
+:root[data-theme="light"] .api-reference-surface figure .text-white,
+:root[data-theme="light"] .api-reference-surface figure .text-slate-100,
+:root[data-theme="light"] .api-reference-surface figure .text-slate-300,
+:root[data-theme="light"] .api-reference-surface figure .text-slate-400 {
+  color: #e5edff !important;
+}
+:root[data-theme="light"] .api-reference-surface figure {
+  background-color: var(--qv-code) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+
+.api-reference-surface #quickvoice-scalar-api-reference,
+.api-reference-surface #quickvoice-scalar-api-reference > * {
+  background: var(--qv-bg) !important;
+  color: var(--qv-ink) !important;
+}
+.api-reference-surface #quickvoice-scalar-api-reference {
+  --scalar-background-1: var(--qv-bg) !important;
+  --scalar-background-2: var(--qv-card) !important;
+  --scalar-background-3: var(--qv-card-soft) !important;
+  --scalar-color-1: var(--qv-ink) !important;
+  --scalar-color-2: var(--qv-muted) !important;
+  --scalar-color-3: color-mix(in srgb, var(--qv-muted) 78%, transparent) !important;
+  --scalar-border-color: var(--qv-border) !important;
+  --scalar-accent: var(--qv-blue) !important;
+  --scalar-sidebar-background-1: var(--qv-card) !important;
+  --scalar-sidebar-background-2: var(--qv-card-soft) !important;
+  --scalar-sidebar-color-1: var(--qv-ink) !important;
+  --scalar-sidebar-color-2: var(--qv-muted) !important;
+  --scalar-sidebar-border-color: var(--qv-border) !important;
+  --scalar-button-1: var(--qv-blue) !important;
+  --scalar-button-1-color: #ffffff !important;
+}
+.api-reference-surface #quickvoice-scalar-api-reference [class*="sidebar"],
+.api-reference-surface #quickvoice-scalar-api-reference aside,
+.api-reference-surface #quickvoice-scalar-api-reference nav {
+  background-color: var(--qv-card) !important;
+  border-color: var(--qv-border) !important;
+}
+.api-reference-surface #quickvoice-scalar-api-reference input,
+.api-reference-surface #quickvoice-scalar-api-reference button,
+.api-reference-surface #quickvoice-scalar-api-reference select {
+  border-color: var(--qv-border) !important;
+}
+.api-reference-surface #quickvoice-scalar-api-reference a,
+.api-reference-surface #quickvoice-scalar-api-reference button {
+  color: inherit;
+}
+.api-reference-surface #quickvoice-scalar-api-reference code,
+.api-reference-surface #quickvoice-scalar-api-reference pre {
+  background-color: var(--qv-code) !important;
+  color: #e5edff !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -175,9 +175,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -190,17 +187,32 @@ jobs:
 
       - name: Build and push server Docker image
         id: server-build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/server/Dockerfile
-          push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}:sha-${{ github.sha }}
-          sbom: true
-          provenance: true
-          cache-from: type=gha,scope=server
-          cache-to: type=gha,scope=server,mode=max,ignore-error=true
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.login-ecr.outputs.registry }}/${{ env.SERVER_ECR_REPOSITORY }}:sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if docker build \
+              --file apps/server/Dockerfile \
+              --tag "${IMAGE_TAG}" \
+              . && docker push "${IMAGE_TAG}"; then
+              digest="$(aws ecr describe-images \
+                --repository-name "${SERVER_ECR_REPOSITORY}" \
+                --image-ids imageTag="sha-${GITHUB_SHA}" \
+                --query 'imageDetails[0].imageDigest' \
+                --output text)"
+              if [ -z "${digest}" ] || [ "${digest}" = "None" ]; then
+                echo "[fail] Could not resolve pushed server image digest."
+                exit 1
+              fi
+              echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            echo "Docker server build/push failed on attempt ${attempt}; retrying after transient registry/network failure..."
+            sleep $((attempt * 20))
+          done
+          exit 1
 
       - name: Export server image metadata
         id: image
@@ -233,9 +245,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -248,17 +257,32 @@ jobs:
 
       - name: Build and push AI Docker image
         id: ai-build
-        uses: docker/build-push-action@v6
-        with:
-          context: apps/ai
-          file: apps/ai/Dockerfile
-          push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}:sha-${{ github.sha }}
-          sbom: true
-          provenance: true
-          cache-from: type=gha,scope=ai
-          cache-to: type=gha,scope=ai,mode=max,ignore-error=true
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.login-ecr.outputs.registry }}/${{ env.AI_ECR_REPOSITORY }}:sha-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if docker build \
+              --file apps/ai/Dockerfile \
+              --tag "${IMAGE_TAG}" \
+              apps/ai && docker push "${IMAGE_TAG}"; then
+              digest="$(aws ecr describe-images \
+                --repository-name "${AI_ECR_REPOSITORY}" \
+                --image-ids imageTag="sha-${GITHUB_SHA}" \
+                --query 'imageDetails[0].imageDigest' \
+                --output text)"
+              if [ -z "${digest}" ] || [ "${digest}" = "None" ]; then
+                echo "[fail] Could not resolve pushed AI image digest."
+                exit 1
+              fi
+              echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+            echo "Docker AI build/push failed on attempt ${attempt}; retrying after transient registry/network failure..."
+            sleep $((attempt * 20))
+          done
+          exit 1
 
       - name: Export AI image metadata
         id: image

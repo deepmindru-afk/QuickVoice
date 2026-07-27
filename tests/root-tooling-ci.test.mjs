@@ -13,11 +13,13 @@ test("required CI workflow gates pull requests with parallel quality shards", as
   assert.match(ci, /pull_request:/);
   assert.match(ci, /workflow_call:/);
   assert.match(ci, /pnpm install --frozen-lockfile/);
-  assert.match(ci, /runs-on: self-hosted/);
+  assert.doesNotMatch(ci, /runs-on: self-hosted/);
+  assert.match(ci, /runs-on: ubuntu-latest/);
   assert.match(ci, /workspace-config:/);
   assert.match(ci, /root-tests:/);
   assert.match(ci, /console:/);
   assert.match(ci, /web:/);
+  assert.match(ci, /docs:/);
   assert.match(ci, /server:/);
   assert.match(ci, /ai-python:/);
   assert.match(ci, /docker-server:/);
@@ -27,14 +29,17 @@ test("required CI workflow gates pull requests with parallel quality shards", as
   assert.match(ci, /pnpm check:configs/);
   assert.match(ci, /pnpm --filter console lint/);
   assert.match(ci, /pnpm --filter web build/);
+  assert.match(ci, /pnpm --filter docs build/);
   assert.match(ci, /pnpm --filter server test/);
   assert.match(ci, /node --test tests\/\*\.test\.mjs/);
   assert.match(ci, /node --test apps\/console\/tests\/\*\.test\.mjs/);
   assert.match(ci, /python -m pip install -r requirements\.txt/);
   assert.match(ci, /python -m pip install pytest/);
   assert.match(ci, /python -m pytest tests/);
-  assert.match(ci, /docker\/setup-buildx-action@v3/);
-  assert.match(ci, /docker\/build-push-action@v6/);
+  assert.match(ci, /node-version: "24"/);
+  assert.match(ci, /docker build \\/);
+  assert.match(ci, /for attempt in 1 2 3/);
+  assert.match(ci, /retrying after transient registry\/network failure/);
   assert.match(ci, /PREINSTALL_CPU_TORCH=true/);
   assert.match(ci, /SKIP_MODEL_DOWNLOAD=true/);
   assert.match(ci, /Write quality gate summary/);
@@ -44,10 +49,14 @@ test("required CI workflow gates pull requests with parallel quality shards", as
 
 test("security audit fails on high advisories and uses explicit suppressions", async () => {
   const workflow = await text(".github/workflows/security-audit.yml");
-  const suppressions = JSON.parse(await text("security/audit-suppressions.json"));
+  const suppressions = JSON.parse(
+    await text("security/audit-suppressions.json"),
+  );
 
   assert.match(workflow, /pnpm audit:deps/);
   assert.match(workflow, /--audit-level high/);
+  assert.doesNotMatch(workflow, /runs-on: self-hosted/);
+  assert.match(workflow, /runs-on: ubuntu-latest/);
   assert.ok(Array.isArray(suppressions.suppressions));
   assert.ok(suppressions.suppressions.length > 0);
 
@@ -56,12 +65,12 @@ test("security audit fails on high advisories and uses explicit suppressions", a
     assert.match(suppression.id, /^GHSA-|^CVE-|^\d+$/);
     assert.ok(suppression.module);
     assert.ok(suppression.reason.includes("Temporary baseline suppression"));
-    assert.equal(suppression.expires, "2026-07-19");
+    assert.equal(suppression.expires, "2026-08-20");
     assert.ok(Array.isArray(suppression.contexts));
     assert.ok(suppression.contexts.length > 0);
     for (const context of suppression.contexts) {
       assert.ok(
-        ["production dependencies", "all dependencies"].includes(context)
+        ["production dependencies", "all dependencies"].includes(context),
       );
     }
     const key = `${suppression.module}:${suppression.id}`;
@@ -78,7 +87,10 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
   assert.match(workflow, /build-server:/);
   assert.match(workflow, /build-ai:/);
   assert.match(workflow, /deploy:/);
-  assert.match(workflow, /needs: \[changes, validate-config, build-server, build-ai\]/);
+  assert.match(
+    workflow,
+    /needs: \[changes, validate-config, build-server, build-ai\]/,
+  );
   assert.match(workflow, /environment:/);
   assert.match(workflow, /Validate deployment configuration/);
   assert.match(workflow, /REQUIRED_AWS_ROLE_ARN/);
@@ -89,8 +101,11 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
   assert.match(workflow, /GitHub repository variables/);
   assert.match(workflow, /github\.sha/);
   assert.doesNotMatch(workflow, /:latest/);
-  assert.match(workflow, /sbom: true/);
-  assert.match(workflow, /provenance: true/);
+  assert.match(workflow, /docker build \\/);
+  assert.match(workflow, /docker push/);
+  assert.match(workflow, /aws ecr describe-images/);
+  assert.match(workflow, /for attempt in 1 2 3/);
+  assert.match(workflow, /retrying after transient registry\/network failure/);
   assert.match(workflow, /Smoke test pushed server image manifest/);
   assert.match(workflow, /Smoke test pushed AI image manifest/);
   assert.match(workflow, /aquasecurity\/trivy-action@/);
@@ -102,15 +117,25 @@ test("deploy workflows are gated, immutable, scanned, signed, and environment pr
 
 test("GitHub templates surface contributor workflow expectations", async () => {
   const pr = await text(".github/pull_request_template.md");
-  const issue = await text(".github/ISSUE_TEMPLATE.md");
+  const config = await text(".github/ISSUE_TEMPLATE/config.yml");
+  const bug = await text(".github/ISSUE_TEMPLATE/bug.yml");
+  const setup = await text(".github/ISSUE_TEMPLATE/setup.yml");
+  const docs = await text(".github/ISSUE_TEMPLATE/docs.yml");
+  const feature = await text(".github/ISSUE_TEMPLATE/feature.yml");
 
   assert.match(pr, /task doctor/);
   assert.match(pr, /pnpm ci:local/);
   assert.match(pr, /Dependency changes/);
   assert.match(pr, /UI screenshots/);
   assert.match(pr, /Environment changes/);
-  assert.match(issue, /Blocks `task up:dev`/);
-  assert.match(issue, /Security issue disclosure question only/);
+  assert.match(config, /blank_issues_enabled: false/);
+  assert.match(config, /security\/policy/);
+  assert.match(bug, /Minimal reproduction/);
+  assert.match(bug, /unpatched security vulnerability/);
+  assert.match(setup, /task up:dev/);
+  assert.match(setup, /Native Windows PowerShell/);
+  assert.match(docs, /Repository evidence/);
+  assert.match(feature, /wait for scope agreement and assignment/);
 });
 
 test("server runtime image installs only production server dependencies", async () => {
@@ -118,18 +143,27 @@ test("server runtime image installs only production server dependencies", async 
 
   assert.match(
     dockerfile,
-    /pnpm install --frozen-lockfile --prod --filter server\.\.\./
+    /pnpm install --frozen-lockfile --prod --filter server\.\.\./,
   );
   assert.doesNotMatch(dockerfile, /pnpm .*deploy/);
   assert.match(dockerfile, /apt-get upgrade -y/);
-  assert.match(dockerfile, /COPY packages\/typescript-config packages\/typescript-config/);
+  assert.match(
+    dockerfile,
+    /COPY packages\/typescript-config packages\/typescript-config/,
+  );
   assert.match(dockerfile, /rm -rf[\s\S]*\/root\/\.cache\/node/);
   assert.match(dockerfile, /rm -rf[\s\S]*\/usr\/local\/lib\/node_modules\/npm/);
-  assert.match(dockerfile, /rm -rf[\s\S]*\/usr\/local\/lib\/node_modules\/corepack/);
-  assert.doesNotMatch(dockerfile, /COPY packages\/typescript-config\/package\.json/);
+  assert.match(
+    dockerfile,
+    /rm -rf[\s\S]*\/usr\/local\/lib\/node_modules\/corepack/,
+  );
   assert.doesNotMatch(
     dockerfile,
-    /COPY --from=build .*\/app\/node_modules \/app\/node_modules/
+    /COPY packages\/typescript-config\/package\.json/,
+  );
+  assert.doesNotMatch(
+    dockerfile,
+    /COPY --from=build .*\/app\/node_modules \/app\/node_modules/,
   );
 });
 
@@ -144,12 +178,7 @@ test("server runtime image lets the non-root user run Prisma migrations", async 
 test("Dependabot covers npm, GitHub Actions, Dockerfiles, and AI Python requirements", async () => {
   const dependabot = await text(".github/dependabot.yml");
 
-  for (const ecosystem of [
-    "npm",
-    "github-actions",
-    "docker",
-    "pip",
-  ]) {
+  for (const ecosystem of ["npm", "github-actions", "docker", "pip"]) {
     assert.match(dependabot, new RegExp(`package-ecosystem: "${ecosystem}"`));
   }
 

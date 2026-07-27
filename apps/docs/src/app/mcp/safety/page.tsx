@@ -1,3 +1,4 @@
+import { DocsShell } from "@/components/docs-shell";
 import { mcpExcludedApis, mcpTools } from "@/generated/mcp-reference";
 
 const groups = [
@@ -9,7 +10,8 @@ const groups = [
 
 export default function SafetyPage() {
   return (
-    <article className="mx-auto max-w-5xl">
+    <DocsShell>
+      <article className="mx-auto max-w-5xl">
       <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--qv-blue)]">Governance</p>
       <h1 className="mt-2 text-4xl font-semibold tracking-[-0.035em] text-slate-950">Safety model</h1>
       <p className="mt-4 max-w-3xl text-lg leading-8 text-[var(--qv-muted)]">MCP clients should show confirmation for actions with real-world effects. The docs generator classifies each tool from the verified API registry so reviewers can audit the exposed surface.</p>
@@ -31,6 +33,7 @@ export default function SafetyPage() {
           </div>
         ))}
       </div>
-    </article>
+      </article>
+    </DocsShell>
   );
 }

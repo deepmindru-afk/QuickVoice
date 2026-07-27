@@ -1,8 +1,10 @@
+import { DocsShell } from "@/components/docs-shell";
 import { mcpReferenceStats } from "@/generated/mcp-reference";
 
 export default function ChangelogPage() {
   return (
-    <article className="prose prose-qv max-w-4xl">
+    <DocsShell>
+      <article className="prose prose-qv mx-auto max-w-4xl">
       <h1>Changelog</h1>
       <h2>July 2026</h2>
       <ul>
@@ -11,6 +13,7 @@ export default function ChangelogPage() {
         <li>Listed {mcpReferenceStats.excludedCount} excluded APIs for follow-up before exposure.</li>
       </ul>
       <p>Future changes should update the MCP API registry first, then regenerate this documentation.</p>
-    </article>
+      </article>
+    </DocsShell>
   );
 }

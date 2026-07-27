@@ -1,3 +1,4 @@
+import { McpArchitecture } from "@/components/mcp/mcp-architecture";
 import { McpClientAccordion } from "@/components/mcp/mcp-client-accordion";
 import { McpConfigGenerator } from "@/components/mcp/mcp-config-generator";
 import { McpFaq } from "@/components/mcp/mcp-faq";
@@ -15,6 +16,7 @@ export default function McpOverviewPage() {
       <McpHero />
       <McpLogoCloud />
       <McpFeatureGrid />
+      <McpArchitecture />
       <McpConfigGenerator />
       <McpClientAccordion />
       <McpFaq />

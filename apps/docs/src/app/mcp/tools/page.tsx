@@ -1,9 +1,11 @@
+import { DocsShell } from "@/components/docs-shell";
 import { ReferenceCard } from "@/components/reference-card";
 import { mcpTools } from "@/generated/mcp-reference";
 
 export default function ToolsPage() {
   return (
-    <section className="mx-auto max-w-6xl">
+    <DocsShell>
+      <section className="mx-auto max-w-6xl">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--qv-border)] pb-6">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--qv-blue)]">Reference</p>
@@ -15,6 +17,7 @@ export default function ToolsPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         {mcpTools.map((tool) => <ReferenceCard key={tool.name} item={tool} kind="tool" />)}
       </div>
-    </section>
+      </section>
+    </DocsShell>
   );
 }
