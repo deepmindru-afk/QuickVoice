@@ -44,6 +44,7 @@ export async function getDialableNumber(args: {
       organizationId: args.organizationId,
       agentId: args.agentId,
       number: args.fromNumber,
+      billingStatus: "ACTIVE",
       agent: {
         isActive: true,
         isConfigured: true,
@@ -286,6 +287,43 @@ export async function getBatchCampaignDetail(args: {
           status: true,
           createdAt: true,
           updatedAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+}
+
+export async function getBatchCampaignResults(args: {
+  organizationId: string;
+  campaignId: string;
+}) {
+  return prisma.campaign.findFirst({
+    where: {
+      organizationId: args.organizationId,
+      campaignId: args.campaignId,
+    },
+    select: {
+      campaignId: true,
+      name: true,
+      outboundCalls: {
+        select: {
+          outboundId: true,
+          phoneNumber: true,
+          optionalData: true,
+          status: true,
+          createdAt: true,
+          callLog: {
+            select: {
+              callId: true,
+              status: true,
+              startTime: true,
+              endTime: true,
+              durationSeconds: true,
+              dataExtracted: true,
+              dataEvaluation: true,
+            },
+          },
         },
         orderBy: { createdAt: "asc" },
       },

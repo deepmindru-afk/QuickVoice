@@ -99,7 +99,7 @@ export const swaggerSpec = {
         in: "header",
         name: "x-api-key",
         description:
-          "Organization-scoped QuickVoice API key. Send the raw key in the x-api-key header; do not use Authorization: Bearer for external API keys.",
+          "Read-only organization-scoped QuickVoice API key. Send the raw key in the x-api-key header; do not use Authorization: Bearer. API keys cannot manage billing or phone-number ownership.",
       },
     },
     schemas: {
@@ -614,6 +614,31 @@ export const swaggerSpec = {
             maximum: 180,
             default: 60,
           },
+          campaignIntelligence: {
+            type: "object",
+            description: "Optional campaign-level personalization, experiment, and goal configuration.",
+            properties: {
+              personalizationSchema: {
+                type: "object",
+                additionalProperties: true,
+              },
+              experiments: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
+              goals: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+        },
+      },
+      CampaignReportBuildRequest: {
+        type: "object",
+        properties: {
+          randomized: { type: "boolean", default: false },
+          persistReport: { type: "boolean", default: false },
         },
       },
       BatchCampaign: {
@@ -1429,7 +1454,14 @@ export const swaggerSpec = {
         description:
           "Updates supported source configuration. Name or agent changes reprocess any source; URL changes are supported for URL sources only.",
         security: userAuthSecurity,
-        parameters: [{ name: "kbId", in: "path", required: true, schema: { type: "string" } }],
+        parameters: [
+          {
+            name: "kbId",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
         requestBody: {
           required: true,
           content: {
@@ -1439,7 +1471,9 @@ export const swaggerSpec = {
           },
         },
         responses: {
-          200: { description: "Knowledge source updated and queued for processing" },
+          200: {
+            description: "Knowledge source updated and queued for processing",
+          },
           400: { $ref: "#/components/responses/BadRequest" },
           401: { $ref: "#/components/responses/Unauthorized" },
           403: { $ref: "#/components/responses/Forbidden" },
@@ -1685,6 +1719,158 @@ export const swaggerSpec = {
           401: { $ref: "#/components/responses/Unauthorized" },
           403: { $ref: "#/components/responses/Forbidden" },
           404: { $ref: "#/components/responses/NotFound" },
+        },
+      },
+    },
+    "/outbound-calls/batches/{campaignId}/personalization/preflight": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Preflight typed campaign personalization",
+        description:
+          "Validates per-recipient typed variables, missing/invalid behavior, masked previews, and rendered configuration digests before dispatch.",
+        security: userAuthSecurity,
+        parameters: [
+          {
+            name: "campaignId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Personalization preflight result" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/batches/{campaignId}/experiments/assignments": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Assign campaign experiment variants",
+        description:
+          "Computes deterministic hash-based variant assignment with exclusions and balance diagnostics. Persist assignments before dispatch in production workflows.",
+        security: userAuthSecurity,
+        parameters: [
+          {
+            name: "campaignId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Experiment assignments" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/batches/{campaignId}/conversions/validate": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Validate campaign conversion event",
+        description:
+          "Validates conversion identity, timestamp, value/currency, source evidence, and idempotency key before ingestion and attribution.",
+        security: userAuthSecurity,
+        parameters: [
+          {
+            name: "campaignId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Conversion accepted" },
+          400: { description: "Conversion rejected or malformed" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/batches/{campaignId}/conversions": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Ingest campaign conversion event",
+        description: "Validates, persists, and attributes a conversion event for the campaign. Conversion events can be rejected when validation fails.",
+        security: userAuthSecurity,
+        parameters: [{
+          name: "campaignId",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Campaign conversion ingested" },
+          400: { description: "Conversion rejected or malformed" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
+        },
+      },
+    },
+    "/outbound-calls/batches/{campaignId}/reports/preview": {
+      post: {
+        tags: ["Outbound Calls"],
+        summary: "Campaign report generated",
+        description:
+          "Builds variant-level counts, denominators, costs, conversion rates, confidence intervals, freshness, and observational/randomized evidence labels without automatic causal claims.",
+        security: userAuthSecurity,
+        parameters: [
+          {
+            name: "campaignId",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CampaignReportBuildRequest" },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Campaign report preview" },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          403: { $ref: "#/components/responses/Forbidden" },
         },
       },
     },

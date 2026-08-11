@@ -14,6 +14,8 @@ let getArgs: unknown[] = [];
 let cancelArgs: unknown[] = [];
 let retryArgs: unknown[] = [];
 let batchArgs: unknown[] = [];
+let conversionIngestArgs: unknown[] = [];
+let reportPreviewArgs: unknown[] = [];
 let uploadUrlArgs: unknown[] = [];
 let listBatchArgs: unknown[] = [];
 let batchDetailArgs: unknown[] = [];
@@ -123,6 +125,38 @@ before(async () => {
         return {
           uploadUrl: "https://s3.example.test/upload",
           s3Key: "outbound-batches/org_123/recipients.csv",
+        };
+      },
+      ingestCampaignConversionEvent: async (args: unknown) => {
+        conversionIngestArgs.push(args);
+        return {
+          campaignId: "campaign_123",
+          accepted: true,
+          canonical: {
+            goalKey: "booking_created",
+            dedupeKey: "booking_123",
+            externalCustomerId: "cust_1",
+          },
+          findings: [],
+          conversionId: "conv_1",
+          attributedAssignments: 1,
+        };
+      },
+      buildBatchCampaignReport: async (args: any) => {
+        reportPreviewArgs.push(args);
+        return {
+          campaignId: args.campaignId,
+          causalClaimAllowed: false,
+          totals: {
+            attempts: 10,
+            connected: 2,
+            conversions: 1,
+            conversionValueCents: 2500,
+            connectionRate: 0.2,
+            conversionRate: 0.1,
+          },
+          variants: [],
+          dataFreshnessAt: "2026-07-30T12:00:00.000Z",
         };
       },
       listBatchCampaigns: async (args: unknown) => {
@@ -378,5 +412,149 @@ test("POST /:outboundId/retry dispatches a replacement call", async () => {
     organizationId: "org_123",
     userId: "user_123",
     outboundId: "out_failed",
+  });
+});
+
+test("campaign intelligence routes run before generic batch detail routing", async () => {
+  conversionIngestArgs = [];
+  reportPreviewArgs = [];
+  const preflight = await requestJson(
+    `${baseUrl}/api/v1/outbound-calls/batches/campaign_123/personalization/preflight`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        schema: {
+          version: 1,
+          fields: [
+            {
+              name: "firstName",
+              type: "string",
+              source: "audience_snapshot",
+              required: true,
+              missingBehavior: "skip",
+              invalidBehavior: "skip",
+            },
+          ],
+          templates: { firstMessage: "Hi {{firstName}}" },
+        },
+        recipients: [{ recipientKey: "cust_1", values: { firstName: "Ada" } }],
+      }),
+    },
+  );
+  assert.equal(preflight.status, 200);
+  const preflightBody = await preflight.json();
+  assert.equal(preflightBody.data.campaignId, "campaign_123");
+  assert.equal(preflightBody.data.validRecipients, 1);
+  assert.equal(
+    preflightBody.data.rows[0].renderedPreview.firstMessage,
+    "Hi Ada",
+  );
+
+  const assignments = await requestJson(
+    `${baseUrl}/api/v1/outbound-calls/batches/campaign_123/experiments/assignments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        experiment: {
+          experimentId: "exp_1",
+          version: 1,
+          hypothesis: "Variant improves connects",
+          primaryMetric: "connected",
+          stoppingPolicy: "Stop after minimum sample",
+          variants: [
+            {
+              key: "control",
+              name: "Control",
+              allocationBps: 5000,
+              isControl: true,
+            },
+            { key: "variant", name: "Variant", allocationBps: 5000 },
+          ],
+        },
+        unitKeys: ["cust_1", "cust_2"],
+      }),
+    },
+  );
+  assert.equal(assignments.status, 200);
+  const assignmentsBody = await assignments.json();
+  assert.equal(assignmentsBody.data.assignments.length, 2);
+  assert.equal(assignmentsBody.data.assignments[0].assignmentHash.length, 64);
+
+  const conversion = await requestJson(
+    `${baseUrl}/api/v1/outbound-calls/batches/campaign_123/conversions/validate`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        goalKey: "booking_created",
+        dedupeKey: "booking_123",
+        externalCustomerId: "cust_1",
+        occurredAt: "2026-07-30T12:00:00.000Z",
+        valueCents: 2500,
+        currency: "USD",
+        source: "crm-webhook",
+      }),
+    },
+  );
+  assert.equal(conversion.status, 200);
+  const conversionBody = await conversion.json();
+  assert.equal(conversionBody.data.accepted, true);
+
+  const ingestion = await requestJson(
+    `${baseUrl}/api/v1/outbound-calls/batches/campaign_123/conversions`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        goalKey: "booking_created",
+        dedupeKey: "booking_456",
+        externalCustomerId: "cust_1",
+        occurredAt: "2026-07-30T12:00:01.000Z",
+        valueCents: 1500,
+        currency: "USD",
+        source: "crm-webhook",
+      }),
+    },
+  );
+  assert.equal(ingestion.status, 200);
+  const ingestionBody = await ingestion.json();
+  assert.equal(ingestionBody.success, true);
+  assert.equal(ingestionBody.data.accepted, true);
+  assert.deepEqual(conversionIngestArgs[0], {
+    organizationId: "org_123",
+    campaignId: "campaign_123",
+    goalKey: "booking_created",
+    dedupeKey: "booking_456",
+    externalCustomerId: "cust_1",
+    occurredAt: new Date("2026-07-30T12:00:01.000Z"),
+    valueCents: 1500,
+    currency: "USD",
+    source: "crm-webhook",
+    evidence: {},
+  });
+  assert.equal(conversionBody.data.accepted, true);
+
+  const report = await requestJson(
+    `${baseUrl}/api/v1/outbound-calls/batches/campaign_123/reports/preview`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        randomized: true,
+        persistReport: false,
+      }),
+    },
+  );
+  assert.equal(report.status, 200);
+  const reportBody = await report.json();
+  assert.equal(reportBody.data.causalClaimAllowed, false);
+  assert.equal(reportBody.data.totals.conversions, 1);
+  assert.deepEqual(reportPreviewArgs[0], {
+    organizationId: "org_123",
+    campaignId: "campaign_123",
+    randomized: true,
+    persistReport: false,
   });
 });
