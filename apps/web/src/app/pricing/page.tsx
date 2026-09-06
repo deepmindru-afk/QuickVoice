@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 
-import {
-  PRICING_FAQS,
-  UsagePricing,
-} from "@/components/pricing/usage-pricing";
+import { PRICING_FAQS, UsagePricing } from "@/components/pricing/usage-pricing";
 
 export const metadata: Metadata = {
   title: "Usage-based AI Voice Agent Pricing",
@@ -18,6 +15,7 @@ export const metadata: Metadata = {
       "A prepaid wallet for measured AI, telephony, and connected-time usage, with $5 in signup call credit.",
     type: "website",
     url: "https://quickvoice.co/pricing",
+    images: [{ url: "https://quickvoice.co/og-image.png", width: 1200, height: 630 }],
   },
 };
 
@@ -28,14 +26,6 @@ const pricingSchema = {
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: "https://quickvoice.co/pricing",
-  offers: {
-    "@type": "Offer",
-    name: "QuickVoice prepaid usage",
-    price: "0",
-    priceCurrency: "USD",
-    description:
-      "$5 promotional call credit for newly verified users, then prepaid usage-based billing.",
-  },
 };
 
 const faqSchema = {

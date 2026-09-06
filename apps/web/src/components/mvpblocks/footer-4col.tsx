@@ -3,6 +3,7 @@
 import {
   Facebook,
   Instagram,
+  Linkedin,
   Mail,
   MapPin,
   Phone,
@@ -21,6 +22,7 @@ const data = {
   facebookLink: "https://www.facebook.com/profile.php?id=61578373598223",
   instaLink: "https://www.instagram.com/quickvoice_co/",
   twitterLink: "https://x.com/QuickVoice_co",
+  linkedinLink: "https://www.linkedin.com/company/quickvoiceai",
   services: {
     industries: "/industries",
     useCases: "/use-cases",
@@ -47,6 +49,7 @@ const socialLinks = [
   { icon: Facebook, label: "Facebook", href: data.facebookLink },
   { icon: Instagram, label: "Instagram", href: data.instaLink },
   { icon: Twitter, label: "X (Twitter)", href: data.twitterLink },
+  { icon: Linkedin, label: "LinkedIn", href: data.linkedinLink },
 ];
 
 const aboutLinks = [
@@ -62,6 +65,7 @@ const serviceLinks = [
   { text: "Use Cases", href: data.services.useCases },
   { text: "Pricing", href: "/pricing" },
   { text: "Blog", href: "/blog" },
+  { text: "Buyer Resources", href: "/resources" },
   { text: "Workflow Scenarios", href: "/case-studies" },
 ];
 
