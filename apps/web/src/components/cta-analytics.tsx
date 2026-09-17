@@ -3,11 +3,18 @@
 import { useEffect } from "react";
 import { trackAnalyticsEvent, type AnalyticsEventName } from "@/lib/analytics";
 import {
+  analyticsDestination,
+  matchesAnalyticsDestination,
+} from "@/lib/cta-destinations.mjs";
+import {
+  API_REFERENCE_URL,
   CONTACT_URL,
   DEMO_BOOKING_URL,
+  DOCS_URL,
   GITHUB_DOCS_URL,
   GITHUB_REPO_URL,
   LOGIN_URL,
+  MCP_DOCS_URL,
   REGISTER_URL,
 } from "@/lib/links";
 
@@ -24,16 +31,19 @@ const ACTION_DESTINATIONS: ReadonlyArray<{
 }> = [
   { eventName: "github_repo_click", href: GITHUB_REPO_URL },
   { eventName: "docs_open", href: GITHUB_DOCS_URL },
+  { eventName: "docs_open", href: DOCS_URL },
+  { eventName: "docs_open", href: API_REFERENCE_URL },
+  { eventName: "docs_open", href: MCP_DOCS_URL },
 ];
 
 function getCtaType(rawHref: string): string | null {
-  const targetUrl = new URL(rawHref, window.location.origin);
-
   for (const destination of CTA_DESTINATIONS) {
-    const destinationUrl = new URL(destination.href, window.location.origin);
     if (
-      targetUrl.href === destinationUrl.href ||
-      targetUrl.pathname === destinationUrl.pathname
+      matchesAnalyticsDestination(
+        rawHref,
+        destination.href,
+        window.location.origin,
+      )
     ) {
       return destination.type;
     }
@@ -43,13 +53,13 @@ function getCtaType(rawHref: string): string | null {
 }
 
 function getActionEvent(rawHref: string): AnalyticsEventName | null {
-  const targetUrl = new URL(rawHref, window.location.origin);
-
   for (const destination of ACTION_DESTINATIONS) {
-    const destinationUrl = new URL(destination.href);
     if (
-      targetUrl.href.replace(/\/+$/, "") ===
-      destinationUrl.href.replace(/\/+$/, "")
+      matchesAnalyticsDestination(
+        rawHref,
+        destination.href,
+        window.location.origin,
+      )
     ) {
       return destination.eventName;
     }
@@ -71,7 +81,11 @@ export function CtaAnalytics() {
         ?.replace(/\s+/g, " ")
         .trim()
         .slice(0, 120);
-      const linkDestination = new URL(href, window.location.origin).href;
+      const linkDestination = analyticsDestination(
+        href,
+        window.location.origin,
+      );
+      if (!linkDestination) return;
       const linkLocation = link.dataset.analyticsLocation;
       const ctaType = getCtaType(href);
       if (ctaType) {
