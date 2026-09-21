@@ -1,6 +1,6 @@
 # Source, status, and dependency tracker
 
-Prepared 2026-09-06. The [dated execution report](execution-2026-09-06.md) now records authorized releases and external observations and supersedes the preparation-time status table below. Status vocabulary: **locally verified** = implementation passed the recorded local checks, with deployment still pending; **prepared** = usable local asset exists; **pending verification** = implementation or measurement needs a recorded check; **scheduled** = future work; **blocked by evidence/access** = required external input unavailable; **superseded** = historical recommendation conflicts with current evidence.
+Prepared 2026-09-06; current follow-up checked 2026-09-21. The [September 18 completion record](completion-2026-09-18.md) records the live content release, active private reports, and remaining access blockers. The older [execution report](execution-2026-09-06.md) remains historical evidence. Status vocabulary: **locally verified** = implementation passed the recorded local checks, with deployment still pending; **prepared** = usable local asset exists; **pending verification** = implementation or measurement needs a recorded check; **scheduled** = future work; **blocked by evidence/access** = required external input unavailable; **superseded** = historical recommendation conflicts with current evidence.
 
 ## Governing sources
 
@@ -14,6 +14,51 @@ Prepared 2026-09-06. The [dated execution report](execution-2026-09-06.md) now r
 | [Public claims gate](../public-claims-gate.md) | Evidence requirements for public claims. | Use current LICENSE if a historical license sentence differs. Never infer certification, savings, or customer approval. |
 
 ## Work and ownership
+
+### September 21 follow-up
+
+[Current verification and hosting handoff](follow-up-2026-09-21.md): all four GA
+registrations are correct, including no key-event default value. The earlier
+USD 1 discrepancy was corrected and is no longer a blocker. The bounded consent
+repair adds default-off analytics with allow, decline and reopen controls;
+TruConversion is disabled pending verified masking and revocation controls.
+Production deployment and marked real receipt/inbox verification remain separate
+gates. Existing Monday private reporting and the staged IVR improvement are
+preserved. The [September 20 record](follow-up-2026-09-20.md) retains dated evidence.
+
+### September 18 completion release
+
+The [completion record](completion-2026-09-18.md) tracks the current release,
+overdue Synthflow review, private reporting automation, and measurement
+activation. Its dated observations supersede preparation and candidate statuses
+below only where completion evidence is recorded.
+
+| Work | September 18 status | Remaining dependency |
+|---|---|---|
+| Nine article journeys; Vapi and Synthflow reviews; commercial clarity | Merged and publicly verified; all 101 sitemap URLs pass | Google recrawl/indexing is monitored separately. |
+| Contact receipts and source attribution | Code merged; backend release workflow completed; flag activation pending | Coolify explicitly denies API read permission; receiver health/configuration must be verified before activation. |
+| Marked production enquiry, inbox and GA receipt | Pending activation; no September 18 enquiry sent | Hosting access, enabled attribution and destination inbox verification. |
+| GA key event, three event dimensions and manual pageviews | Utilities tested; automatic pageviews remain configured | Existing grant lacks `analytics.edit`; secure administrative access still required. |
+| Private weekly US GSC/GA reporting | Active Mondays 14:17 UTC; first hosted run passed 141 requests | Human review and independently verified sales outcomes remain recurring work. |
+| Future campaign work and customer proof | Scheduled or evidence-dependent | Preserve real evidence, consent and sending boundaries. |
+
+### Historical September 16 implementation overlay
+
+See [implementation-2026-09-16.md](implementation-2026-09-16.md). This table preserves the
+September 16 candidate state; use the completion table above for current status.
+
+| Work | Current status | Next dependency |
+|---|---|---|
+| Nine article journeys; reviewed Vapi comparison; commercial clarity | Locally verified, deployment pending | Reviewed release; live metadata/link checks. Candidate sitemap 100 URLs versus current live 99. |
+| Enquiry source/landing context and receipts | Locally implemented; production forwarding disabled by default | Deploy compatible API first, then enable web `CONTACT_ATTRIBUTION_ENABLED`; verify a marked QA enquiry separately. |
+| GA4 `generate_lead` key event and CTA/form dimensions | Utility tested; blocked by edit access | September 16 existing OAuth grant has `analytics.readonly`, not `analytics.edit`; no registrations changed. |
+| US GSC/GA reporting | Live read-only run verified; weekly scheduling not configured | 141 successful requests, final GSC through September 14; operator owns recurring private snapshots. |
+| Confirmed bookings and qualified business outcomes | Offline reconciliation tool tested; actual source records required | Sales supplies verified private records; unknown source gets no organic credit. |
+| DataForSEO demand validation | US/English keyword and SERP research completed during September 15 audit | Directional prioritization only; volume spikes/difficulty zeros are not a reliable ranking or pipeline forecast. |
+| Production GA collection | Tag already present; historical gaps remain | Do not reinstall or claim clean historical conversion rates. New lead flow still needs deployment and end-to-end verification. |
+| Days 1–90 execution, real demonstrations, stories and distribution | Scheduled or evidence-dependent | Use the active growth backlog; record actual owners, dates and source evidence. |
+
+### Historical September 6 release and preparation state
 
 **Updated 2026-09-06:** Search Console is active; the authorized sitemap submission has been processed without reported errors or warnings. The deployed website now loads the verified GA4 tag. `generate_lead` key-event registration and manual page-view activation still require the missing Analytics edit access. The current hosting API is accessible, and the contact backend has been deployed. See the [execution report](execution-2026-09-06.md) for web rollout and delivery evidence; the earlier [live measurement check](live-measurement-check-2026-09-06.md) is historical diagnosis.
 

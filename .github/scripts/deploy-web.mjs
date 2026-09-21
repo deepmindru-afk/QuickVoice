@@ -2,6 +2,7 @@ import { appendFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 
 export const WEB_APP_UUID = "76d9ooqtvm1hl9tbzmza3few";
+export const SERVER_APP_UUID = "udefnayjdhyb2ketfxrbvwdq";
 const API_URL = "https://webhook.quickintell.com/api/v1";
 const activeStatuses = new Set(["queued", "in_progress", "building"]);
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -11,6 +12,9 @@ export async function deployWeb({
   apiUrl,
   token,
   expectedCommit,
+  flagUpdates = {},
+  prerequisitesVerified = false,
+  expectedReceiverCommit,
   fetchImpl = fetch,
   sleep = delay,
   log = console.log,
@@ -23,17 +27,32 @@ export async function deployWeb({
   if (!/^[a-f0-9]{40}$/.test(expectedCommit ?? "")) {
     throw new Error("A full expected main commit is required.");
   }
+  const allowedFlags = new Set(["CONTACT_ATTRIBUTION_ENABLED", "NEXT_PUBLIC_GA_MANUAL_PAGEVIEWS"]);
+  const updates = Object.entries(flagUpdates).filter(([, value]) => value !== "preserve");
+  if (Object.keys(flagUpdates).some((key) => !allowedFlags.has(key)) ||
+      updates.some(([, value]) => !["enable", "disable"].includes(value))) {
+    throw new Error("Only the two documented SEO rollout flags can be changed.");
+  }
+  if (updates.some(([, value]) => value === "enable") && prerequisitesVerified !== true) {
+    throw new Error("Verify the compatible receiver / GA history setting before enabling rollout flags.");
+  }
+  if (flagUpdates.CONTACT_ATTRIBUTION_ENABLED === "enable" &&
+      !/^[a-f0-9]{40}$/.test(expectedReceiverCommit ?? "")) {
+    throw new Error("Contact activation requires the full compatible API revision.");
+  }
 
-  async function request(path, method = "GET") {
+  async function request(path, method = "GET", body) {
     let response;
     try {
       response = await fetchImpl(`${API_URL}${path}`, {
         method,
         redirect: "error",
         signal: AbortSignal.timeout(30_000),
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
           "User-Agent": "Mozilla/5.0 QuickVoice-Web-Deploy",
         },
       });
@@ -41,7 +60,18 @@ export async function deployWeb({
       throw new Error(`Coolify ${method} request did not receive a response.`);
     }
     if (!response.ok) {
-      throw new Error(`Coolify ${method} returned HTTP ${response.status}.`);
+      // Report a bounded classification, never the raw body or environment data.
+      let reason = "";
+      if (response.status === 403) {
+        const contentType = response.headers.get("content-type") ?? "";
+        if (contentType.includes("json")) {
+          const body = await response.json().catch(() => ({}));
+          const message = String(body?.message ?? "").toLowerCase();
+          reason = /ip|allowlist/.test(message) ? " (API network restriction)" :
+            /permission|ability|abilities|scope/.test(message) ? " (API permission restriction)" : " (API forbidden)";
+        } else reason = " (non-JSON access denial)";
+      }
+      throw new Error(`Coolify ${method} returned HTTP ${response.status}${reason}.`);
     }
     try {
       return await response.json();
@@ -83,6 +113,9 @@ export async function deployWeb({
 
   const before = await listDeployments();
   const active = before.filter((row) => activeStatuses.has(row.status));
+  if (updates.length && active.length) {
+    throw new Error("Wait for the active deployment before changing rollout flags.");
+  }
   if (
     active.length > 1 ||
     (active.length === 1 && active[0].commit !== expectedCommit)
@@ -90,6 +123,67 @@ export async function deployWeb({
     throw new Error(
       "Another marketing deployment is active; no additional deployment was requested.",
     );
+  }
+  if (updates.length) {
+    const envPath = `${appPath}/envs`;
+    const readFlags = async () => {
+      const rows = await request(envPath);
+      if (!Array.isArray(rows)) throw new Error("Unexpected environment-variable response.");
+      return rows.filter((row) => row.is_preview === false || row.is_preview === 0);
+    };
+    let variables = await readFlags();
+    if (flagUpdates.CONTACT_ATTRIBUTION_ENABLED === "enable") {
+      const serverPath = `/applications/${SERVER_APP_UUID}`;
+      const server = await request(serverPath);
+      const history = await request(`/deployments/applications/${SERVER_APP_UUID}?take=10`);
+      const deployments = Array.isArray(history) ? history : history.deployments;
+      if (server.uuid !== SERVER_APP_UUID || server.status !== "running:healthy" ||
+          server.docker_registry_image_tag !== `sha-${expectedReceiverCommit}` ||
+          !String(server.docker_registry_image_name).endsWith("/allgpt-co/quickvoice-server") ||
+          !Array.isArray(deployments) || deployments.length === 0 ||
+          deployments.some((row) => activeStatuses.has(row.status)) ||
+          deployments[0].status !== "finished") {
+        throw new Error("Compatible API revision is not confirmed healthy with a finished deployment.");
+      }
+      const serverVariables = await request(`${serverPath}/envs`);
+      if (!Array.isArray(serverVariables)) throw new Error("Unexpected receiver environment response.");
+      const value = (rows, key) => {
+        const matches = rows.filter((row) => row.key === key &&
+          (row.is_preview === false || row.is_preview === 0) && row.is_runtime);
+        return matches.length === 1 ? String(matches[0].value ?? "").trim() : "";
+      };
+      const webhook = value(variables, "CONTACT_WEBHOOK_URL");
+      const secret = value(variables, "CONTACT_WEBHOOK_SECRET");
+      const version = value(serverVariables, "API_VERSION") || "v1";
+      const endpoints = String(server.fqdn ?? "").split(",")
+        .map((domain) => `${domain.trim().replace(/\/$/, "")}/api/${version}/contact-delivery`);
+      if (!webhook.startsWith("https://") || !endpoints.includes(webhook) ||
+          secret.length < 32 || secret !== value(serverVariables, "CONTACT_WEBHOOK_SECRET")) {
+        throw new Error("Website webhook does not match the verified receiver configuration.");
+      }
+      log(`Verified healthy contact receiver at ${expectedReceiverCommit}; webhook configuration matches.`);
+    }
+    for (const [key, action] of updates) {
+      const matches = variables.filter((row) => row.key === key);
+      if (matches.length > 1) throw new Error(`Ambiguous production flag: ${key}.`);
+      const desired = {
+        key, value: action === "enable" ? "true" : "false",
+        is_preview: false, is_literal: true, is_multiline: false,
+        is_buildtime: key.startsWith("NEXT_PUBLIC_"), is_runtime: true,
+      };
+      const matchesDesired = (row) => row?.value === desired.value &&
+        Boolean(row.is_buildtime) === desired.is_buildtime && Boolean(row.is_runtime);
+      if (!matchesDesired(matches[0])) {
+        // A timeout may follow acceptance. Never repeat an uncertain mutation.
+        await request(envPath, matches.length ? "PATCH" : "POST", desired);
+        variables = await readFlags();
+        const verified = variables.filter((row) => row.key === key);
+        if (verified.length !== 1 || !matchesDesired(verified[0])) {
+          throw new Error(`Rollout flag verification failed: ${key}. Inspect settings before retrying.`);
+        }
+      }
+      log(`Verified production rollout flag ${key}=${desired.value}.`);
+    }
   }
   let deploymentUuid = active[0]?.deployment_uuid;
   if (!deploymentUuid) {
@@ -194,6 +288,12 @@ if (
       apiUrl: process.env.COOLIFY_API_URL,
       token: process.env.COOLIFY_API_TOKEN,
       expectedCommit: process.env.GITHUB_SHA,
+      flagUpdates: {
+        CONTACT_ATTRIBUTION_ENABLED: process.env.CONTACT_ATTRIBUTION_ACTION || "preserve",
+        NEXT_PUBLIC_GA_MANUAL_PAGEVIEWS: process.env.MANUAL_PAGEVIEWS_ACTION || "preserve",
+      },
+      prerequisitesVerified: process.env.ROLLOUT_PREREQUISITES_VERIFIED === "true",
+      expectedReceiverCommit: process.env.COMPATIBLE_API_COMMIT,
     });
     const summary = `Marketing deployment finished: ${result.deploymentUuid}\nCommit: ${result.commit}\nApplication: running:healthy\nPublic URL: https://quickvoice.co\n`;
     console.log(summary);
