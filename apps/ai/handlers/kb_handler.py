@@ -22,7 +22,8 @@ from urllib.parse import urlparse, urlunparse
 from utils.logger import logger, redact_sensitive
 from utils.metrics import emit_metric
 from utils.pinecone_client import pinecone_client, pinecone_host
-from handlers.vector_provider_adapters import get_vector_adapters
+from handlers.vector_provider_adapters import get_vector_adapters, get_vector_store_adapter
+from handlers.kb_chunking import chunk_text as _chunk_text
 
 # ── lazy imports (heavy deps loaded once) ────────────────────────────────────
 
@@ -44,8 +45,9 @@ def _agent_filter(agent_id: str, base_filter: dict | None = None) -> dict:
 
 EMBEDDING_MODEL = os.environ.get("PINECONE_EMBEDDING_MODEL", "llama-text-embed-v2")
 EMBEDDING_TRUNCATE = os.environ.get("PINECONE_EMBEDDING_TRUNCATE", "END")
-CHUNK_SIZE = 500       # characters (not tokens — keeps it dependency-light)
-CHUNK_OVERLAP = 50
+CHUNK_SIZE = int(os.environ.get("KB_CHUNK_SIZE_TOKENS", "220"))
+CHUNK_OVERLAP = int(os.environ.get("KB_CHUNK_OVERLAP_TOKENS", "32"))
+MAX_INPUT_TOKENS = int(os.environ.get("KB_MAX_INPUT_TOKENS", "256"))
 MAX_DOWNLOAD_BYTES = int(os.environ.get("KB_MAX_DOWNLOAD_BYTES", str(10 * 1024 * 1024)))
 MAX_CHUNKS_PER_DOCUMENT = int(os.environ.get("KB_MAX_CHUNKS_PER_DOCUMENT", "500"))
 MAX_DOCUMENTS_PER_JOB = int(os.environ.get("KB_MAX_DOCUMENTS_PER_JOB", "50"))
@@ -715,16 +717,8 @@ def parse_file(content: bytes, source_type: str) -> str:
 # ── chunking ─────────────────────────────────────────────────────────────────
 
 def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Simple character-based sliding window splitter."""
-    chunks: list[str] = []
-    start = 0
-    while start < len(text):
-        end = start + size
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
-        start += size - overlap
-    return chunks
+    """Split on sentence boundaries within the configured MiniLM token budget."""
+    return _chunk_text(text, size, overlap, max_input_tokens=MAX_INPUT_TOKENS)
 
 
 # ── embedding ─────────────────────────────────────────────────────────────────
@@ -783,7 +777,7 @@ def upsert_to_pinecone(
                     "kbId": kb_id,
                     "name": doc_name,
                     "chunkIdx": i,
-                    "text": chunk[:1000],
+                    "text": chunk,
                 },
             }
             for i, (chunk, emb) in enumerate(zip(chunks, embeddings))
@@ -809,8 +803,7 @@ def upsert_kb_vectors(
     kb_id: str,
     doc_name: str,
 ) -> None:
-    adapters = get_vector_adapters()
-    adapters.vector_store.upsert(
+    get_vector_store_adapter().upsert(
         namespace=namespace,
         kb_id=kb_id,
         doc_name=doc_name,
@@ -824,8 +817,7 @@ def delete_kb_vectors(*, namespace: str, kb_id: str) -> None:
         _delete_kb_vectors(index=_index(), namespace=namespace, kb_id=kb_id)
         return
 
-    adapters = get_vector_adapters()
-    adapters.vector_store.delete_by_kb(namespace=namespace, kb_id=kb_id)
+    get_vector_store_adapter().delete_by_kb(namespace=namespace, kb_id=kb_id)
 
 
 def _delete_kb_vectors(*, index, namespace: str, kb_id: str) -> None:
@@ -910,7 +902,7 @@ async def process_documents(payload: dict, progress=None, should_cancel=None) ->
                 results.append(result)
                 continue
             await _notify_progress(progress, {**result_base, "status": "running", "stage": "chunking"})
-            chunks = chunk_text(text)
+            chunks = await asyncio.to_thread(chunk_text, text)
             if not chunks:
                 raise ValueError("No chunks produced")
             if len(chunks) > budget["max_chunks_per_document"]:
