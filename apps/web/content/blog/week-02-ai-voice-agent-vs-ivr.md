@@ -2,7 +2,7 @@
 title: 'AI Voice Agent vs IVR: Choose the Right Call-Handling Design'
 slug: ai-voice-agent-vs-ivr
 date: '2026-03-09'
-updatedAt: '2026-09-06'
+updatedAt: '2026-09-27'
 author: Rahul Agarwal
 category: AI Voice Agent Education
 tags:
@@ -20,15 +20,19 @@ ogImage: /og-image.png
 readTime: 5 min
 evidenceReview:
   status: reviewed
-  reviewedAt: '2026-09-16T18:15:25.564Z'
-  reviewer: 'Codex (primary-source, repository, and editorial journey review)'
+  reviewedAt: '2026-09-27T06:15:39.178Z'
+  reviewer: >-
+    Codex (AI-assisted primary-source and current-repository review; not human
+    expert review)
   sources:
     - 'https://www.twilio.com/docs/voice/twiml/gather'
+    - 'https://docs.livekit.io/agents/logic/turns/'
     - >-
-      https://github.com/allgpt-co/QuickVoice/blob/main/apps/ai/handlers/mcp_handler.py
-    - 'https://github.com/allgpt-co/QuickVoice'
+      https://github.com/allgpt-co/QuickVoice/blob/75761398e8dcdc342fe71818b22444f5d8d2f785/apps/ai/handlers/mcp_handler.py
+    - >-
+      https://github.com/allgpt-co/QuickVoice/blob/75761398e8dcdc342fe71818b22444f5d8d2f785/README.md
     - 'https://quickvoice.co/pricing'
-  contentHash: c82f06b41bd4ac54b36a313413b601fc2aa53e2d06ec96ffe64d70254bf6b41e
+  contentHash: 969af5c1b17058316f1dae7567dacb242b4f7cb2c8484bdca2c098ff53bb7f2b
 ---
 
 # AI Voice Agent vs IVR: Choose the Right Call-Handling Design
@@ -37,7 +41,21 @@ IVR and AI voice agents are ways to organize telephone interactions. An IVR usua
 
 The distinction is not simply buttons versus speech. IVR implementations can accept spoken input, and an AI agent can still need explicit choices, identity checks, and structured steps.
 
-Sources were reviewed on September 6, 2026. This guide compares design choices without assuming that changing the technology improves satisfaction, resolution, or cost.
+Sources were reviewed on September 27, 2026. This guide compares design choices without assuming that changing the technology improves satisfaction, resolution, or cost.
+
+## What does “AI IVR” change in the call?
+
+When evaluating an AI IVR proposal, ask which part of the call changes. Does speech select an established route, or does a conversational agent interpret the request, ask follow-up questions and generate a response? A system that accepts speech can still follow a fixed workflow: Twilio's [Gather](https://www.twilio.com/docs/voice/twiml/gather) supports keypad input, speech, or both.
+
+Compare one representative call in the current and proposed designs:
+
+| Caller situation | Evidence to collect |
+| --- | --- |
+| A known department request | Correct destination and a usable alternative to speech. |
+| An unclear request or interruption | What the system asks next and whether the caller can correct it. |
+| An unsupported action or failed lookup | A truthful response and a tested route to staff or another channel. |
+
+A text-chatbot demonstration does not test telephone audio or interruption handling. Review those behaviors on the actual call path before changing it. LiveKit's [turn and interruption documentation](https://docs.livekit.io/agents/logic/turns/) explains why voice interaction needs its own checks; it does not establish the behavior of a particular QuickVoice deployment.
 
 ## Start with the task callers need to complete
 
@@ -101,6 +119,8 @@ A business may keep a short menu or an established transaction path while adding
 Plan the transition and fallback explicitly. Test the carrier path and staff destination; do not assume every phone system supports the same transfers or routing options.
 
 The [IVR migration guide](/blog/how-to-migrate-ivr-to-ai-voice-agents) covers route inventory, acceptance gates, and rollback once the business decides to pilot a change.
+
+A property manager can keep established resident and safety routes while evaluating a limited leasing-intake path. The [after-hours leasing-call playbook](/blog/after-hours-leasing-call-handling) explains the coverage, failed-handoff and next-shift ownership questions to settle before changing that route.
 
 ## QuickVoice evaluation scope
 
