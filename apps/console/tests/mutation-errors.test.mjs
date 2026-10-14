@@ -66,7 +66,14 @@ const cases = [
     { widget: { widgetId: "widget" } },
   ],
   ["components/agents/tabs/WebsiteWidgetTab.tsx", "removeWidget"],
-  ["components/agents/tabs/VoiceTab.tsx", "onSubmit"],
+  ["components/agents/tabs/VoiceTab.tsx", "onSubmit", {
+    voiceOptions: {},
+    languages: [{ code: "en" }],
+    availableSttModels: [{ id: "deepgram/nova-3" }],
+    llmModels: [{ id: "bedrock/model" }],
+    availableTtsModels: [{ id: "deepgram/aura-2" }],
+    availableVoices: [{ id: "aura-2-asteria-en" }],
+  }],
   ["components/agents/tabs/WebhooksTab.tsx", "onSubmit"],
   ["components/agents/tabs/AnalysisTab.tsx", "saveAnalysis"],
   ["app/(app)/calls/[id]/page.tsx", "onDelete"],
@@ -98,6 +105,11 @@ for (const [file, name, overrides] of cases) {
     const effect = () => effects.push("success");
     const values = {
       name: "Draft",
+      agent_language: "en",
+      sttModel: "deepgram/nova-3",
+      llmModel: "bedrock/model",
+      ttsModel: "deepgram/aura-2",
+      voiceId: "aura-2-asteria-en",
       response_timeout_secs: "",
       api_headers: [],
       dynamic_variables: [],
@@ -157,6 +169,8 @@ for (const [file, name, overrides] of cases) {
       selectedTemplate: "blank",
       dialogIntent: "save",
       config: {},
+      isSuccess: true,
+      hasConflict: false,
       dataNeeded: [],
       evaluations: [],
       placeholderValues: {},
@@ -226,6 +240,48 @@ for (const [file, name, overrides] of cases) {
   });
 }
 
+test("analysis save waits for a loaded, current configuration", async () => {
+  let requests = 0;
+  for (const state of [
+    { isSuccess: false, config: undefined, hasConflict: false },
+    { isSuccess: true, config: undefined, hasConflict: false },
+    { isSuccess: true, config: {}, hasConflict: true },
+  ]) {
+    const saveAnalysis = loadHandler(
+      "components/agents/tabs/AnalysisTab.tsx",
+      "saveAnalysis",
+      {
+        ...state,
+        save: {
+          mutateAsync: async () => {
+            requests++;
+          },
+        },
+      },
+    );
+    await saveAnalysis();
+  }
+  assert.equal(requests, 0);
+  const saveNewAgentAnalysis = loadHandler(
+    "components/agents/tabs/AnalysisTab.tsx",
+    "saveAnalysis",
+    {
+      isSuccess: true,
+      config: null,
+      hasConflict: false,
+      dataNeeded: [],
+      evaluations: [],
+      mergeConfig: (_config, patch) => patch,
+      save: {
+        mutateAsync: async () => {
+          requests++;
+        },
+      },
+    },
+  );
+  await saveNewAgentAnalysis();
+  assert.equal(requests, 1, "a loaded agent without a saved config can save");
+});
 
 test("number purchase ignores another submission while buying a number", async () => {
   let requests = 0;
