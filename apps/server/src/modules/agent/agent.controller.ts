@@ -5,6 +5,25 @@ import * as agentService from "./agent.service.js";
 import { BadRequestError } from "../../common/errors/badRequest.js";
 import { authorized } from "../../middleware/authorize.middleware.js";
 import { recordAuditEvent } from "../audit/audit-log.service.js";
+import { listWebhookEvents, recordWebhookEvent } from "./webhook-events.service.js";
+import { createVoiceSample } from "./voice-sample.service.js";
+
+export const previewVoiceSample = authorized(async (req, res) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || !agentId) throw new BadRequestError("Agent id is required");
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  req.once("aborted", cancel);
+  res.once("close", cancel);
+  try {
+    const sample = await createVoiceSample(req.auth.activeOrganizationId, agentId, req.body, controller.signal);
+    res.setHeader("Cache-Control", "private, no-store");
+    res.status(StatusCodes.OK).json({ success: true, message: "Voice sample generated", data: sample });
+  } finally {
+    req.off("aborted", cancel);
+    res.off("close", cancel);
+  }
+});
 
 export const createAgent = authorized(async (req, res) => {
   const agent = await agentService.createAgent({
@@ -191,3 +210,17 @@ export const getAgentConfigByIdForRuntime = async (
     data: configuration,
   });
 };
+
+export const recordAgentWebhookEvent = async (req: Request, res: Response) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || !agentId) throw new BadRequestError("Agent id is required");
+  await recordWebhookEvent(agentId, req.body);
+  res.status(StatusCodes.NO_CONTENT).end();
+};
+
+export const getAgentWebhookEvents = authorized(async (req, res) => {
+  const agentId = req.params.agentId;
+  if (typeof agentId !== "string" || !agentId) throw new BadRequestError("Agent id is required");
+  const events = await listWebhookEvents(req.auth.activeOrganizationId, agentId);
+  res.status(StatusCodes.OK).json({ success: true, data: events });
+});

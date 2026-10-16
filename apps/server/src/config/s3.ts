@@ -1,5 +1,6 @@
 import { S3Client, DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Readable } from "node:stream";
 
 type S3Credentials = {
   accessKeyId: string;
@@ -89,12 +90,15 @@ function getBucket(): string {
 export const generateDownloadUrl = async (
   key: string,
   expiresIn = 3600,
-  fileName?: string
+  fileName?: string,
+  disposition: "attachment" | "inline" = "attachment",
+  contentType?: string,
 ): Promise<string> => {
   const command = new GetObjectCommand({
     Bucket: getBucket(),
     Key: key,
-    ...(fileName ? { ResponseContentDisposition: `attachment; filename="${fileName}"` } : {}),
+    ...(fileName ? { ResponseContentDisposition: `${disposition}; filename="${fileName}"` } : {}),
+    ...(contentType ? { ResponseContentType: contentType } : {}),
   });
   return getSignedUrl(s3, command, { expiresIn });
 };
@@ -130,4 +134,15 @@ export const readObjectBuffer = async (key: string): Promise<Buffer> => {
 
   const bytes = await response.Body.transformToByteArray();
   return Buffer.from(bytes);
+};
+
+export const readObjectStream = async (key: string, signal: AbortSignal) => {
+  const response = await s3.send(
+    new GetObjectCommand({ Bucket: getBucket(), Key: key }),
+    { abortSignal: signal },
+  );
+  if (!(response.Body instanceof Readable)) {
+    throw new Error("Storage did not return a readable file");
+  }
+  return { body: response.Body, contentLength: response.ContentLength };
 };

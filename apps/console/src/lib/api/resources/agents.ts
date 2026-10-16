@@ -5,6 +5,7 @@ import type {
   AgentPreviewSession,
   ApiEnvelope,
   VoiceCatalog,
+  VoiceSample,
 } from "@/src/lib/api/types";
 
 // organizationId + userId are injected server-side from the session.
@@ -84,6 +85,13 @@ export interface WebhookValue {
   redacted?: boolean;
 }
 
+export interface AgentWebhookEvent {
+  phase: "initiation" | "post_call";
+  status: "delivered" | "retrying" | "failed";
+  errorCode: string | null;
+  createdAt: string;
+}
+
 export const agentsApi = {
   list: async (): Promise<Agent[]> => {
     const res = await apiClient.get<ApiEnvelope<Agent[]>>("/agents");
@@ -109,9 +117,25 @@ export const agentsApi = {
     );
     return res.data.data;
   },
+  getWebhookEvents: async (id: string): Promise<AgentWebhookEvent[]> => {
+    const res = await apiClient.get<ApiEnvelope<AgentWebhookEvent[]>>(
+      `/agents/${id}/webhook-events`,
+    );
+    return res.data.data;
+  },
   getVoiceCatalog: async (): Promise<VoiceCatalog> => {
     const res = await apiClient.get<ApiEnvelope<VoiceCatalog>>(
       "/agents/voice/catalog",
+    );
+    return res.data.data;
+  },
+  createVoiceSample: async (
+    id: string,
+    input: { language: string; ttsModel: string; voiceId: string },
+    signal: AbortSignal,
+  ): Promise<VoiceSample> => {
+    const res = await apiClient.post<ApiEnvelope<VoiceSample>>(
+      `/agents/${id}/voice-sample`, input, { signal, timeout: 25_000 },
     );
     return res.data.data;
   },

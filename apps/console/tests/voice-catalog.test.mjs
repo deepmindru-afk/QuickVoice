@@ -36,7 +36,7 @@ test("buildVoiceOptionsFromCatalog maps AI catalog values to console dropdown op
   const options = buildVoiceOptionsFromCatalog({
     version: "2026-06-30",
     defaults: {},
-    languages: [{ id: "en-IN", label: "English (India)", locale: "en-IN" }],
+    languages: [{ id: "en-IN", label: "English (India)", locale: "en-IN", sample_text: "Hello! How can I help you today?" }],
     timezones: ["UTC", "Asia/Kolkata"],
     stt_models: [
       {
@@ -72,7 +72,7 @@ test("buildVoiceOptionsFromCatalog maps AI catalog values to console dropdown op
     ],
   });
 
-  assert.deepEqual(plain(options.languages), [{ code: "en-IN", label: "English (India)" }]);
+  assert.deepEqual(plain(options.languages), [{ code: "en-IN", label: "English (India)", sampleText: "Hello! How can I help you today?" }]);
   assert.deepEqual(plain(options.timezones), ["UTC", "Asia/Kolkata"]);
   assert.equal(options.sttModels[0].id, "deepgram/nova-3");
   assert.equal(options.llmModels[0].id, "bedrock/us.amazon.nova-lite-v1:0");
@@ -94,10 +94,12 @@ test("Indian English stays distinct when filtering speech models and voices", ()
   assert.equal(normalizeLanguageCode("en-US"), "en");
   assert.equal(normalizeLanguageCode("es"), "es");
   assert.equal(normalizeLanguageCode("fr-CA", [{ code: "fr" }]), "fr");
-  assert.ok(getSttModelsForLanguage("en-IN").some((model) => model.id === "sarvam/saaras:v3"));
-  assert.ok(getTtsModelsForLanguage("en-IN").some((model) => model.id === "sarvam/bulbul:v3"));
+  assert.ok(getSttModelsForLanguage("en-IN").some((model) => model.id === "deepgram/nova-3"));
+  assert.ok(getTtsModelsForLanguage("en-IN").some((model) => model.id === "elevenlabs/eleven_flash_v2_5"));
   assert.ok(!getTtsModelsForLanguage("en-IN").some((model) => model.id === "deepgram/aura-2"));
-  assert.ok(getVoicesForTtsModel("sarvam/bulbul:v3", "en-IN").length > 0);
+  assert.ok(getVoicesForTtsModel("elevenlabs/eleven_flash_v2_5", "en-IN").length > 0);
+  assert.ok(!getSttModelsForLanguage("hi").some((model) => model.provider === "Sarvam"));
+  assert.ok(!getTtsModelsForLanguage("hi").some((model) => model.provider === "Sarvam"));
 });
 
 test("voice tab keeps configured model and voice values visible after refresh", () => {

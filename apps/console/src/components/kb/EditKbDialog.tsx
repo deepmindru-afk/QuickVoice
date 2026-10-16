@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, Eye, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 
 import { KnowledgeSourceStatus } from "@/src/components/kb/kb-utils";
+import { KbDocumentPreview } from "@/src/components/kb/KbDocumentPreview";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -23,7 +25,9 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { useUpdateKb } from "@/src/hooks/queries/kb";
+import { kbApi } from "@/src/lib/api/resources/kb";
 import type { Agent, KnowledgeSource } from "@/src/lib/api/types";
+import { downloadBlobAsFile } from "@/src/lib/export-csv";
 
 function formatDate(value: string | null) {
   if (!value) return "Not indexed";
@@ -85,6 +89,12 @@ function EditKbDialogContent({
     source.sourceType === "URL" ? source.storagePath : ""
   );
   const update = useUpdateKb();
+  const [downloading, setDownloading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const downloadRequest = useRef<AbortController | null>(null);
+  useEffect(() => () => downloadRequest.current?.abort(), []);
+  const fileName = source.originalFileName?.split(/[\\/]/).pop()
+    || `${source.name.replace(/\.[^.]+$/, "")}.${source.sourceType.toLowerCase()}`;
 
   const metadata = useMemo(() => {
     if (!source.metadata || Object.keys(source.metadata).length === 0) {
@@ -94,6 +104,7 @@ function EditKbDialogContent({
   }, [source]);
 
   const isProcessing = source.status === "PROCESSING";
+  const canPreviewFile = source.sourceType === "PDF" || source.sourceType === "TXT" || source.sourceType === "CSV";
   const canSave =
     !isProcessing &&
     !update.isPending &&
@@ -126,6 +137,30 @@ function EditKbDialogContent({
       // The mutation displays the API error and keeps the dialog open so the
       // user can correct the fields without losing their changes.
     }
+  }
+
+  async function downloadFile() {
+    if (downloadRequest.current) return;
+    const controller = new AbortController();
+    downloadRequest.current = controller;
+    setDownloading(true);
+    try {
+      const blob = await kbApi.file(source.kbId, "attachment", controller.signal);
+      if (!controller.signal.aborted) downloadBlobAsFile(fileName, blob);
+    } catch (error) {
+      if (!controller.signal.aborted) toast.error(error instanceof Error ? error.message : "Could not download this document");
+    } finally {
+      downloadRequest.current = null;
+      if (!controller.signal.aborted) setDownloading(false);
+    }
+  }
+
+  if (showPreview) {
+    return (
+      <Dialog open onOpenChange={onOpenChange}>
+        <KbDocumentPreview source={source} fileName={fileName} onBack={() => setShowPreview(false)} />
+      </Dialog>
+    );
   }
 
   return (
@@ -233,6 +268,25 @@ function EditKbDialogContent({
                 <Detail label="Storage reference" value={source.storagePath} />
               ) : null}
             </div>
+            {source.sourceType !== "URL" ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {canPreviewFile ? (
+                    <Button type="button" variant="outline" disabled={downloading} onClick={() => setShowPreview(true)}>
+                      <Eye />
+                      Preview document
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="outline" disabled={downloading} onClick={() => void downloadFile()}>
+                    {downloading ? <Loader2 className="animate-spin" /> : <Download />}
+                    Download file
+                  </Button>
+                </div>
+                {!canPreviewFile ? (
+                  <p className="text-xs text-muted-foreground">Download this file to review it in a compatible app.</p>
+                ) : null}
+              </div>
+            ) : null}
           </section>
 
           <section className="space-y-3" aria-labelledby="kb-metadata-heading">

@@ -38,7 +38,7 @@ export interface Voice {
 }
 
 export interface VoiceOptions {
-  languages: Array<{ code: string; label: string }>;
+  languages: Array<{ code: string; label: string; sampleText?: string | null }>;
   timezones: string[];
   sttModels: LanguageAwareModelOption[];
   llmModels: ModelOption[];
@@ -178,18 +178,6 @@ export const VOICES: Voice[] = [
     ],
     styles: ["Deep", "Narrative"],
     useCases: ["IVR", "Narration"],
-  },
-  {
-    id: "shubh",
-    name: "Shubh",
-    provider: "Sarvam",
-    gender: "masculine",
-    locale: "hi-IN",
-    accent: "Indian",
-    languages: ["hi", "en-IN"],
-    ttsModels: ["sarvam/bulbul:v3"],
-    styles: ["Conversational"],
-    useCases: ["Voice agents", "Customer service"],
   },
   {
     id: "f786b574-daa5-4673-aa0c-cbe3e8534c02",
@@ -391,12 +379,6 @@ export const STT_MODELS: LanguageAwareModelOption[] = [
     provider: "Deepgram",
     languages: ["en", "en-IN"],
   },
-  {
-    id: "sarvam/saaras:v3",
-    label: "Saaras v3",
-    provider: "Sarvam",
-    languages: ["hi", "en-IN"],
-  },
 ];
 
 export const TTS_MODELS: LanguageAwareModelOption[] = [
@@ -417,12 +399,6 @@ export const TTS_MODELS: LanguageAwareModelOption[] = [
     label: "Aura-2",
     provider: "Deepgram",
     languages: ["en"],
-  },
-  {
-    id: "sarvam/bulbul:v3",
-    label: "Bulbul v3",
-    provider: "Sarvam",
-    languages: ["hi", "en-IN"],
   },
 ];
 
@@ -450,6 +426,7 @@ export function buildVoiceOptionsFromCatalog(
     languages: catalog.languages.map((language) => ({
       code: language.id,
       label: language.label,
+      ...(language.sample_text ? { sampleText: language.sample_text } : {}),
     })),
     timezones: catalog.timezones,
     sttModels: catalog.stt_models.map((model) => ({

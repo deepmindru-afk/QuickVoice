@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { containsReservedSecretEnvelope } from "../../lib/secrets.js";
 
+export const voiceSampleSchema = z.object({
+  language: z.string().trim().min(2).max(20),
+  ttsModel: z.string().trim().min(1).max(200),
+  voiceId: z.string().trim().min(1).max(200),
+}).strict();
+export type VoiceSampleInput = z.infer<typeof voiceSampleSchema>;
+
 const agentTemplateSlugSchema = z.enum([
   "business",
   "medical",
@@ -138,6 +145,13 @@ export const post_call_webhookSchema = z
     audio_url: z.boolean(),
   })
   .nullable();
+
+export const webhookEventSchema = z.object({
+  organizationId: z.string().min(1),
+  phase: z.enum(["initiation", "post_call"]),
+  status: z.enum(["delivered", "retrying", "failed"]),
+  errorCode: z.enum(["timeout", "http_error", "invalid_response", "delivery_error"]).optional(),
+});
 
 export const configureAgentSchema = z
   .object({
